@@ -64,6 +64,7 @@ class MagazineIssue {
     required this.date,
     required this.description,
     required this.fileSize,
+    this.readUrl = '',
   });
 
   final int id;
@@ -72,6 +73,29 @@ class MagazineIssue {
   final DateTime date;
   final String description;
   final String fileSize;
+  final String readUrl;
+
+  factory MagazineIssue.fromJson(Map<String, dynamic> json) {
+    return MagazineIssue(
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      title: json['title'] as String? ?? '',
+      coverUrl: json['coverUrl'] as String? ?? '',
+      date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
+      description: json['description'] as String? ?? '',
+      fileSize: json['fileSize'] as String? ?? '',
+      readUrl: json['readUrl'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'coverUrl': coverUrl,
+        'date': date.toIso8601String(),
+        'description': description,
+        'fileSize': fileSize,
+        'readUrl': readUrl,
+      };
 }
 
 class AppEvent {

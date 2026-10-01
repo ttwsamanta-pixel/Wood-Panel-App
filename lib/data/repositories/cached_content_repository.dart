@@ -83,7 +83,20 @@ class CachedContentRepository implements ContentRepository {
   }
 
   @override
-  Future<List<MagazineIssue>> magazines() => inner.magazines();
+  Future<List<MagazineIssue>> magazines() async {
+    const key = '$_prefix:magazines';
+    final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getString(key);
+    if (cached != null) {
+      if (!_isFresh(prefs, key)) {
+        unawaited(_refreshMagazines(key));
+      }
+      return _decodeList(cached, MagazineIssue.fromJson);
+    }
+    final items = await inner.magazines();
+    await _saveList(key, items.map((item) => item.toJson()).toList());
+    return items;
+  }
 
   @override
   Future<List<AppEvent>> events() async {
@@ -160,6 +173,18 @@ class CachedContentRepository implements ContentRepository {
   Future<void> _refreshEvents(String key) async {
     try {
       final items = await inner.events();
+      if (items.isNotEmpty) {
+        await _saveList(key, items.map((item) => item.toJson()).toList());
+        CacheRefreshBus.emit(CacheRefreshType.content);
+      }
+    } on Object {
+      // Keep the previous cache if background refresh fails.
+    }
+  }
+
+  Future<void> _refreshMagazines(String key) async {
+    try {
+      final items = await inner.magazines();
       if (items.isNotEmpty) {
         await _saveList(key, items.map((item) => item.toJson()).toList());
         CacheRefreshBus.emit(CacheRefreshType.content);

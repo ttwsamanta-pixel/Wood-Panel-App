@@ -110,7 +110,22 @@ class WordPressContentRepository implements ContentRepository {
   }
 
   @override
-  Future<List<MagazineIssue>> magazines() async => const [];
+  Future<List<MagazineIssue>> magazines() async {
+    final issuesByUrl = <String, MagazineIssue>{};
+    for (final year in [DateTime.now().year, DateTime.now().year - 1]) {
+      try {
+        final html = await _client.get<String>('/archive/archive-$year/');
+        for (final issue in _magazinesFromArchiveHtml(html, year)) {
+          issuesByUrl[issue.readUrl] = issue;
+        }
+      } on Object {
+        // Keep loading other years if one archive page is temporarily blocked.
+      }
+    }
+    final issues = issuesByUrl.values.toList()
+      ..sort((a, b) => b.date.compareTo(a.date));
+    return issues;
+  }
 
   @override
   Future<List<AppEvent>> events() async => const [];
@@ -280,6 +295,110 @@ class WordPressContentRepository implements ContentRepository {
       url: url,
       html: '',
     );
+  }
+
+  List<MagazineIssue> _magazinesFromArchiveHtml(String html, int year) {
+    final cards = RegExp(
+      r'<div class="archive-card">([\s\S]*?)<a href="(https://www\.woodandpanel\.com/flipbooks/[^"]+)"[^>]*class="read-btn">Read Online</a>',
+      caseSensitive: false,
+    ).allMatches(html);
+    return [
+      for (final card in cards)
+        if (_magazineFromArchiveCard(card, year) case final issue?) issue,
+    ];
+  }
+
+  MagazineIssue? _magazineFromArchiveCard(RegExpMatch card, int year) {
+    final body = card.group(1) ?? '';
+    final readUrl = _decodeHtml(card.group(2) ?? '');
+    final title = _decodeHtml(_stripHtml(_firstMatch(
+          body,
+          r'<h2>([\s\S]*?)</h2>',
+        ) ??
+        ''));
+    final coverUrl = _decodeHtml(
+      _firstMatch(body, r'data-breeze="([^"]+)"') ??
+          _firstMatch(body, r'<img[^>]+src="([^"]+)"') ??
+          '',
+    );
+    if (readUrl.isEmpty || title.isEmpty || coverUrl.startsWith('data:')) {
+      return null;
+    }
+    final topics = RegExp(
+      r'<li>([\s\S]*?)</li>',
+      caseSensitive: false,
+    )
+        .allMatches(body)
+        .map((match) => _decodeHtml(_stripHtml(match.group(1) ?? '')))
+        .where((item) => item.isNotEmpty)
+        .toList();
+    return MagazineIssue(
+      id: _magazineId(title, year),
+      title: _titleCaseIssue(title),
+      coverUrl: coverUrl,
+      date: _issueDate(title, year),
+      description: topics.isEmpty
+          ? 'Wood & Panel digital magazine issue.'
+          : topics.join(', '),
+      fileSize: 'Online issue',
+      readUrl: readUrl,
+    );
+  }
+
+  int _magazineId(String title, int year) {
+    final date = _issueDate(title, year);
+    return (date.year * 100) + date.month;
+  }
+
+  DateTime _issueDate(String title, int year) {
+    final normalized = title
+        .toUpperCase()
+        .replaceAll('&NDASH;', ' ')
+        .replaceAll('–', ' ')
+        .replaceAll('-', ' ');
+    final months = <String, int>{
+      'JAN': 1,
+      'JANUARY': 1,
+      'FEB': 2,
+      'FEBRUARY': 2,
+      'MAR': 3,
+      'MARCH': 3,
+      'APR': 4,
+      'APRIL': 4,
+      'MAY': 5,
+      'JUNE': 6,
+      'JUL': 7,
+      'JULY': 7,
+      'AUG': 8,
+      'AUGUST': 8,
+      'SEP': 9,
+      'SEPT': 9,
+      'SEPTEMBER': 9,
+      'OCT': 10,
+      'OCTOBER': 10,
+      'NOV': 11,
+      'NOVEMBER': 11,
+      'DEC': 12,
+      'DECEMBER': 12,
+    };
+    final found = RegExp(r'[A-Z]+')
+        .allMatches(normalized)
+        .map((match) => months[match.group(0)])
+        .whereType<int>()
+        .toList();
+    return DateTime(year, found.isEmpty ? 1 : found.last, 1);
+  }
+
+  String _titleCaseIssue(String title) {
+    return title
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim()
+        .toLowerCase()
+        .split(' ')
+        .map((word) => word.isEmpty
+            ? word
+            : '${word[0].toUpperCase()}${word.substring(1)}')
+        .join(' ');
   }
 
   Article _postFromJson(Map<String, dynamic> json) {

@@ -58,10 +58,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           builder: (context, state) => const BookmarksScreen()),
       GoRoute(
           path: '/magazine/:id',
-          builder: (context, state) => const MagazineDetailScreen()),
+          builder: (context, state) => MagazineDetailScreen(
+                id: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+              )),
       GoRoute(
           path: '/magazine/:id/read',
-          builder: (context, state) => const MagazineReaderScreen()),
+          builder: (context, state) => MagazineReaderScreen(
+                id: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+              )),
       GoRoute(
           path: '/downloads',
           builder: (context, state) => const DownloadsScreen()),

@@ -2377,85 +2377,134 @@ class BookmarksScreen extends ConsumerWidget {
   }
 }
 
-class MagazineDetailScreen extends StatelessWidget {
-  const MagazineDetailScreen({super.key});
+class MagazineDetailScreen extends ConsumerWidget {
+  const MagazineDetailScreen({super.key, required this.id});
+
+  final int id;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final repository = ref.watch(contentRepositoryProvider);
     return WPScaffold(
       showBack: true,
-      title: 'Magazine',
-      child: ListView(
-        padding: const EdgeInsets.all(18),
-        children: [
-          const WPImage(
-            url:
-                'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=80',
-            height: 330,
-            width: double.infinity,
-          ),
-          const SizedBox(height: 14),
-          Text('September 2025',
-              style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 8),
-          const Text(
-              'Vol. 18 | Issue 9\nIndustry insights, expert opinions, market trends, and technology updates.'),
-          const SizedBox(height: 18),
-          WPPrimaryButton(
-              label: 'Read Now',
-              onPressed: () => context.push('/magazine/1/read')),
-          const SizedBox(height: 10),
-          OutlinedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.download_rounded),
-            label: const Text('Download PDF'),
-          ),
-        ],
+      child: FutureBuilder(
+        future: repository.magazines(),
+        builder: (context, snapshot) {
+          final issue = _issueById(snapshot.data ?? const [], id);
+          if (snapshot.connectionState != ConnectionState.done &&
+              issue == null) {
+            return const WPSkeletonList(itemCount: 4);
+          }
+          if (snapshot.hasError || issue == null) {
+            return const WPErrorState(
+              title: 'Magazine could not load',
+              message: 'Please reopen Magazine and try again.',
+            );
+          }
+          return ListView(
+            padding: const EdgeInsets.all(18),
+            children: [
+              WPImage(
+                url: issue.coverUrl,
+                height: 360,
+                width: double.infinity,
+              ),
+              const SizedBox(height: 14),
+              Text(issue.title,
+                  style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: 8),
+              Text(issue.description),
+              const SizedBox(height: 6),
+              Text(
+                DateFormat('MMMM yyyy').format(issue.date),
+                style: const TextStyle(color: AppColors.muted),
+              ),
+              const SizedBox(height: 18),
+              WPPrimaryButton(
+                label: 'Read Online',
+                onPressed: () => context.push('/magazine/${issue.id}/read'),
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: issue.readUrl.isEmpty
+                    ? null
+                    : () => _openUrl(issue.readUrl),
+                icon: const Icon(Icons.open_in_new_rounded),
+                label: const Text('Open in Browser'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
-class MagazineReaderScreen extends StatelessWidget {
-  const MagazineReaderScreen({super.key});
+class MagazineReaderScreen extends ConsumerWidget {
+  const MagazineReaderScreen({super.key, required this.id});
+
+  final int id;
 
   @override
-  Widget build(BuildContext context) => WPScaffold(
-        showBack: true,
-        title: '1 / 68',
-        child: ListView(
-          padding: const EdgeInsets.all(18),
-          children: [
-            Container(
-              height: 520,
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: const Color(0xFF22170F),
-                borderRadius: BorderRadius.circular(8),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final repository = ref.watch(contentRepositoryProvider);
+    return WPScaffold(
+      showBack: true,
+      child: FutureBuilder(
+        future: repository.magazines(),
+        builder: (context, snapshot) {
+          final issue = _issueById(snapshot.data ?? const [], id);
+          if (snapshot.connectionState != ConnectionState.done &&
+              issue == null) {
+            return const WPSkeletonList(itemCount: 4);
+          }
+          if (snapshot.hasError || issue == null) {
+            return const WPErrorState(
+              title: 'Magazine reader could not load',
+              message: 'Please reopen Magazine and try again.',
+            );
+          }
+          return ListView(
+            padding: const EdgeInsets.all(18),
+            children: [
+              WPImage(
+                url: issue.coverUrl,
+                height: 420,
+                width: double.infinity,
               ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Wood & Panel',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900)),
-                  SizedBox(height: 6),
-                  Text('September 2025',
-                      style: TextStyle(color: AppColors.gold, fontSize: 18)),
-                  Spacer(),
-                  Text('Premium magazine reader shell',
-                      style: TextStyle(color: Colors.white70)),
-                ],
+              const SizedBox(height: 14),
+              Text(issue.title,
+                  style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: 8),
+              Text(
+                'Open the official Wood & Panel flipbook to read this digital issue.',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: AppColors.muted),
               ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-                'Native PDF page rendering is ready to connect when the production magazine PDF source is available.'),
-          ],
-        ),
-      );
+              const SizedBox(height: 18),
+              WPPrimaryButton(
+                label: 'Open Magazine',
+                onPressed: issue.readUrl.isEmpty
+                    ? () {}
+                    : () => _openUrl(issue.readUrl),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+MagazineIssue? _issueById(List<MagazineIssue> issues, int id) {
+  for (final issue in issues) {
+    if (issue.id == id) {
+      return issue;
+    }
+  }
+  return issues.isEmpty ? null : issues.first;
 }
 
 class LegacyInterviewDetailScreen extends StatefulWidget {

@@ -10,6 +10,7 @@ class CachedContentRepository implements ContentRepository {
   const CachedContentRepository({required this.inner});
 
   static const _prefix = 'content_cache_v1';
+  static const _freshFor = Duration(minutes: 10);
 
   final ContentRepository inner;
 
@@ -70,11 +71,13 @@ class CachedContentRepository implements ContentRepository {
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString(key);
     if (cached != null) {
-      unawaited(_refreshSingleArticle(key, id));
+      if (!_isFresh(prefs, key)) {
+        unawaited(_refreshSingleArticle(key, id));
+      }
       return Article.fromJson(jsonDecode(cached) as Map<String, dynamic>);
     }
     final article = await inner.articleById(id);
-    await prefs.setString(key, jsonEncode(article.toJson()));
+    await _saveString(key, jsonEncode(article.toJson()));
     return article;
   }
 
@@ -87,7 +90,9 @@ class CachedContentRepository implements ContentRepository {
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString(key);
     if (cached != null) {
-      unawaited(_refreshEvents(key));
+      if (!_isFresh(prefs, key)) {
+        unawaited(_refreshEvents(key));
+      }
       return _decodeList(cached, AppEvent.fromJson);
     }
     final items = await inner.events();
@@ -106,14 +111,19 @@ class CachedContentRepository implements ContentRepository {
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString(cacheKey);
     if (cached != null) {
-      unawaited(_refreshArticleList(cacheKey, fetch, sharedCacheKey));
+      if (!_isFresh(prefs, cacheKey)) {
+        unawaited(_refreshArticleList(cacheKey, fetch, sharedCacheKey));
+      }
       return _decodeList(cached, Article.fromJson);
     }
-    final sharedCached =
-        sharedCacheKey == null ? null : prefs.getString(sharedCacheKey);
-    if (sharedCached != null) {
-      unawaited(_refreshArticleList(cacheKey, fetch, sharedCacheKey));
-      return _decodeList(sharedCached, Article.fromJson);
+    if (sharedCacheKey != null) {
+      final sharedCached = prefs.getString(sharedCacheKey);
+      if (sharedCached != null) {
+        if (!_isFresh(prefs, sharedCacheKey)) {
+          unawaited(_refreshArticleList(cacheKey, fetch, sharedCacheKey));
+        }
+        return _decodeList(sharedCached, Article.fromJson);
+      }
     }
     final items = await fetch();
     await _saveArticleList(cacheKey, items, sharedCacheKey);
@@ -138,8 +148,7 @@ class CachedContentRepository implements ContentRepository {
   Future<void> _refreshSingleArticle(String key, int id) async {
     try {
       final article = await inner.articleById(id);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(key, jsonEncode(article.toJson()));
+      await _saveString(key, jsonEncode(article.toJson()));
     } on Object {
       // Keep the previous cache if background refresh fails.
     }
@@ -157,8 +166,14 @@ class CachedContentRepository implements ContentRepository {
   }
 
   Future<void> _saveList(String key, List<Map<String, dynamic>> data) async {
+    await _saveString(key, jsonEncode(data));
+  }
+
+  Future<void> _saveString(String key, String value) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(key, jsonEncode(data));
+    await prefs.setString(key, value);
+    await prefs.setInt(
+        _timestampKey(key), DateTime.now().millisecondsSinceEpoch);
   }
 
   Future<void> _saveArticleList(
@@ -183,4 +198,17 @@ class CachedContentRepository implements ContentRepository {
         .map(fromJson)
         .toList(growable: false);
   }
+
+  bool _isFresh(SharedPreferences prefs, String key) {
+    final savedAt = prefs.getInt(_timestampKey(key));
+    if (savedAt == null) {
+      return false;
+    }
+    final age = DateTime.now().difference(
+      DateTime.fromMillisecondsSinceEpoch(savedAt),
+    );
+    return age < _freshFor;
+  }
+
+  String _timestampKey(String key) => '$key:saved_at';
 }

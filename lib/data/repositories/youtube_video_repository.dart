@@ -28,6 +28,8 @@ class YouTubeVideoRepository {
   static const _feedUrl =
       'https://www.youtube.com/feeds/videos.xml?channel_id=$channelId';
   static const _cacheKey = 'youtube_videos_cache_v1';
+  static const _cacheSavedAtKey = 'youtube_videos_cache_v1:saved_at';
+  static const _freshFor = Duration(minutes: 15);
   static const _mediaNamespace = 'http://search.yahoo.com/mrss/';
   static const _youtubeNamespace = 'http://www.youtube.com/xml/schemas/2015';
 
@@ -36,7 +38,9 @@ class YouTubeVideoRepository {
   Future<List<YouTubeVideo>> latestVideos({int limit = 50}) async {
     final cached = await _cachedVideos(limit: limit);
     if (cached.isNotEmpty) {
-      unawaited(_refreshCache(limit: limit));
+      if (!await _isCacheFresh()) {
+        unawaited(_refreshCache(limit: limit));
+      }
       return cached;
     }
 
@@ -114,6 +118,19 @@ class YouTubeVideoRepository {
       _cacheKey,
       jsonEncode([for (final video in videos) video.toJson()]),
     );
+    await prefs.setInt(_cacheSavedAtKey, DateTime.now().millisecondsSinceEpoch);
+  }
+
+  Future<bool> _isCacheFresh() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedAt = prefs.getInt(_cacheSavedAtKey);
+    if (savedAt == null) {
+      return false;
+    }
+    final age = DateTime.now().difference(
+      DateTime.fromMillisecondsSinceEpoch(savedAt),
+    );
+    return age < _freshFor;
   }
 
   Future<List<YouTubeVideo>> _tryLatestVideosFromRss() async {

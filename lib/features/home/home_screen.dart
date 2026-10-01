@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/content_models.dart';
 import '../../data/models/news_category.dart';
+import '../../data/repositories/cache_refresh_bus.dart';
 import '../../data/repositories/content_providers.dart';
 import '../../data/repositories/youtube_video_repository.dart';
 import '../../widgets/wp_components.dart';
@@ -21,12 +24,29 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   late Future<List<Article>> _articlesFuture;
   late Future<List<YouTubeVideo>> _videosFuture;
+  StreamSubscription<CacheRefreshType>? _cacheRefreshSubscription;
 
   @override
   void initState() {
     super.initState();
     _articlesFuture = _fetchArticles();
     _videosFuture = _fetchVideos();
+    _cacheRefreshSubscription = CacheRefreshBus.stream.listen((type) {
+      if (!mounted) return;
+      setState(() {
+        if (type == CacheRefreshType.content) {
+          _articlesFuture = _fetchArticles();
+        } else if (type == CacheRefreshType.videos) {
+          _videosFuture = _fetchVideos();
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _cacheRefreshSubscription?.cancel();
+    super.dispose();
   }
 
   Future<List<Article>> _fetchArticles() =>

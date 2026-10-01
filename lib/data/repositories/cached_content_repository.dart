@@ -4,13 +4,14 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/content_models.dart';
+import 'cache_refresh_bus.dart';
 import 'content_repository.dart';
 
 class CachedContentRepository implements ContentRepository {
   const CachedContentRepository({required this.inner});
 
   static const _prefix = 'content_cache_v1';
-  static const _freshFor = Duration(minutes: 10);
+  static const _freshFor = Duration(minutes: 2);
 
   final ContentRepository inner;
 
@@ -139,6 +140,7 @@ class CachedContentRepository implements ContentRepository {
       final items = await fetch();
       if (items.isNotEmpty) {
         await _saveArticleList(key, items, sharedKey);
+        CacheRefreshBus.emit(CacheRefreshType.content);
       }
     } on Object {
       // Keep the previous cache if background refresh fails.
@@ -149,6 +151,7 @@ class CachedContentRepository implements ContentRepository {
     try {
       final article = await inner.articleById(id);
       await _saveString(key, jsonEncode(article.toJson()));
+      CacheRefreshBus.emit(CacheRefreshType.content);
     } on Object {
       // Keep the previous cache if background refresh fails.
     }
@@ -159,6 +162,7 @@ class CachedContentRepository implements ContentRepository {
       final items = await inner.events();
       if (items.isNotEmpty) {
         await _saveList(key, items.map((item) => item.toJson()).toList());
+        CacheRefreshBus.emit(CacheRefreshType.content);
       }
     } on Object {
       // Keep the previous cache if background refresh fails.

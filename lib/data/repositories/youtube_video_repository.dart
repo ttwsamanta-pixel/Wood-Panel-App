@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xml/xml.dart' as xml;
 
 import '../models/content_models.dart';
+import 'cache_refresh_bus.dart';
 
 final youtubeVideoRepositoryProvider = Provider<YouTubeVideoRepository>((ref) {
   return YouTubeVideoRepository();
@@ -29,7 +30,7 @@ class YouTubeVideoRepository {
       'https://www.youtube.com/feeds/videos.xml?channel_id=$channelId';
   static const _cacheKey = 'youtube_videos_cache_v1';
   static const _cacheSavedAtKey = 'youtube_videos_cache_v1:saved_at';
-  static const _freshFor = Duration(minutes: 15);
+  static const _freshFor = Duration(minutes: 5);
   static const _mediaNamespace = 'http://search.yahoo.com/mrss/';
   static const _youtubeNamespace = 'http://www.youtube.com/xml/schemas/2015';
 
@@ -88,6 +89,7 @@ class YouTubeVideoRepository {
       final videos = await _fetchLatestVideos(limit: limit);
       if (videos.isNotEmpty) {
         await _saveVideos(videos);
+        CacheRefreshBus.emit(CacheRefreshType.videos);
       }
     } on Object {
       // Keep the existing cache if YouTube is slow or unavailable.

@@ -17,6 +17,7 @@ import '../../data/repositories/app_api_repository.dart';
 import '../../data/repositories/app_preferences_repository.dart';
 import '../../data/repositories/bookmark_repository.dart';
 import '../../data/models/content_models.dart';
+import '../../data/repositories/cache_refresh_bus.dart';
 import '../../data/repositories/content_providers.dart';
 import '../../data/repositories/youtube_video_repository.dart';
 import '../../widgets/wp_components.dart';
@@ -51,6 +52,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   var _hasMoreInterviews = true;
   String? _newsError;
   String? _interviewsError;
+  StreamSubscription<CacheRefreshType>? _cacheRefreshSubscription;
 
   @override
   void initState() {
@@ -60,12 +62,58 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     _loadFirstInterviewsPage();
     _videosFuture =
         ref.read(youtubeVideoRepositoryProvider).latestVideos(limit: 50);
+    _cacheRefreshSubscription = CacheRefreshBus.stream.listen((type) {
+      if (!mounted) return;
+      if (type == CacheRefreshType.content) {
+        unawaited(_refreshExploreContentFromCache());
+      } else if (type == CacheRefreshType.videos) {
+        setState(() {
+          _videosFuture =
+              ref.read(youtubeVideoRepositoryProvider).latestVideos(limit: 50);
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
+    _cacheRefreshSubscription?.cancel();
     _contentScrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _refreshExploreContentFromCache() async {
+    try {
+      final news = await ref
+          .read(contentRepositoryProvider)
+          .latestArticles(page: 1, perPage: _newsPerPage);
+      final interviews = await ref
+          .read(contentRepositoryProvider)
+          .latestInterviews(page: 1, perPage: _interviewsPerPage);
+      if (!mounted) return;
+      setState(() {
+        if (news.isNotEmpty) {
+          _newsPage = 1;
+          _newsArticles
+            ..clear()
+            ..addAll(news);
+          _hasMoreNews = news.length == _newsPerPage;
+          _newsError = null;
+          _isNewsLoading = false;
+        }
+        if (interviews.isNotEmpty) {
+          _interviewsPage = 1;
+          _interviewArticles
+            ..clear()
+            ..addAll(interviews);
+          _hasMoreInterviews = true;
+          _interviewsError = null;
+          _isInterviewsLoading = false;
+        }
+      });
+    } on Object {
+      // Keep current on-screen content if the refreshed cache cannot be read.
+    }
   }
 
   void _onContentScroll() {
@@ -1007,6 +1055,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
   var _hasMore = true;
   var _showSwipeHint = false;
   String? _error;
+  StreamSubscription<CacheRefreshType>? _cacheRefreshSubscription;
 
   @override
   void initState() {
@@ -1020,10 +1069,16 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
       curve: Curves.easeInOutCubic,
     ).drive(Tween<double>(begin: 0, end: -26));
     _loadFirstPage();
+    _cacheRefreshSubscription = CacheRefreshBus.stream.listen((type) {
+      if (type == CacheRefreshType.content && mounted) {
+        unawaited(_refreshFirstPageFromCache());
+      }
+    });
   }
 
   @override
   void dispose() {
+    _cacheRefreshSubscription?.cancel();
     _swipeHintTimer?.cancel();
     _swipeHintController.dispose();
     _pageController.dispose();
@@ -1117,6 +1172,26 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
         _hasMore = false;
         _isLoadingMore = false;
       });
+    }
+  }
+
+  Future<void> _refreshFirstPageFromCache() async {
+    try {
+      final items = await ref
+          .read(contentRepositoryProvider)
+          .latestArticles(page: 1, perPage: _perPage);
+      if (!mounted || items.isEmpty) return;
+      setState(() {
+        _page = 1;
+        _articles
+          ..clear()
+          ..addAll(items);
+        _hasMore = items.length == _perPage;
+        _isLoading = false;
+        _error = null;
+      });
+    } on Object {
+      // Keep the visible feed if the refreshed cache cannot be read.
     }
   }
 
@@ -1721,11 +1796,23 @@ class VideosScreen extends ConsumerStatefulWidget {
 
 class _VideosScreenState extends ConsumerState<VideosScreen> {
   late Future<List<YouTubeVideo>> _videosFuture;
+  StreamSubscription<CacheRefreshType>? _cacheRefreshSubscription;
 
   @override
   void initState() {
     super.initState();
     _videosFuture = _fetchVideos();
+    _cacheRefreshSubscription = CacheRefreshBus.stream.listen((type) {
+      if (type == CacheRefreshType.videos && mounted) {
+        setState(() => _videosFuture = _fetchVideos());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _cacheRefreshSubscription?.cancel();
+    super.dispose();
   }
 
   Future<List<YouTubeVideo>> _fetchVideos() {
@@ -1815,6 +1902,7 @@ class _CategoryNewsScreenState extends ConsumerState<CategoryNewsScreen> {
   var _isLoadingMore = false;
   var _hasMore = true;
   String? _error;
+  StreamSubscription<CacheRefreshType>? _cacheRefreshSubscription;
 
   NewsCategory get category => NewsCategory.byId(widget.categoryId);
 
@@ -1823,10 +1911,16 @@ class _CategoryNewsScreenState extends ConsumerState<CategoryNewsScreen> {
     super.initState();
     _scrollController.addListener(_onScroll);
     _loadFirstPage();
+    _cacheRefreshSubscription = CacheRefreshBus.stream.listen((type) {
+      if (type == CacheRefreshType.content && mounted) {
+        unawaited(_refreshFirstPageFromCache());
+      }
+    });
   }
 
   @override
   void dispose() {
+    _cacheRefreshSubscription?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -1897,6 +1991,24 @@ class _CategoryNewsScreenState extends ConsumerState<CategoryNewsScreen> {
     } on Object {
       if (!mounted) return;
       setState(() => _isLoadingMore = false);
+    }
+  }
+
+  Future<void> _refreshFirstPageFromCache() async {
+    try {
+      final articles = await _fetchArticles(page: 1);
+      if (!mounted || articles.isEmpty) return;
+      setState(() {
+        _page = 1;
+        _articles
+          ..clear()
+          ..addAll(articles);
+        _hasMore = articles.length == _perPage;
+        _isLoading = false;
+        _error = null;
+      });
+    } on Object {
+      // Keep current category content if the refreshed cache cannot be read.
     }
   }
 

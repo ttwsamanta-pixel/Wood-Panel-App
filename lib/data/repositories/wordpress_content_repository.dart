@@ -112,7 +112,7 @@ class WordPressContentRepository implements ContentRepository {
   @override
   Future<List<MagazineIssue>> magazines() async {
     final issuesByUrl = <String, MagazineIssue>{};
-    for (final year in [DateTime.now().year, DateTime.now().year - 1]) {
+    for (var year = DateTime.now().year; year >= 2022; year--) {
       try {
         final html = await _client.get<String>('/archive/archive-$year/');
         for (final issue in _magazinesFromArchiveHtml(html, year)) {

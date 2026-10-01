@@ -84,7 +84,7 @@ class CachedContentRepository implements ContentRepository {
 
   @override
   Future<List<MagazineIssue>> magazines() async {
-    const key = '$_prefix:magazines';
+    const key = '$_prefix:magazines_v2';
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString(key);
     if (cached != null) {

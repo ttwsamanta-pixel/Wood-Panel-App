@@ -1659,17 +1659,8 @@ class MagazineScreen extends ConsumerWidget {
               _LatestMagazinePanel(issue: latest),
               if (previous.isNotEmpty) ...[
                 const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Text('Previous Issues',
-                        style: Theme.of(context).textTheme.headlineMedium),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text('View All'),
-                    ),
-                  ],
-                ),
+                Text('Previous Issues',
+                    style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 8),
                 SizedBox(
                   height: 300,
@@ -1717,7 +1708,11 @@ class _LatestMagazinePanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          WPImage(url: issue.coverUrl, height: 260, width: double.infinity),
+          _MagazineCoverImage(
+            url: issue.coverUrl,
+            height: 330,
+            width: double.infinity,
+          ),
           const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -1761,15 +1756,80 @@ class _LatestMagazinePanel extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: OutlinedButton.icon(
+                child: _MagazineDownloadButton(
                   onPressed: issue.pdfUrl.isEmpty
                       ? null
                       : () => _openUrl(issue.pdfUrl),
-                  icon: const Icon(Icons.download_rounded),
-                  label: const Text('Download PDF'),
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MagazineCoverImage extends StatelessWidget {
+  const _MagazineCoverImage({
+    required this.url,
+    required this.height,
+    required this.width,
+  });
+
+  final String url;
+  final double height;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: height,
+      width: width,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: WPImage(
+        url: url,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.contain,
+      ),
+    );
+  }
+}
+
+class _MagazineDownloadButton extends StatelessWidget {
+  const _MagazineDownloadButton({required this.onPressed});
+
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        minimumSize: const Size.fromHeight(48),
+      ),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.download_rounded, size: 20),
+          SizedBox(width: 6),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'Download PDF',
+                maxLines: 1,
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
           ),
         ],
       ),
@@ -1820,7 +1880,11 @@ class _MagazineIssueCard extends StatelessWidget {
         children: [
           InkWell(
             onTap: () => context.push('/magazine/${issue.id}'),
-            child: WPImage(url: issue.coverUrl, height: 150, width: 170),
+            child: _MagazineCoverImage(
+              url: issue.coverUrl,
+              height: 150,
+              width: 170,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -1847,11 +1911,20 @@ class _MagazineIssueCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             height: 38,
-            child: OutlinedButton.icon(
+            child: OutlinedButton(
               onPressed:
                   issue.pdfUrl.isEmpty ? null : () => _openUrl(issue.pdfUrl),
-              icon: const Icon(Icons.download_rounded, size: 18),
-              label: const Text('Download'),
+              child: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.download_rounded, size: 18),
+                    SizedBox(width: 5),
+                    Text('Download'),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
@@ -1869,41 +1942,104 @@ class _ArchiveYearTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final issue = issues.isEmpty ? null : issues.first;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Row(
-        children: [
-          if (issue != null)
-            WPImage(url: issue.coverUrl, width: 92, height: 62)
-          else
-            const SizedBox(width: 92, height: 62),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('$year',
-                    style: const TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.w900)),
-                Text(
-                  '${issues.length} issues',
-                  style: const TextStyle(color: AppColors.muted),
-                ),
-                Text(
-                  'January - December $year',
-                  style: const TextStyle(color: AppColors.muted),
-                ),
-              ],
+    return InkWell(
+      onTap: () => context.push('/magazine/archive/$year'),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Row(
+          children: [
+            if (issue != null)
+              _MagazineCoverImage(url: issue.coverUrl, width: 92, height: 68)
+            else
+              const SizedBox(width: 92, height: 68),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('$year',
+                      style: const TextStyle(
+                          fontSize: 22, fontWeight: FontWeight.w900)),
+                  Text(
+                    '${issues.length} issues',
+                    style: const TextStyle(color: AppColors.muted),
+                  ),
+                  Text(
+                    'January - December $year',
+                    style: const TextStyle(color: AppColors.muted),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
-        ],
+            const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class MagazineArchiveScreen extends ConsumerWidget {
+  const MagazineArchiveScreen({super.key, required this.year});
+
+  final int year;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final repository = ref.watch(contentRepositoryProvider);
+    return WPScaffold(
+      showBack: true,
+      child: FutureBuilder(
+        future: repository.magazines(),
+        builder: (context, snapshot) {
+          final issues = (snapshot.data ?? const <MagazineIssue>[])
+              .where((issue) => issue.date.year == year)
+              .toList();
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const WPSkeletonList(itemCount: 5);
+          }
+          if (snapshot.hasError) {
+            return const WPErrorState(
+              title: 'Archive could not load',
+              message: 'Please check your connection and reopen Magazine.',
+            );
+          }
+          if (issues.isEmpty) {
+            return WPEmptyState(
+              icon: Icons.menu_book_outlined,
+              title: 'No $year issues found',
+              message: 'This archive year has no magazine issues yet.',
+            );
+          }
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
+            children: [
+              Text('Archive $year',
+                  style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: 12),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: issues.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.47,
+                ),
+                itemBuilder: (context, index) =>
+                    _MagazineIssueCard(issue: issues[index]),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -2644,9 +2780,9 @@ class MagazineDetailScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.all(18),
             children: [
-              WPImage(
+              _MagazineCoverImage(
                 url: issue.coverUrl,
-                height: 360,
+                height: 430,
                 width: double.infinity,
               ),
               const SizedBox(height: 14),
@@ -2665,11 +2801,9 @@ class MagazineDetailScreen extends ConsumerWidget {
                 onPressed: () => context.push('/magazine/${issue.id}/read'),
               ),
               const SizedBox(height: 10),
-              OutlinedButton.icon(
+              _MagazineDownloadButton(
                 onPressed:
                     issue.pdfUrl.isEmpty ? null : () => _openUrl(issue.pdfUrl),
-                icon: const Icon(Icons.download_rounded),
-                label: const Text('Download PDF'),
               ),
             ],
           );

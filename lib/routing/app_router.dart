@@ -23,6 +23,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           path: '/magazine',
           builder: (context, state) => const MagazineScreen()),
       GoRoute(
+          path: '/magazine/archive/:year',
+          builder: (context, state) => MagazineArchiveScreen(
+                year: int.tryParse(state.pathParameters['year'] ?? '') ??
+                    DateTime.now().year,
+              )),
+      GoRoute(
           path: '/profile', builder: (context, state) => const ProfileScreen()),
       GoRoute(
         path: '/article/:id',

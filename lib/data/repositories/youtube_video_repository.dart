@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xml/xml.dart' as xml;
 
 import '../models/content_models.dart';
@@ -23,12 +27,25 @@ class YouTubeVideoRepository {
   static const _videosUrl = '$channelUrl/videos';
   static const _feedUrl =
       'https://www.youtube.com/feeds/videos.xml?channel_id=$channelId';
+  static const _cacheKey = 'youtube_videos_cache_v1';
   static const _mediaNamespace = 'http://search.yahoo.com/mrss/';
   static const _youtubeNamespace = 'http://www.youtube.com/xml/schemas/2015';
 
   final Dio _dio;
 
   Future<List<YouTubeVideo>> latestVideos({int limit = 50}) async {
+    final cached = await _cachedVideos(limit: limit);
+    if (cached.isNotEmpty) {
+      unawaited(_refreshCache(limit: limit));
+      return cached;
+    }
+
+    final videos = await _fetchLatestVideos(limit: limit);
+    await _saveVideos(videos);
+    return videos;
+  }
+
+  Future<List<YouTubeVideo>> _fetchLatestVideos({required int limit}) async {
     final rssVideos = await _tryLatestVideosFromRss();
     final videosById = {
       for (final video in rssVideos) video.id: video,
@@ -60,6 +77,43 @@ class YouTubeVideoRepository {
       return videos;
     }
     return _fallbackVideos.take(limit).toList();
+  }
+
+  Future<void> _refreshCache({required int limit}) async {
+    try {
+      final videos = await _fetchLatestVideos(limit: limit);
+      if (videos.isNotEmpty) {
+        await _saveVideos(videos);
+      }
+    } on Object {
+      // Keep the existing cache if YouTube is slow or unavailable.
+    }
+  }
+
+  Future<List<YouTubeVideo>> _cachedVideos({required int limit}) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cached = prefs.getString(_cacheKey);
+      if (cached == null) {
+        return const <YouTubeVideo>[];
+      }
+      final decoded = jsonDecode(cached) as List<dynamic>;
+      return decoded
+          .whereType<Map<String, dynamic>>()
+          .map(YouTubeVideo.fromJson)
+          .take(limit)
+          .toList(growable: false);
+    } on Object {
+      return const <YouTubeVideo>[];
+    }
+  }
+
+  Future<void> _saveVideos(List<YouTubeVideo> videos) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _cacheKey,
+      jsonEncode([for (final video in videos) video.toJson()]),
+    );
   }
 
   Future<List<YouTubeVideo>> _tryLatestVideosFromRss() async {

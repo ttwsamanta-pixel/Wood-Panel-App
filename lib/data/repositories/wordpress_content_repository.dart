@@ -1,12 +1,15 @@
 import '../../core/config/app_config.dart';
 import '../../core/network/api_client.dart';
 import '../models/content_models.dart';
+import '../models/news_category.dart';
 import 'content_repository.dart';
 
 class WordPressContentRepository implements ContentRepository {
   WordPressContentRepository(this._client);
 
   static const _interviewCategoryId = 34718;
+  static const _listFields =
+      'id,date,link,title,excerpt,author,featured_media,categories';
 
   final ApiClient _client;
 
@@ -15,14 +18,12 @@ class WordPressContentRepository implements ContentRepository {
     final data = await _client.get<List<dynamic>>(
       '/wp-json/wp/v2/posts',
       queryParameters: {
-        '_embed': true,
+        '_fields': _listFields,
         'page': page,
         'per_page': perPage,
       },
     );
-    return data
-        .map((item) => _postFromJson(item as Map<String, dynamic>))
-        .toList();
+    return _listPostsFromJson(data);
   }
 
   @override
@@ -35,15 +36,13 @@ class WordPressContentRepository implements ContentRepository {
     final data = await _client.get<List<dynamic>>(
       '/wp-json/wp/v2/posts',
       queryParameters: {
-        '_embed': true,
+        '_fields': _listFields,
         'categories': categoryId,
         'page': page,
         'per_page': perPage,
       },
     );
-    return data
-        .map((item) => _postFromJson(item as Map<String, dynamic>))
-        .toList();
+    return _listPostsFromJson(data, fallbackCategoryName: categoryName);
   }
 
   @override
@@ -101,15 +100,13 @@ class WordPressContentRepository implements ContentRepository {
     final data = await _client.get<List<dynamic>>(
       '/wp-json/wp/v2/posts',
       queryParameters: {
-        '_embed': true,
+        '_fields': _listFields,
         'search': query.trim(),
         'page': page,
         'per_page': perPage,
       },
     );
-    return data
-        .map((item) => _postFromJson(item as Map<String, dynamic>))
-        .toList();
+    return _listPostsFromJson(data);
   }
 
   @override
@@ -137,6 +134,115 @@ class WordPressContentRepository implements ContentRepository {
       }
     }
     return articles;
+  }
+
+  Future<List<Article>> _listPostsFromJson(
+    List<dynamic> data, {
+    String? fallbackCategoryName,
+  }) async {
+    final posts = data.cast<Map<String, dynamic>>();
+    final mediaById = await _mediaUrlsForPosts(posts);
+    final authorsById = await _authorsForPosts(posts);
+    return [
+      for (final post in posts)
+        _listPostFromJson(
+          post,
+          mediaById: mediaById,
+          authorsById: authorsById,
+          fallbackCategoryName: fallbackCategoryName,
+        ),
+    ];
+  }
+
+  Future<Map<int, String>> _mediaUrlsForPosts(
+    List<Map<String, dynamic>> posts,
+  ) async {
+    final ids = posts
+        .map((post) => (post['featured_media'] as num?)?.toInt() ?? 0)
+        .where((id) => id > 0)
+        .toSet();
+    if (ids.isEmpty) {
+      return const <int, String>{};
+    }
+    try {
+      final media = await _client.get<List<dynamic>>(
+        '/wp-json/wp/v2/media',
+        queryParameters: {
+          'include': ids.join(','),
+          'per_page': ids.length.clamp(1, 100),
+          '_fields': 'id,source_url',
+        },
+      );
+      return {
+        for (final item in media.cast<Map<String, dynamic>>())
+          if (item['source_url'] is String)
+            (item['id'] as num).toInt(): item['source_url'] as String,
+      };
+    } on Object {
+      return const <int, String>{};
+    }
+  }
+
+  Future<Map<int, ({String name, String avatarUrl})>> _authorsForPosts(
+    List<Map<String, dynamic>> posts,
+  ) async {
+    final ids = posts
+        .map((post) => (post['author'] as num?)?.toInt() ?? 0)
+        .where((id) => id > 0)
+        .toSet();
+    if (ids.isEmpty) {
+      return const <int, ({String name, String avatarUrl})>{};
+    }
+    try {
+      final users = await _client.get<List<dynamic>>(
+        '/wp-json/wp/v2/users',
+        queryParameters: {
+          'include': ids.join(','),
+          'per_page': ids.length.clamp(1, 100),
+          '_fields': 'id,name,avatar_urls',
+        },
+      );
+      return {
+        for (final item in users.cast<Map<String, dynamic>>())
+          (item['id'] as num).toInt(): (
+            name: (item['name'] as String?) ?? 'Wood & Panel',
+            avatarUrl: _authorAvatar(item),
+          ),
+      };
+    } on Object {
+      return const <int, ({String name, String avatarUrl})>{};
+    }
+  }
+
+  Article _listPostFromJson(
+    Map<String, dynamic> json, {
+    required Map<int, String> mediaById,
+    required Map<int, ({String name, String avatarUrl})> authorsById,
+    String? fallbackCategoryName,
+  }) {
+    final title = _rendered(json['title']);
+    final excerpt = _stripHtml(_rendered(json['excerpt']));
+    final link = (json['link'] as String?) ?? AppConfig.wordpressBaseUrl;
+    final mediaId = (json['featured_media'] as num?)?.toInt() ?? 0;
+    final authorId = (json['author'] as num?)?.toInt() ?? 0;
+    final author = authorsById[authorId];
+
+    return Article(
+      id: (json['id'] as num?)?.toInt() ?? 0,
+      category: _categoryNameFromIds(json['categories']) ??
+          fallbackCategoryName ??
+          'Latest',
+      title: _decodeHtml(title),
+      excerpt: _decodeHtml(excerpt),
+      imageUrl: mediaById[mediaId] ?? _fallbackImage,
+      date:
+          DateTime.tryParse((json['date'] as String?) ?? '') ?? DateTime.now(),
+      readingMinutes: _readingMinutes(excerpt),
+      author: author?.name ?? 'Wood & Panel',
+      authorAvatarUrl: author?.avatarUrl ?? '',
+      url: link,
+      html: '',
+    );
   }
 
   Article? _legacyInterviewFromHtml(String html, int page, int index) {
@@ -222,11 +328,29 @@ class WordPressContentRepository implements ContentRepository {
     return null;
   }
 
+  String? _categoryNameFromIds(Object? value) {
+    if (value is! List || value.isEmpty) {
+      return null;
+    }
+    for (final id in value.whereType<num>()) {
+      final categoryId = id.toInt();
+      final knownCategory = NewsCategory.all.where(
+        (category) => category.id == categoryId,
+      );
+      if (knownCategory.isNotEmpty) {
+        return knownCategory.first.name;
+      }
+    }
+    return null;
+  }
+
   String _featuredImage(List<Map<String, dynamic>>? media) {
     final source = _firstOrNull(media)?['source_url'] as String?;
-    return source ??
-        'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=80';
+    return source ?? _fallbackImage;
   }
+
+  String get _fallbackImage =>
+      'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=80';
 
   String _authorAvatar(Map<String, dynamic>? author) {
     final avatars = author?['avatar_urls'];

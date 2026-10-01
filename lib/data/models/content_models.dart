@@ -65,6 +65,7 @@ class MagazineIssue {
     required this.description,
     required this.fileSize,
     this.readUrl = '',
+    this.pdfUrl = '',
   });
 
   final int id;
@@ -74,8 +75,10 @@ class MagazineIssue {
   final String description;
   final String fileSize;
   final String readUrl;
+  final String pdfUrl;
 
   factory MagazineIssue.fromJson(Map<String, dynamic> json) {
+    final readUrl = json['readUrl'] as String? ?? '';
     return MagazineIssue(
       id: (json['id'] as num?)?.toInt() ?? 0,
       title: json['title'] as String? ?? '',
@@ -83,7 +86,8 @@ class MagazineIssue {
       date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
       description: json['description'] as String? ?? '',
       fileSize: json['fileSize'] as String? ?? '',
-      readUrl: json['readUrl'] as String? ?? '',
+      readUrl: readUrl,
+      pdfUrl: json['pdfUrl'] as String? ?? _pdfUrlForReadUrl(readUrl),
     );
   }
 
@@ -95,7 +99,21 @@ class MagazineIssue {
         'description': description,
         'fileSize': fileSize,
         'readUrl': readUrl,
+        'pdfUrl': pdfUrl,
       };
+
+  static String _pdfUrlForReadUrl(String readUrl) {
+    final uri = Uri.tryParse(readUrl);
+    if (uri == null || uri.path.isEmpty) {
+      return '';
+    }
+    final path = uri.path.endsWith('/index.html')
+        ? uri.path.substring(0, uri.path.length - 'index.html'.length)
+        : uri.path.endsWith('/')
+            ? uri.path
+            : '${uri.path}/';
+    return uri.replace(path: '${path}offline/download.pdf').toString();
+  }
 }
 
 class AppEvent {

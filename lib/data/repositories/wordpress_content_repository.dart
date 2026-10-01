@@ -342,7 +342,21 @@ class WordPressContentRepository implements ContentRepository {
           : topics.join(', '),
       fileSize: 'Online issue',
       readUrl: readUrl,
+      pdfUrl: _pdfUrlForFlipbook(readUrl),
     );
+  }
+
+  String _pdfUrlForFlipbook(String readUrl) {
+    final uri = Uri.tryParse(readUrl);
+    if (uri == null) {
+      return '';
+    }
+    final path = uri.path.endsWith('/index.html')
+        ? uri.path.substring(0, uri.path.length - 'index.html'.length)
+        : uri.path.endsWith('/')
+            ? uri.path
+            : '${uri.path}/';
+    return uri.replace(path: '${path}offline/download.pdf').toString();
   }
 
   int _magazineId(String title, int year) {

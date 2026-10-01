@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -1645,25 +1646,264 @@ class MagazineScreen extends ConsumerWidget {
               message: 'Digital magazine issues will appear here.',
             );
           }
+          final latest = issues.first;
+          final previous = issues.skip(1).take(8).toList();
+          final archiveYears = issues
+              .map((issue) => issue.date.year)
+              .toSet()
+              .toList()
+            ..sort((a, b) => b.compareTo(a));
           return ListView(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
             children: [
-              const WPSectionHeader(title: 'Latest Issue'),
-              for (final issue in issues)
-                ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                  leading: WPImage(url: issue.coverUrl, width: 76, height: 96),
-                  title: Text(issue.title,
-                      style: const TextStyle(fontWeight: FontWeight.w900)),
-                  subtitle: Text('${issue.description}\n${issue.fileSize}'),
-                  isThreeLine: true,
-                  trailing: const Icon(Icons.download_rounded,
-                      color: AppColors.green),
-                  onTap: () => context.push('/magazine/${issue.id}'),
+              _LatestMagazinePanel(issue: latest),
+              if (previous.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Text('Previous Issues',
+                        style: Theme.of(context).textTheme.headlineMedium),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {},
+                      child: const Text('View All'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 300,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: previous.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) =>
+                        _MagazineIssueCard(issue: previous[index]),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 22),
+              Text('Year Wise Archive',
+                  style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: 10),
+              for (final year in archiveYears)
+                _ArchiveYearTile(
+                  year: year,
+                  issues:
+                      issues.where((issue) => issue.date.year == year).toList(),
                 ),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _LatestMagazinePanel extends StatelessWidget {
+  const _LatestMagazinePanel({required this.issue});
+
+  final MagazineIssue issue;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9F4EF),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          WPImage(url: issue.coverUrl, height: 260, width: double.infinity),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: AppColors.copper,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Text(
+              'LATEST ISSUE',
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(issue.title, style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: 6),
+          Text(
+            issue.description,
+            style: const TextStyle(color: AppColors.muted, height: 1.25),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _MagazineMeta(icon: Icons.menu_book_rounded, label: 'Vol. 18'),
+              const SizedBox(width: 12),
+              _MagazineMeta(
+                  icon: Icons.article_outlined,
+                  label: 'Issue ${issue.date.month}'),
+              const SizedBox(width: 12),
+              const _MagazineMeta(icon: Icons.picture_as_pdf, label: 'PDF'),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: WPPrimaryButton(
+                  label: 'Read Now',
+                  onPressed: () => context.push('/magazine/${issue.id}/read'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: issue.pdfUrl.isEmpty
+                      ? null
+                      : () => _openUrl(issue.pdfUrl),
+                  icon: const Icon(Icons.download_rounded),
+                  label: const Text('Download PDF'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MagazineMeta extends StatelessWidget {
+  const _MagazineMeta({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Flexible(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: AppColors.muted),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                  color: AppColors.muted, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MagazineIssueCard extends StatelessWidget {
+  const _MagazineIssueCard({required this.issue});
+
+  final MagazineIssue issue;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 170,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () => context.push('/magazine/${issue.id}'),
+            child: WPImage(url: issue.coverUrl, height: 150, width: 170),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            issue.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+          ),
+          Text(
+            'Vol. 18 | Issue ${issue.date.month}',
+            style: const TextStyle(color: AppColors.muted),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            height: 38,
+            child: FilledButton.icon(
+              onPressed: () => context.push('/magazine/${issue.id}/read'),
+              icon: const Icon(Icons.menu_book_rounded, size: 18),
+              label: const Text('Read'),
+            ),
+          ),
+          const SizedBox(height: 6),
+          SizedBox(
+            width: double.infinity,
+            height: 38,
+            child: OutlinedButton.icon(
+              onPressed:
+                  issue.pdfUrl.isEmpty ? null : () => _openUrl(issue.pdfUrl),
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: const Text('Download'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ArchiveYearTile extends StatelessWidget {
+  const _ArchiveYearTile({required this.year, required this.issues});
+
+  final int year;
+  final List<MagazineIssue> issues;
+
+  @override
+  Widget build(BuildContext context) {
+    final issue = issues.isEmpty ? null : issues.first;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Row(
+        children: [
+          if (issue != null)
+            WPImage(url: issue.coverUrl, width: 92, height: 62)
+          else
+            const SizedBox(width: 92, height: 62),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('$year',
+                    style: const TextStyle(
+                        fontSize: 22, fontWeight: FontWeight.w900)),
+                Text(
+                  '${issues.length} issues',
+                  style: const TextStyle(color: AppColors.muted),
+                ),
+                Text(
+                  'January - December $year',
+                  style: const TextStyle(color: AppColors.muted),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+        ],
       ),
     );
   }
@@ -2426,11 +2666,10 @@ class MagazineDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 10),
               OutlinedButton.icon(
-                onPressed: issue.readUrl.isEmpty
-                    ? null
-                    : () => _openUrl(issue.readUrl),
-                icon: const Icon(Icons.open_in_new_rounded),
-                label: const Text('Open in Browser'),
+                onPressed:
+                    issue.pdfUrl.isEmpty ? null : () => _openUrl(issue.pdfUrl),
+                icon: const Icon(Icons.download_rounded),
+                label: const Text('Download PDF'),
               ),
             ],
           );
@@ -2464,36 +2703,61 @@ class MagazineReaderScreen extends ConsumerWidget {
               message: 'Please reopen Magazine and try again.',
             );
           }
-          return ListView(
-            padding: const EdgeInsets.all(18),
-            children: [
-              WPImage(
-                url: issue.coverUrl,
-                height: 420,
-                width: double.infinity,
-              ),
-              const SizedBox(height: 14),
-              Text(issue.title,
-                  style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 8),
-              Text(
-                'Open the official Wood & Panel flipbook to read this digital issue.',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: AppColors.muted),
-              ),
-              const SizedBox(height: 18),
-              WPPrimaryButton(
-                label: 'Open Magazine',
-                onPressed: issue.readUrl.isEmpty
-                    ? () {}
-                    : () => _openUrl(issue.readUrl),
-              ),
-            ],
-          );
+          if (issue.readUrl.isEmpty) {
+            return const WPErrorState(
+              title: 'Magazine reader could not load',
+              message: 'This issue does not have an online reader link yet.',
+            );
+          }
+          return _MagazineWebView(issue: issue);
         },
       ),
+    );
+  }
+}
+
+class _MagazineWebView extends StatefulWidget {
+  const _MagazineWebView({required this.issue});
+
+  final MagazineIssue issue;
+
+  @override
+  State<_MagazineWebView> createState() => _MagazineWebViewState();
+}
+
+class _MagazineWebViewState extends State<_MagazineWebView> {
+  late final WebViewController _controller;
+  var _progress = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(const Color(0xFF1A1A1A))
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onProgress: (progress) => setState(() => _progress = progress),
+          onPageFinished: (_) => setState(() => _progress = 100),
+        ),
+      )
+      ..loadRequest(Uri.parse(widget.issue.readUrl));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        if (_progress < 100)
+          LinearProgressIndicator(
+            value: _progress <= 0 ? null : _progress / 100,
+            color: AppColors.copper,
+            backgroundColor: const Color(0xFFF4E8DF),
+          ),
+        Expanded(
+          child: WebViewWidget(controller: _controller),
+        ),
+      ],
     );
   }
 }

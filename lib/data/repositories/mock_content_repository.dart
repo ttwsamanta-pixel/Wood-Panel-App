@@ -173,6 +173,8 @@ final _magazines = <MagazineIssue>[
     fileSize: '68 MB',
     readUrl:
         'https://www.woodandpanel.com/flipbooks/2026/july-aug26-new/index.html',
+    pdfUrl:
+        'https://www.woodandpanel.com/flipbooks/2026/july-aug26-new/offline/download.pdf',
   ),
   MagazineIssue(
     id: 2,
@@ -183,6 +185,7 @@ final _magazines = <MagazineIssue>[
     description: 'Panel manufacturing, exports, events, and machinery updates.',
     fileSize: '62 MB',
     readUrl: 'https://www.woodandpanel.com/archive/archive-2025/',
+    pdfUrl: 'https://www.woodandpanel.com/archive/archive-2025/',
   ),
 ];
 

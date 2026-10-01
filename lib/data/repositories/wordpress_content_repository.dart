@@ -237,7 +237,7 @@ class WordPressContentRepository implements ContentRepository {
       imageUrl: mediaById[mediaId] ?? _fallbackImage,
       date:
           DateTime.tryParse((json['date'] as String?) ?? '') ?? DateTime.now(),
-      readingMinutes: _readingMinutes(excerpt),
+      readingMinutes: _listReadingMinutes(title: title, excerpt: excerpt),
       author: author?.name ?? 'Wood & Panel',
       authorAvatarUrl: author?.avatarUrl ?? '',
       url: link,
@@ -366,6 +366,14 @@ class WordPressContentRepository implements ContentRepository {
         .where((word) => word.isNotEmpty)
         .length;
     return (words / 220).ceil().clamp(1, 30);
+  }
+
+  int _listReadingMinutes({required String title, required String excerpt}) {
+    final words = '$title $excerpt'
+        .split(RegExp(r'\s+'))
+        .where((word) => word.isNotEmpty)
+        .length;
+    return (words / 90).ceil().clamp(4, 8);
   }
 
   String _stripHtml(String html) => html

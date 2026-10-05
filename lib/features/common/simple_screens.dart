@@ -20,6 +20,7 @@ import '../../data/repositories/bookmark_repository.dart';
 import '../../data/models/content_models.dart';
 import '../../data/repositories/cache_refresh_bus.dart';
 import '../../data/repositories/content_providers.dart';
+import '../../data/repositories/download_repository.dart';
 import '../../data/repositories/youtube_video_repository.dart';
 import '../../widgets/wp_components.dart';
 import '../../widgets/wp_scaffold.dart';
@@ -1663,7 +1664,7 @@ class MagazineScreen extends ConsumerWidget {
                     style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 8),
                 SizedBox(
-                  height: 300,
+                  height: 322,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: previous.length,
@@ -1677,12 +1678,26 @@ class MagazineScreen extends ConsumerWidget {
               Text('Year Wise Archive',
                   style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 10),
-              for (final year in archiveYears)
-                _ArchiveYearTile(
-                  year: year,
-                  issues:
-                      issues.where((issue) => issue.date.year == year).toList(),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: archiveYears.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 0.76,
                 ),
+                itemBuilder: (context, index) {
+                  final year = archiveYears[index];
+                  return _ArchiveYearTile(
+                    year: year,
+                    issues: issues
+                        .where((issue) => issue.date.year == year)
+                        .toList(),
+                  );
+                },
+              ),
             ],
           );
         },
@@ -1759,7 +1774,7 @@ class _LatestMagazinePanel extends StatelessWidget {
                 child: _MagazineDownloadButton(
                   onPressed: issue.pdfUrl.isEmpty
                       ? null
-                      : () => _openUrl(issue.pdfUrl),
+                      : () => _downloadMagazinePdf(context, issue),
                 ),
               ),
             ],
@@ -1873,8 +1888,14 @@ class _MagazineIssueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: 170,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.line),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1900,7 +1921,7 @@ class _MagazineIssueCard extends StatelessWidget {
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
-            height: 38,
+            height: 34,
             child: FilledButton.icon(
               onPressed: () => context.push('/magazine/${issue.id}/read'),
               icon: const Icon(Icons.menu_book_rounded, size: 18),
@@ -1910,10 +1931,11 @@ class _MagazineIssueCard extends StatelessWidget {
           const SizedBox(height: 6),
           SizedBox(
             width: double.infinity,
-            height: 38,
+            height: 34,
             child: OutlinedButton(
-              onPressed:
-                  issue.pdfUrl.isEmpty ? null : () => _openUrl(issue.pdfUrl),
+              onPressed: issue.pdfUrl.isEmpty
+                  ? null
+                  : () => _downloadMagazinePdf(context, issue),
               child: const FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Row(
@@ -1946,39 +1968,70 @@ class _ArchiveYearTile extends StatelessWidget {
       onTap: () => context.push('/magazine/archive/$year'),
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.line),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (issue != null)
-              _MagazineCoverImage(url: issue.coverUrl, width: 92, height: 68)
-            else
-              const SizedBox(width: 92, height: 68),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('$year',
-                      style: const TextStyle(
-                          fontSize: 22, fontWeight: FontWeight.w900)),
-                  Text(
-                    '${issues.length} issues',
-                    style: const TextStyle(color: AppColors.muted),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(7),
+              child: issue != null
+                  ? WPImage(
+                      url: issue.coverUrl,
+                      width: double.infinity,
+                      height: 86,
+                      fit: BoxFit.cover,
+                    )
+                  : Container(
+                      width: double.infinity,
+                      height: 86,
+                      color: const Color(0xFFF8F3EE),
+                      child: const Icon(Icons.menu_book_rounded,
+                          color: AppColors.copper),
+                    ),
+            ),
+            const SizedBox(height: 9),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '$year',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
-                  Text(
-                    'January - December $year',
-                    style: const TextStyle(color: AppColors.muted),
-                  ),
-                ],
+                ),
+                const Icon(Icons.chevron_right_rounded,
+                    color: AppColors.muted, size: 24),
+              ],
+            ),
+            Text(
+              '${issues.length} issues',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.muted,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+            Text(
+              'January - December $year',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.muted,
+                fontSize: 11,
+                height: 1.12,
+              ),
+            ),
           ],
         ),
       ),
@@ -1995,7 +2048,6 @@ class MagazineArchiveScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final repository = ref.watch(contentRepositoryProvider);
     return WPScaffold(
-      showBack: true,
       child: FutureBuilder(
         future: repository.magazines(),
         builder: (context, snapshot) {
@@ -2802,8 +2854,9 @@ class MagazineDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 10),
               _MagazineDownloadButton(
-                onPressed:
-                    issue.pdfUrl.isEmpty ? null : () => _openUrl(issue.pdfUrl),
+                onPressed: issue.pdfUrl.isEmpty
+                    ? null
+                    : () => _downloadMagazinePdf(context, issue),
               ),
             ],
           );
@@ -3154,22 +3207,43 @@ String _decodeLegacyHtml(String value) {
   return decoded;
 }
 
-class DownloadsScreen extends StatelessWidget {
+class DownloadsScreen extends ConsumerWidget {
   const DownloadsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => _DownloadListScreen(
-        title: 'Downloads',
-        items: const [
-          _DownloadItem(
-              'Wood & Panel September 2025', '68 MB', Icons.menu_book_rounded),
-          _DownloadItem(
-              'Wood & Panel August 2025', '62 MB', Icons.menu_book_rounded),
-          _DownloadItem('Industry Report 2025', '12 MB',
-              Icons.insert_chart_outlined_rounded),
-          _DownloadItem('Sustainable Wood Trends', '8 MB', Icons.eco_rounded),
-        ],
-      );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final repository = ref.watch(downloadRepositoryProvider);
+    return WPScaffold(
+      showBack: true,
+      title: 'Downloads',
+      child: FutureBuilder(
+        future: repository.files(),
+        builder: (context, snapshot) {
+          final items = snapshot.data ?? const <DownloadedFile>[];
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const WPSkeletonList(itemCount: 4);
+          }
+          if (items.isEmpty) {
+            return const WPEmptyState(
+              icon: Icons.download_done_rounded,
+              title: 'No downloads yet',
+              message:
+                  'Downloaded magazine PDFs will appear here after you tap Download PDF.',
+            );
+          }
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 24),
+            children: [
+              Text('Downloads',
+                  style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: 14),
+              for (final item in items) _DownloadedFileTile(item: item),
+            ],
+          );
+        },
+      ),
+    );
+  }
 }
 
 class WallpapersScreen extends StatelessWidget {
@@ -3758,6 +3832,43 @@ Future<void> _openUrl(String url) async {
   await launchUrl(uri, mode: LaunchMode.externalApplication);
 }
 
+Future<void> _downloadMagazinePdf(
+  BuildContext context,
+  MagazineIssue issue,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
+  messenger.showSnackBar(
+    SnackBar(content: Text('Downloading ${issue.title}...')),
+  );
+  try {
+    final repository =
+        ProviderScope.containerOf(context).read(downloadRepositoryProvider);
+    await repository.downloadPdf(
+      title: 'Wood & Panel ${issue.title}',
+      url: issue.pdfUrl,
+    );
+    if (!context.mounted) {
+      return;
+    }
+    messenger.showSnackBar(
+      SnackBar(
+        content: const Text('PDF downloaded'),
+        action: SnackBarAction(
+          label: 'Downloads',
+          onPressed: () => context.push('/downloads'),
+        ),
+      ),
+    );
+  } on Object {
+    if (!context.mounted) {
+      return;
+    }
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Download failed. Please try again.')),
+    );
+  }
+}
+
 void _openInterview(BuildContext context, Article article) {
   if (article.id > 0) {
     context.push('/article/${article.id}');
@@ -3771,52 +3882,54 @@ void _openInterview(BuildContext context, Article article) {
   );
 }
 
-class _DownloadListScreen extends StatelessWidget {
-  const _DownloadListScreen({required this.title, required this.items});
+class _DownloadedFileTile extends StatelessWidget {
+  const _DownloadedFileTile({required this.item});
 
-  final String title;
-  final List<_DownloadItem> items;
+  final DownloadedFile item;
 
   @override
   Widget build(BuildContext context) {
-    return WPScaffold(
-      showBack: true,
-      title: title,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 24),
-        children: [
-          Text(title, style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 14),
-          for (final item in items)
-            ListTile(
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
-              leading: CircleAvatar(
-                backgroundColor: const Color(0xFFF7F1EC),
-                child: Icon(item.icon, color: AppColors.copper),
-              ),
-              title: Text(item.title,
-                  style: const TextStyle(fontWeight: FontWeight.w900)),
-              subtitle: Text(item.size),
-              trailing: IconButton(
-                tooltip: 'Download',
-                icon:
-                    const Icon(Icons.download_rounded, color: AppColors.green),
-                onPressed: () {},
-              ),
-            ),
-        ],
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: ListTile(
+        leading: const CircleAvatar(
+          backgroundColor: Color(0xFFF7F1EC),
+          child: Icon(Icons.picture_as_pdf_rounded, color: AppColors.copper),
+        ),
+        title: Text(
+          item.title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w900),
+        ),
+        subtitle: Text(
+          '${_formatFileSize(item.size)} - ${DateFormat('d MMM yyyy').format(item.downloadedAt)}',
+        ),
+        trailing: IconButton(
+          tooltip: 'Share',
+          icon: const Icon(Icons.ios_share_rounded, color: AppColors.copper),
+          onPressed: () => Share.shareXFiles([XFile(item.path)]),
+        ),
       ),
     );
   }
 }
 
-class _DownloadItem {
-  const _DownloadItem(this.title, this.size, this.icon);
-
-  final String title;
-  final String size;
-  final IconData icon;
+String _formatFileSize(int bytes) {
+  if (bytes <= 0) {
+    return 'Downloaded';
+  }
+  final mb = bytes / (1024 * 1024);
+  if (mb >= 1) {
+    return '${mb.toStringAsFixed(1)} MB';
+  }
+  final kb = bytes / 1024;
+  return '${kb.toStringAsFixed(0)} KB';
 }
 
 class _WallpaperScreen extends StatelessWidget {

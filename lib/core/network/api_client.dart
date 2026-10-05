@@ -21,6 +21,8 @@ class ApiClient {
 
   final Dio _dio;
 
+  Dio get dio => _dio;
+
   Future<T> get<T>(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -33,7 +35,9 @@ class ApiClient {
       return response.data as T;
     } on DioException catch (error) {
       throw ApiException(
-        error.response?.statusMessage ?? error.message ?? 'Network request failed.',
+        error.response?.statusMessage ??
+            error.message ??
+            'Network request failed.',
         statusCode: error.response?.statusCode,
       );
     } on Object catch (error) {

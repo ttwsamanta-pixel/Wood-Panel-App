@@ -22,7 +22,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   void initState() {
     super.initState();
     _timer = Timer(const Duration(milliseconds: 1400), () async {
-      final completed = await ref.read(appPreferencesRepositoryProvider).hasCompletedOnboarding();
+      final completed = await ref
+          .read(appPreferencesRepositoryProvider)
+          .hasCompletedOnboarding();
       if (mounted) {
         context.go(completed ? '/feed' : '/onboarding');
       }
@@ -44,46 +46,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         children: [
           CustomPaint(painter: _WoodGrainPainter()),
           Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 292,
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x55000000),
-                        blurRadius: 28,
-                        offset: Offset(0, 18),
-                      ),
-                    ],
-                  ),
-                  child: const WPLogo(height: 90),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'WOOD AND PANEL',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    letterSpacing: 0,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                const Text(
-                  'NEWS | INSIGHTS | MAGAZINE',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    letterSpacing: 0,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 34),
+              child: WPLogo(
+                width: MediaQuery.of(context).size.width * .78,
+                height: 118,
+              ),
             ),
           ),
           const Positioned(
@@ -112,8 +80,10 @@ class _WoodGrainPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.4;
     for (var i = 0; i < 28; i++) {
-      paint.color = Color.lerp(AppColors.brown, AppColors.gold, i / 36)!.withValues(alpha: .36);
-      final rect = Rect.fromLTWH(-size.width * .72 + i * 10, -40 + i * 18, size.width * 1.8, size.height * 1.05);
+      paint.color = Color.lerp(AppColors.brown, AppColors.gold, i / 36)!
+          .withValues(alpha: .36);
+      final rect = Rect.fromLTWH(-size.width * .72 + i * 10, -40 + i * 18,
+          size.width * 1.8, size.height * 1.05);
       canvas.drawArc(rect, -1.0, 3.05, false, paint);
     }
   }

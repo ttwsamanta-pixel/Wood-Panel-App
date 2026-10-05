@@ -1685,9 +1685,9 @@ class MagazineScreen extends ConsumerWidget {
                 itemCount: archiveYears.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  mainAxisSpacing: 12,
+                  mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
-                  childAspectRatio: 0.76,
+                  mainAxisExtent: 184,
                 ),
                 itemBuilder: (context, index) {
                   final year = archiveYears[index];
@@ -2018,7 +2018,7 @@ class _ArchiveYearTile extends StatelessWidget {
       onTap: () => context.push('/magazine/archive/$year'),
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(9),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
@@ -2033,34 +2033,26 @@ class _ArchiveYearTile extends StatelessWidget {
                   ? WPImage(
                       url: issue.coverUrl,
                       width: double.infinity,
-                      height: 96,
+                      height: 88,
                       fit: BoxFit.contain,
                     )
                   : Container(
                       width: double.infinity,
-                      height: 96,
+                      height: 88,
                       color: const Color(0xFFF8F3EE),
                       child: const Icon(Icons.menu_book_rounded,
                           color: AppColors.copper),
                     ),
             ),
-            const SizedBox(height: 7),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '$year',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                const Icon(Icons.chevron_right_rounded,
-                    color: AppColors.muted, size: 24),
-              ],
+            const SizedBox(height: 8),
+            Text(
+              '$year',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+              ),
             ),
             Text(
               '${issues.length} issues',

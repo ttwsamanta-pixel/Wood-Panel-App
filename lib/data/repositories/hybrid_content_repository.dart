@@ -59,11 +59,6 @@ class HybridContentRepository implements ContentRepository {
 
   @override
   Future<List<AppEvent>> events() async {
-    try {
-      final appEvents = await remote.events();
-      return appEvents.isEmpty ? await fallback.events() : appEvents;
-    } catch (_) {
-      return fallback.events();
-    }
+    return remote.events();
   }
 }

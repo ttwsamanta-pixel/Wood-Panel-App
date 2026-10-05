@@ -122,12 +122,14 @@ class AppEvent {
     required this.date,
     required this.location,
     required this.imageUrl,
+    this.url = '',
   });
 
   final String title;
   final String date;
   final String location;
   final String imageUrl;
+  final String url;
 
   factory AppEvent.fromJson(Map<String, dynamic> json) {
     return AppEvent(
@@ -135,6 +137,7 @@ class AppEvent {
       date: json['date'] as String? ?? '',
       location: json['location'] as String? ?? '',
       imageUrl: json['imageUrl'] as String? ?? '',
+      url: json['url'] as String? ?? '',
     );
   }
 
@@ -143,6 +146,7 @@ class AppEvent {
         'date': date,
         'location': location,
         'imageUrl': imageUrl,
+        'url': url,
       };
 }
 

@@ -24,6 +24,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   late Future<List<Article>> _articlesFuture;
   late Future<List<YouTubeVideo>> _videosFuture;
+  late Future<List<MagazineIssue>> _magazinesFuture;
+  late Future<List<AppEvent>> _eventsFuture;
   StreamSubscription<CacheRefreshType>? _cacheRefreshSubscription;
 
   @override
@@ -31,11 +33,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     _articlesFuture = _fetchArticles();
     _videosFuture = _fetchVideos();
+    _magazinesFuture = _fetchMagazines();
+    _eventsFuture = _fetchEvents();
     _cacheRefreshSubscription = CacheRefreshBus.stream.listen((type) {
       if (!mounted) return;
       setState(() {
         if (type == CacheRefreshType.content) {
           _articlesFuture = _fetchArticles();
+          _magazinesFuture = _fetchMagazines();
+          _eventsFuture = _fetchEvents();
         } else if (type == CacheRefreshType.videos) {
           _videosFuture = _fetchVideos();
         }
@@ -55,12 +61,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<List<YouTubeVideo>> _fetchVideos() =>
       ref.read(youtubeVideoRepositoryProvider).latestVideos();
 
+  Future<List<MagazineIssue>> _fetchMagazines() =>
+      ref.read(contentRepositoryProvider).magazines();
+
+  Future<List<AppEvent>> _fetchEvents() =>
+      ref.read(contentRepositoryProvider).events();
+
   Future<void> _reloadArticles() async {
     setState(() {
       _articlesFuture = _fetchArticles();
       _videosFuture = _fetchVideos();
+      _magazinesFuture = _fetchMagazines();
+      _eventsFuture = _fetchEvents();
     });
-    await Future.wait([_articlesFuture, _videosFuture]);
+    await Future.wait([
+      _articlesFuture,
+      _videosFuture,
+      _magazinesFuture,
+      _eventsFuture,
+    ]);
   }
 
   @override
@@ -134,25 +153,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   actionLabel: 'All Issues',
                   onAction: () => context.go('/magazine'),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  child: WPPrimaryButton(
-                      label: 'Read September Issue',
-                      onPressed: () => context.go('/magazine')),
-                ),
+                _HomeMagazineCarousel(magazinesFuture: _magazinesFuture),
                 WPSectionHeader(
                   title: 'Upcoming Events',
                   actionLabel: 'View',
                   onAction: () => context.push('/events'),
                 ),
-                _FeatureBand(
-                  icon: Icons.event_rounded,
-                  title: 'IndiaWood, DelhiWood and global exhibitions',
-                  subtitle:
-                      'Track dates, venues, registrations, and industry opportunities.',
-                  button: 'Explore Events',
-                  onPressed: () => context.push('/events'),
-                ),
+                _HomeEventsCarousel(eventsFuture: _eventsFuture),
                 const WPSectionHeader(title: 'Newsletter'),
                 _NewsletterCard(onPressed: () => context.push('/newsletter')),
                 const SizedBox(height: 20),
@@ -333,6 +340,256 @@ class _HomeVideoCard extends StatelessWidget {
             Text(
               DateFormat('d MMM yyyy').format(video.publishedAt),
               style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeMagazineCarousel extends StatelessWidget {
+  const _HomeMagazineCarousel({required this.magazinesFuture});
+
+  final Future<List<MagazineIssue>> magazinesFuture;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<MagazineIssue>>(
+      future: magazinesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const SizedBox(
+            height: 230,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final issues = _recentYearIssues(snapshot.data ?? const []);
+        if (snapshot.hasError || issues.isEmpty) {
+          return Container(
+            margin: const EdgeInsets.symmetric(horizontal: 18),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7F1EC),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.line),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.menu_book_rounded,
+                    color: AppColors.copper, size: 32),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Magazine issues will appear here.',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.go('/magazine'),
+                  child: const Text('Open'),
+                ),
+              ],
+            ),
+          );
+        }
+        return SizedBox(
+          height: 242,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            itemCount: issues.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) =>
+                _HomeMagazineCard(issue: issues[index]),
+          ),
+        );
+      },
+    );
+  }
+
+  List<MagazineIssue> _recentYearIssues(List<MagazineIssue> issues) {
+    if (issues.isEmpty) {
+      return const [];
+    }
+    final currentYear = DateTime.now().year;
+    final currentYearIssues =
+        issues.where((issue) => issue.date.year == currentYear).toList();
+    if (currentYearIssues.isNotEmpty) {
+      return currentYearIssues;
+    }
+    return issues.take(8).toList();
+  }
+}
+
+class _HomeMagazineCard extends StatelessWidget {
+  const _HomeMagazineCard({required this.issue});
+
+  final MagazineIssue issue;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => context.push('/magazine/${issue.id}'),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 156,
+        padding: const EdgeInsets.all(9),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            WPImage(
+              url: issue.coverUrl,
+              width: double.infinity,
+              height: 132,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 9),
+            Text(
+              issue.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w900, height: 1.1),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Vol. 18 | Issue ${issue.date.month}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+            const Spacer(),
+            SizedBox(
+              width: double.infinity,
+              height: 34,
+              child: FilledButton.icon(
+                onPressed: () => context.push('/magazine/${issue.id}/read'),
+                icon: const Icon(Icons.menu_book_rounded, size: 17),
+                label: const Text('Read'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeEventsCarousel extends StatelessWidget {
+  const _HomeEventsCarousel({required this.eventsFuture});
+
+  final Future<List<AppEvent>> eventsFuture;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<AppEvent>>(
+      future: eventsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const SizedBox(
+            height: 212,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final events = snapshot.data ?? const <AppEvent>[];
+        if (snapshot.hasError || events.isEmpty) {
+          return _FeatureBand(
+            icon: Icons.event_busy_rounded,
+            title: 'No website events found',
+            subtitle: 'Events from Wood & Panel will appear here when listed.',
+            button: 'Open Events',
+            onPressed: () => context.push('/events'),
+          );
+        }
+        return SizedBox(
+          height: 224,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            itemCount: events.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) => _HomeEventCard(
+              event: events[index],
+              onTap: () => context.push('/events'),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _HomeEventCard extends StatelessWidget {
+  const _HomeEventCard({required this.event, required this.onTap});
+
+  final AppEvent event;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 250,
+        decoration: BoxDecoration(
+          color: AppColors.green,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            WPImage(
+              url: event.imageUrl,
+              width: double.infinity,
+              height: 92,
+              fit: BoxFit.cover,
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      height: 1.12,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    event.date,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFFE9D8C6),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    event.location,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFFE9D8C6),
+                      height: 1.12,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

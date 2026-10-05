@@ -128,7 +128,30 @@ class WordPressContentRepository implements ContentRepository {
   }
 
   @override
-  Future<List<AppEvent>> events() async => const [];
+  Future<List<AppEvent>> events() async {
+    final eventsByKey = <String, AppEvent>{};
+    final requests = [
+      (path: '/events/', query: null),
+      (path: '/events/list/', query: {'eventDisplay': 'past'}),
+    ];
+    for (final request in requests) {
+      try {
+        final html = await _client.get<String>(
+          request.path,
+          queryParameters: request.query,
+        );
+        for (final event in _eventsFromHtml(html)) {
+          final key = event.url.isNotEmpty
+              ? event.url.toLowerCase()
+              : event.title.toLowerCase();
+          eventsByKey[key] = event;
+        }
+      } on Object {
+        // Keep the event feed usable if one view is blocked or temporarily down.
+      }
+    }
+    return eventsByKey.values.toList();
+  }
 
   Future<List<Article>> _legacyInterviewPosts({required int page}) async {
     final path = page <= 1 ? '/interviews/' : '/interviews/page/$page/';
@@ -343,6 +366,68 @@ class WordPressContentRepository implements ContentRepository {
       fileSize: 'Online issue',
       readUrl: readUrl,
       pdfUrl: _pdfUrlForFlipbook(readUrl),
+    );
+  }
+
+  List<AppEvent> _eventsFromHtml(String html) {
+    final articles = RegExp(
+      r'<article[^>]+class="[^"]*tribe-events-calendar-(?:list|latest-past)__event\b[^"]*"[^>]*>([\s\S]*?)</article>',
+      caseSensitive: false,
+    ).allMatches(html);
+    return [
+      for (final article in articles)
+        if (_eventFromHtml(article.group(1) ?? '') case final event?) event,
+    ];
+  }
+
+  AppEvent? _eventFromHtml(String html) {
+    final title = _decodeHtml(_stripHtml(_firstMatch(
+          html,
+          r'<a[^>]+class="[^"]*event-title-link[^"]*"[^>]*>([\s\S]*?)</a>',
+        ) ??
+        ''));
+    final url = _decodeHtml(_firstMatch(
+          html,
+          r'<a[^>]+href="([^"]+)"[^>]+class="[^"]*event-title-link[^"]*"',
+        ) ??
+        _firstMatch(
+          html,
+          r'<a[^>]+class="[^"]*event-title-link[^"]*"[^>]+href="([^"]+)"',
+        ) ??
+        '');
+    if (title.isEmpty) {
+      return null;
+    }
+    final date = _decodeHtml(_stripHtml(_firstMatch(
+          html,
+          r'<time[^>]+class="[^"]*event-datetime[^"]*"[^>]*>([\s\S]*?)</time>',
+        ) ??
+        ''));
+    final venueTitle = _decodeHtml(_stripHtml(_firstMatch(
+          html,
+          r'<span[^>]+class="[^"]*event-venue-title[^"]*"[^>]*>([\s\S]*?)</span>',
+        ) ??
+        ''));
+    final venueAddress = _decodeHtml(_stripHtml(_firstMatch(
+          html,
+          r'<span[^>]+class="[^"]*event-venue-address[^"]*"[^>]*>([\s\S]*?)</span>',
+        ) ??
+        ''));
+    final location = [
+      if (venueTitle.isNotEmpty) venueTitle,
+      if (venueAddress.isNotEmpty) venueAddress,
+    ].join(', ');
+    final imageUrl = _decodeHtml(
+      _firstMatch(html, r'data-breeze="([^"]+)"') ??
+          _firstMatch(html, r'<img[^>]+src="([^"]+)"') ??
+          _fallbackImage,
+    );
+    return AppEvent(
+      title: title,
+      date: date.isEmpty ? 'Event date to be announced' : date,
+      location: location.isEmpty ? 'Venue to be announced' : location,
+      imageUrl: imageUrl.startsWith('data:') ? _fallbackImage : imageUrl,
+      url: url,
     );
   }
 

@@ -6,6 +6,7 @@ import '../features/common/simple_screens.dart';
 import '../features/home/home_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/splash/splash_screen.dart';
+import '../data/repositories/download_repository.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -75,6 +76,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/downloads',
           builder: (context, state) => const DownloadsScreen()),
+      GoRoute(
+        path: '/downloaded-pdf',
+        builder: (context, state) {
+          final file = state.extra;
+          if (file is DownloadedFile) {
+            return DownloadedPdfScreen(file: file);
+          }
+          return const DownloadsScreen();
+        },
+      ),
       GoRoute(
           path: '/wallpapers',
           builder: (context, state) => const WallpapersScreen()),

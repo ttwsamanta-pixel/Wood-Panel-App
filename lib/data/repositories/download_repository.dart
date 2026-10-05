@@ -12,6 +12,7 @@ class DownloadedFile {
     required this.path,
     required this.size,
     required this.downloadedAt,
+    this.coverUrl = '',
   });
 
   final String title;
@@ -19,6 +20,7 @@ class DownloadedFile {
   final String path;
   final int size;
   final DateTime downloadedAt;
+  final String coverUrl;
 
   factory DownloadedFile.fromJson(Map<String, dynamic> json) {
     return DownloadedFile(
@@ -28,6 +30,7 @@ class DownloadedFile {
       size: (json['size'] as num?)?.toInt() ?? 0,
       downloadedAt: DateTime.tryParse(json['downloadedAt'] as String? ?? '') ??
           DateTime.now(),
+      coverUrl: json['coverUrl'] as String? ?? '',
     );
   }
 
@@ -37,6 +40,7 @@ class DownloadedFile {
         'path': path,
         'size': size,
         'downloadedAt': downloadedAt.toIso8601String(),
+        'coverUrl': coverUrl,
       };
 }
 
@@ -61,9 +65,19 @@ class DownloadRepository {
         .toList(growable: false);
   }
 
+  Future<DownloadedFile?> fileForUrl(String url) async {
+    for (final file in await files()) {
+      if (file.url == url) {
+        return file;
+      }
+    }
+    return null;
+  }
+
   Future<DownloadedFile> downloadPdf({
     required String title,
     required String url,
+    String coverUrl = '',
   }) async {
     final directory = await _downloadDirectory();
     final fileName = '${_safeFileName(title)}.pdf';
@@ -76,6 +90,7 @@ class DownloadRepository {
       path: path,
       size: await file.length(),
       downloadedAt: DateTime.now(),
+      coverUrl: coverUrl,
     );
     final existing = await files();
     final next = [

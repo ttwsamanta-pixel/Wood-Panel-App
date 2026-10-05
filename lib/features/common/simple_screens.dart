@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:go_router/go_router.dart';
@@ -1686,7 +1687,7 @@ class MagazineScreen extends ConsumerWidget {
                   crossAxisCount: 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 10,
-                  childAspectRatio: 0.76,
+                  childAspectRatio: 0.62,
                 ),
                 itemBuilder: (context, index) {
                   final year = archiveYears[index];
@@ -1771,11 +1772,7 @@ class _LatestMagazinePanel extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _MagazineDownloadButton(
-                  onPressed: issue.pdfUrl.isEmpty
-                      ? null
-                      : () => _downloadMagazinePdf(context, issue),
-                ),
+                child: _MagazinePdfActionButton(issue: issue),
               ),
             ],
           ),
@@ -1790,14 +1787,27 @@ class _MagazineCoverImage extends StatelessWidget {
     required this.url,
     required this.height,
     required this.width,
+    this.framed = true,
   });
 
   final String url;
   final double height;
   final double width;
+  final bool framed;
 
   @override
   Widget build(BuildContext context) {
+    if (!framed) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(7),
+        child: WPImage(
+          url: url,
+          width: width,
+          height: height,
+          fit: BoxFit.contain,
+        ),
+      );
+    }
     return Container(
       height: height,
       width: width,
@@ -1818,9 +1828,17 @@ class _MagazineCoverImage extends StatelessWidget {
 }
 
 class _MagazineDownloadButton extends StatelessWidget {
-  const _MagazineDownloadButton({required this.onPressed});
+  const _MagazineDownloadButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.height = 48,
+  });
 
+  final String label;
+  final IconData icon;
   final VoidCallback? onPressed;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
@@ -1828,26 +1846,72 @@ class _MagazineDownloadButton extends StatelessWidget {
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 10),
-        minimumSize: const Size.fromHeight(48),
+        minimumSize: Size.fromHeight(height),
       ),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.download_rounded, size: 20),
-          SizedBox(width: 6),
+          Icon(icon, size: 20),
+          const SizedBox(width: 6),
           Flexible(
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                'Download PDF',
+                label,
                 maxLines: 1,
-                style: TextStyle(fontWeight: FontWeight.w800),
+                style: const TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _MagazinePdfActionButton extends ConsumerWidget {
+  const _MagazinePdfActionButton({
+    required this.issue,
+    this.compact = false,
+  });
+
+  final MagazineIssue issue;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (issue.pdfUrl.isEmpty) {
+      return _MagazineDownloadButton(
+        label: compact ? 'PDF' : 'Download PDF',
+        icon: Icons.download_rounded,
+        height: compact ? 34 : 48,
+        onPressed: null,
+      );
+    }
+    final repository = ref.watch(downloadRepositoryProvider);
+    return FutureBuilder<DownloadedFile?>(
+      future: repository.fileForUrl(issue.pdfUrl),
+      builder: (context, snapshot) {
+        final downloaded = snapshot.data;
+        if (downloaded != null) {
+          return _MagazineDownloadButton(
+            label: compact ? 'View PDF' : 'View PDF',
+            icon: Icons.visibility_outlined,
+            height: compact ? 34 : 48,
+            onPressed: () => _openDownloadedPdf(context, downloaded),
+          );
+        }
+        return _MagazineDownloadButton(
+          label: compact ? 'Download' : 'Download PDF',
+          icon: Icons.download_rounded,
+          height: compact ? 34 : 48,
+          onPressed: () async {
+            await _downloadMagazinePdf(context, issue);
+            ref.invalidate(downloadRepositoryProvider);
+          },
+        );
+      },
     );
   }
 }
@@ -1905,6 +1969,7 @@ class _MagazineIssueCard extends StatelessWidget {
               url: issue.coverUrl,
               height: 150,
               width: 170,
+              framed: false,
             ),
           ),
           const SizedBox(height: 8),
@@ -1932,22 +1997,7 @@ class _MagazineIssueCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             height: 34,
-            child: OutlinedButton(
-              onPressed: issue.pdfUrl.isEmpty
-                  ? null
-                  : () => _downloadMagazinePdf(context, issue),
-              child: const FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.download_rounded, size: 18),
-                    SizedBox(width: 5),
-                    Text('Download'),
-                  ],
-                ),
-              ),
-            ),
+            child: _MagazinePdfActionButton(issue: issue, compact: true),
           ),
         ],
       ),
@@ -1983,12 +2033,12 @@ class _ArchiveYearTile extends StatelessWidget {
                   ? WPImage(
                       url: issue.coverUrl,
                       width: double.infinity,
-                      height: 86,
-                      fit: BoxFit.cover,
+                      height: 116,
+                      fit: BoxFit.contain,
                     )
                   : Container(
                       width: double.infinity,
-                      height: 86,
+                      height: 116,
                       color: const Color(0xFFF8F3EE),
                       child: const Icon(Icons.menu_book_rounded,
                           color: AppColors.copper),
@@ -2853,11 +2903,7 @@ class MagazineDetailScreen extends ConsumerWidget {
                 onPressed: () => context.push('/magazine/${issue.id}/read'),
               ),
               const SizedBox(height: 10),
-              _MagazineDownloadButton(
-                onPressed: issue.pdfUrl.isEmpty
-                    ? null
-                    : () => _downloadMagazinePdf(context, issue),
-              ),
+              _MagazinePdfActionButton(issue: issue),
             ],
           );
         },
@@ -3213,13 +3259,23 @@ class DownloadsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final repository = ref.watch(downloadRepositoryProvider);
+    final contentRepository = ref.watch(contentRepositoryProvider);
     return WPScaffold(
       showBack: true,
       title: 'Downloads',
       child: FutureBuilder(
-        future: repository.files(),
+        future: Future.wait<Object>([
+          repository.files(),
+          contentRepository.magazines(),
+        ]),
         builder: (context, snapshot) {
-          final items = snapshot.data ?? const <DownloadedFile>[];
+          final data = snapshot.data;
+          final items = data == null
+              ? const <DownloadedFile>[]
+              : data[0] as List<DownloadedFile>;
+          final issues = data == null
+              ? const <MagazineIssue>[]
+              : data[1] as List<MagazineIssue>;
           if (snapshot.connectionState != ConnectionState.done) {
             return const WPSkeletonList(itemCount: 4);
           }
@@ -3237,7 +3293,11 @@ class DownloadsScreen extends ConsumerWidget {
               Text('Downloads',
                   style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 14),
-              for (final item in items) _DownloadedFileTile(item: item),
+              for (final item in items)
+                _DownloadedFileTile(
+                  item: item,
+                  coverUrl: _coverForDownloadedFile(item, issues),
+                ),
             ],
           );
         },
@@ -3837,8 +3897,12 @@ Future<void> _downloadMagazinePdf(
   MagazineIssue issue,
 ) async {
   final messenger = ScaffoldMessenger.of(context);
+  messenger.clearSnackBars();
   messenger.showSnackBar(
-    SnackBar(content: Text('Downloading ${issue.title}...')),
+    SnackBar(
+      content: Text('Downloading ${issue.title}...'),
+      duration: const Duration(seconds: 2),
+    ),
   );
   try {
     final repository =
@@ -3846,13 +3910,16 @@ Future<void> _downloadMagazinePdf(
     await repository.downloadPdf(
       title: 'Wood & Panel ${issue.title}',
       url: issue.pdfUrl,
+      coverUrl: issue.coverUrl,
     );
     if (!context.mounted) {
       return;
     }
+    messenger.clearSnackBars();
     messenger.showSnackBar(
       SnackBar(
         content: const Text('PDF downloaded'),
+        duration: const Duration(seconds: 2),
         action: SnackBarAction(
           label: 'Downloads',
           onPressed: () => context.push('/downloads'),
@@ -3863,10 +3930,15 @@ Future<void> _downloadMagazinePdf(
     if (!context.mounted) {
       return;
     }
+    messenger.clearSnackBars();
     messenger.showSnackBar(
       const SnackBar(content: Text('Download failed. Please try again.')),
     );
   }
+}
+
+void _openDownloadedPdf(BuildContext context, DownloadedFile item) {
+  context.push('/downloaded-pdf', extra: item);
 }
 
 void _openInterview(BuildContext context, Article article) {
@@ -3883,9 +3955,10 @@ void _openInterview(BuildContext context, Article article) {
 }
 
 class _DownloadedFileTile extends StatelessWidget {
-  const _DownloadedFileTile({required this.item});
+  const _DownloadedFileTile({required this.item, required this.coverUrl});
 
   final DownloadedFile item;
+  final String coverUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -3896,25 +3969,143 @@ class _DownloadedFileTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.line),
       ),
-      child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: Color(0xFFF7F1EC),
-          child: Icon(Icons.picture_as_pdf_rounded, color: AppColors.copper),
+      child: InkWell(
+        onTap: () => _openDownloadedPdf(context, item),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(7),
+                child: coverUrl.isEmpty
+                    ? Container(
+                        width: 54,
+                        height: 64,
+                        color: const Color(0xFFF7F1EC),
+                        child: const Icon(Icons.picture_as_pdf_rounded,
+                            color: AppColors.copper),
+                      )
+                    : WPImage(
+                        url: coverUrl,
+                        width: 54,
+                        height: 64,
+                        fit: BoxFit.cover,
+                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    Text(
+                      '${_formatFileSize(item.size)} - ${DateFormat('d MMM yyyy').format(item.downloadedAt)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: AppColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: 'View',
+                constraints: const BoxConstraints.tightFor(
+                  width: 38,
+                  height: 38,
+                ),
+                padding: EdgeInsets.zero,
+                icon: const Icon(Icons.visibility_outlined,
+                    color: AppColors.copper),
+                onPressed: () => _openDownloadedPdf(context, item),
+              ),
+              IconButton(
+                tooltip: 'Share',
+                constraints: const BoxConstraints.tightFor(
+                  width: 38,
+                  height: 38,
+                ),
+                padding: EdgeInsets.zero,
+                icon: const Icon(Icons.share_rounded, color: AppColors.copper),
+                onPressed: () => Share.shareXFiles([XFile(item.path)]),
+              ),
+            ],
+          ),
         ),
-        title: Text(
-          item.title,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.w900),
-        ),
-        subtitle: Text(
-          '${_formatFileSize(item.size)} - ${DateFormat('d MMM yyyy').format(item.downloadedAt)}',
-        ),
-        trailing: IconButton(
-          tooltip: 'Share',
-          icon: const Icon(Icons.ios_share_rounded, color: AppColors.copper),
-          onPressed: () => Share.shareXFiles([XFile(item.path)]),
-        ),
+      ),
+    );
+  }
+}
+
+String _coverForDownloadedFile(
+  DownloadedFile item,
+  List<MagazineIssue> issues,
+) {
+  if (item.coverUrl.isNotEmpty) {
+    return item.coverUrl;
+  }
+  for (final issue in issues) {
+    if (issue.pdfUrl == item.url || item.title.contains(issue.title)) {
+      return issue.coverUrl;
+    }
+  }
+  return '';
+}
+
+class DownloadedPdfScreen extends StatelessWidget {
+  const DownloadedPdfScreen({super.key, required this.file});
+
+  final DownloadedFile file;
+
+  @override
+  Widget build(BuildContext context) {
+    return WPScaffold(
+      showBack: true,
+      showBottomNav: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    file.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Share',
+                  icon:
+                      const Icon(Icons.share_rounded, color: AppColors.copper),
+                  onPressed: () => Share.shareXFiles([XFile(file.path)]),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: PDFView(
+              filePath: file.path,
+              enableSwipe: true,
+              swipeHorizontal: false,
+              autoSpacing: true,
+              pageFling: true,
+            ),
+          ),
+        ],
       ),
     );
   }

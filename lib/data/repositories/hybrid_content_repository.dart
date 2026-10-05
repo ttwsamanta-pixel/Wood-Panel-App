@@ -12,15 +12,7 @@ class HybridContentRepository implements ContentRepository {
 
   @override
   Future<List<Article>> latestArticles({int page = 1, int perPage = 12}) async {
-    try {
-      final articles =
-          await remote.latestArticles(page: page, perPage: perPage);
-      return articles.isEmpty
-          ? await fallback.latestArticles(page: page, perPage: perPage)
-          : articles;
-    } catch (_) {
-      return fallback.latestArticles(page: page, perPage: perPage);
-    }
+    return remote.latestArticles(page: page, perPage: perPage);
   }
 
   @override
@@ -30,66 +22,29 @@ class HybridContentRepository implements ContentRepository {
     int page = 1,
     int perPage = 12,
   }) async {
-    try {
-      final articles = await remote.articlesByCategory(
-        categoryId: categoryId,
-        categoryName: categoryName,
-        page: page,
-        perPage: perPage,
-      );
-      return articles.isEmpty
-          ? await fallback.articlesByCategory(
-              categoryId: categoryId,
-              categoryName: categoryName,
-              page: page,
-              perPage: perPage,
-            )
-          : articles;
-    } catch (_) {
-      return fallback.articlesByCategory(
-        categoryId: categoryId,
-        categoryName: categoryName,
-        page: page,
-        perPage: perPage,
-      );
-    }
+    return remote.articlesByCategory(
+      categoryId: categoryId,
+      categoryName: categoryName,
+      page: page,
+      perPage: perPage,
+    );
   }
 
   @override
   Future<List<Article>> latestInterviews(
       {int page = 1, int perPage = 12}) async {
-    try {
-      final articles =
-          await remote.latestInterviews(page: page, perPage: perPage);
-      return articles.isEmpty
-          ? await fallback.latestInterviews(page: page, perPage: perPage)
-          : articles;
-    } catch (_) {
-      return fallback.latestInterviews(page: page, perPage: perPage);
-    }
+    return remote.latestInterviews(page: page, perPage: perPage);
   }
 
   @override
   Future<Article> articleById(int id) async {
-    try {
-      return await remote.articleById(id);
-    } catch (_) {
-      return fallback.articleById(id);
-    }
+    return remote.articleById(id);
   }
 
   @override
   Future<List<Article>> searchArticles(String query,
       {int page = 1, int perPage = 12}) async {
-    try {
-      final articles =
-          await remote.searchArticles(query, page: page, perPage: perPage);
-      return articles.isEmpty
-          ? await fallback.searchArticles(query, page: page, perPage: perPage)
-          : articles;
-    } catch (_) {
-      return fallback.searchArticles(query, page: page, perPage: perPage);
-    }
+    return remote.searchArticles(query, page: page, perPage: perPage);
   }
 
   @override

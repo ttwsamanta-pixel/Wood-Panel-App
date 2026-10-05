@@ -1687,7 +1687,7 @@ class MagazineScreen extends ConsumerWidget {
                   crossAxisCount: 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 10,
-                  childAspectRatio: 0.62,
+                  childAspectRatio: 0.76,
                 ),
                 itemBuilder: (context, index) {
                   final year = archiveYears[index];
@@ -2033,18 +2033,18 @@ class _ArchiveYearTile extends StatelessWidget {
                   ? WPImage(
                       url: issue.coverUrl,
                       width: double.infinity,
-                      height: 116,
+                      height: 96,
                       fit: BoxFit.contain,
                     )
                   : Container(
                       width: double.infinity,
-                      height: 116,
+                      height: 96,
                       color: const Color(0xFFF8F3EE),
                       child: const Icon(Icons.menu_book_rounded,
                           color: AppColors.copper),
                     ),
             ),
-            const SizedBox(height: 9),
+            const SizedBox(height: 7),
             Row(
               children: [
                 Expanded(
@@ -2068,18 +2068,18 @@ class _ArchiveYearTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: AppColors.muted,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
               ),
             ),
             Text(
-              'January - December $year',
-              maxLines: 2,
+              'Jan - Dec $year',
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: AppColors.muted,
                 fontSize: 11,
-                height: 1.12,
+                height: 1.05,
               ),
             ),
           ],
@@ -4101,8 +4101,10 @@ class DownloadedPdfScreen extends StatelessWidget {
               filePath: file.path,
               enableSwipe: true,
               swipeHorizontal: false,
-              autoSpacing: true,
-              pageFling: true,
+              autoSpacing: false,
+              pageFling: false,
+              pageSnap: false,
+              fitPolicy: FitPolicy.WIDTH,
             ),
           ),
         ],

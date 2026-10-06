@@ -20,9 +20,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _openNextScreen() async {
-    final completed = await ref
-        .read(appPreferencesRepositoryProvider)
-        .hasCompletedOnboarding();
+    final results = await Future.wait<dynamic>([
+      ref.read(appPreferencesRepositoryProvider).hasCompletedOnboarding(),
+      Future<void>.delayed(const Duration(milliseconds: 1200)),
+    ]);
+    final completed = results.first as bool;
     if (mounted) {
       context.go(completed ? '/feed' : '/onboarding');
     }

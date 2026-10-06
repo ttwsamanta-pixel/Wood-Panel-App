@@ -507,9 +507,10 @@ class _ExploreLoadingList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(
-      height: 360,
-      child: WPBrandLoader(label: 'Loading...'),
+    final height = MediaQuery.sizeOf(context).height * .62;
+    return SizedBox(
+      height: height.clamp(420.0, 620.0),
+      child: const WPPageLoader(),
     );
   }
 }

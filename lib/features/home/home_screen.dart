@@ -89,7 +89,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         future: _articlesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const WPSkeletonList(showHero: true, itemCount: 6);
+            return const WPPageLoader();
           }
           if (snapshot.hasError) {
             return WPErrorState(

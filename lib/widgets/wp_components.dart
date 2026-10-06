@@ -291,11 +291,13 @@ class WPBrandLoader extends StatefulWidget {
     this.size = 132,
     this.label,
     this.compact = false,
+    this.logoScale = .52,
   });
 
   final double size;
   final String? label;
   final bool compact;
+  final double logoScale;
 
   @override
   State<WPBrandLoader> createState() => _WPBrandLoaderState();
@@ -322,7 +324,7 @@ class _WPBrandLoaderState extends State<WPBrandLoader>
 
   @override
   Widget build(BuildContext context) {
-    final logoSize = widget.size * .44;
+    final logoSize = widget.size * widget.logoScale;
     final loader = SizedBox(
       width: widget.size,
       height: widget.size,
@@ -384,6 +386,20 @@ class _WPBrandLoaderState extends State<WPBrandLoader>
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class WPPageLoader extends StatelessWidget {
+  const WPPageLoader({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(
+      color: Colors.white,
+      child: SizedBox.expand(
+        child: WPBrandLoader(size: 188),
       ),
     );
   }
@@ -461,6 +477,6 @@ class WPSkeletonList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const WPBrandLoader(label: 'Loading...');
+    return const WPPageLoader();
   }
 }

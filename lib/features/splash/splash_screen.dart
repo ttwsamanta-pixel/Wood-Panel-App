@@ -38,11 +38,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Colors.black,
-      body: Center(
-        child: WPBrandLoader(size: 184),
-      ),
-    );
+    return const Scaffold(body: WPPageLoader());
   }
 }

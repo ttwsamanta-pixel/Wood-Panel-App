@@ -8,7 +8,7 @@ void main() {
   testWidgets('Wood & Panel app boots', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: WoodPanelApp()));
 
-    expect(find.byType(WPBrandLoader), findsOneWidget);
+    expect(find.byType(WPPageLoader), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 1400));
   });
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -22,30 +23,16 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  late Future<List<Article>> _articlesFuture;
-  late Future<List<YouTubeVideo>> _videosFuture;
-  late Future<List<MagazineIssue>> _magazinesFuture;
-  late Future<List<AppEvent>> _eventsFuture;
+  late Future<_HomeData> _homeFuture;
   StreamSubscription<CacheRefreshType>? _cacheRefreshSubscription;
 
   @override
   void initState() {
     super.initState();
-    _articlesFuture = _fetchArticles();
-    _videosFuture = _fetchVideos();
-    _magazinesFuture = _fetchMagazines();
-    _eventsFuture = _fetchEvents();
+    _homeFuture = _fetchHomeData();
     _cacheRefreshSubscription = CacheRefreshBus.stream.listen((type) {
       if (!mounted) return;
-      setState(() {
-        if (type == CacheRefreshType.content) {
-          _articlesFuture = _fetchArticles();
-          _magazinesFuture = _fetchMagazines();
-          _eventsFuture = _fetchEvents();
-        } else if (type == CacheRefreshType.videos) {
-          _videosFuture = _fetchVideos();
-        }
-      });
+      setState(() => _homeFuture = _fetchHomeData());
     });
   }
 
@@ -55,38 +42,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.dispose();
   }
 
-  Future<List<Article>> _fetchArticles() =>
-      ref.read(contentRepositoryProvider).latestArticles();
-
-  Future<List<YouTubeVideo>> _fetchVideos() =>
-      ref.read(youtubeVideoRepositoryProvider).latestVideos();
-
-  Future<List<MagazineIssue>> _fetchMagazines() =>
-      ref.read(contentRepositoryProvider).magazines();
-
-  Future<List<AppEvent>> _fetchEvents() =>
-      ref.read(contentRepositoryProvider).events();
+  Future<_HomeData> _fetchHomeData() async {
+    final contentRepository = ref.read(contentRepositoryProvider);
+    final videoRepository = ref.read(youtubeVideoRepositoryProvider);
+    final articlesFuture = contentRepository.latestArticles();
+    final videosFuture =
+        videoRepository.latestVideos().catchError((_) => <YouTubeVideo>[]);
+    final magazinesFuture =
+        contentRepository.magazines().catchError((_) => <MagazineIssue>[]);
+    final eventsFuture =
+        contentRepository.events().catchError((_) => <AppEvent>[]);
+    final results = await Future.wait([
+      articlesFuture,
+      videosFuture,
+      magazinesFuture,
+      eventsFuture,
+    ]);
+    return _HomeData(
+      articles: results[0] as List<Article>,
+      videos: results[1] as List<YouTubeVideo>,
+      magazines: results[2] as List<MagazineIssue>,
+      events: results[3] as List<AppEvent>,
+    );
+  }
 
   Future<void> _reloadArticles() async {
-    setState(() {
-      _articlesFuture = _fetchArticles();
-      _videosFuture = _fetchVideos();
-      _magazinesFuture = _fetchMagazines();
-      _eventsFuture = _fetchEvents();
-    });
-    await Future.wait([
-      _articlesFuture,
-      _videosFuture,
-      _magazinesFuture,
-      _eventsFuture,
-    ]);
+    setState(() => _homeFuture = _fetchHomeData());
+    await _homeFuture;
   }
 
   @override
   Widget build(BuildContext context) {
     return WPScaffold(
-      child: FutureBuilder<List<Article>>(
-        future: _articlesFuture,
+      child: FutureBuilder<_HomeData>(
+        future: _homeFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const WPPageLoader();
@@ -99,8 +88,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             );
           }
 
-          final articles = snapshot.data ?? const <Article>[];
-          if (articles.isEmpty) {
+          final homeData = snapshot.data ?? _HomeData.empty;
+          if (homeData.articles.isEmpty) {
             return const WPEmptyState(
               icon: Icons.article_outlined,
               title: 'No articles yet',
@@ -108,66 +97,179 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             );
           }
 
-          return RefreshIndicator(
-            onRefresh: _reloadArticles,
-            child: ListView(
-              children: [
-                WPHeroNewsCard(article: articles.first),
-                WPSectionHeader(
-                  title: 'Latest News',
-                  actionLabel: 'See All',
-                  onAction: () => context.go('/feed'),
-                ),
-                for (final article in articles.skip(1).take(4))
-                  _LatestNewsRow(article: article),
-                const WPSectionHeader(title: 'Trending'),
-                SizedBox(
-                  height: 206,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
-                    itemCount: articles.length,
-                    itemBuilder: (context, index) =>
-                        _TrendingCard(article: articles[index]),
-                  ),
-                ),
-                const WPSectionHeader(title: 'News Categories'),
-                SizedBox(
-                  height: 112,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
-                    itemCount: NewsCategory.all.length,
-                    itemBuilder: (context, index) =>
-                        _CategoryTile(category: NewsCategory.all[index]),
-                  ),
-                ),
-                WPSectionHeader(
-                  title: 'Videos',
-                  actionLabel: 'See All',
-                  onAction: () => context.push('/videos'),
-                ),
-                _HomeVideoCarousel(videosFuture: _videosFuture),
-                WPSectionHeader(
-                  title: 'Magazine Highlight',
-                  actionLabel: 'All Issues',
-                  onAction: () => context.go('/magazine'),
-                ),
-                _HomeMagazineCarousel(magazinesFuture: _magazinesFuture),
-                WPSectionHeader(
-                  title: 'Upcoming Events',
-                  actionLabel: 'View',
-                  onAction: () => context.push('/events'),
-                ),
-                _HomeEventsCarousel(eventsFuture: _eventsFuture),
-                const WPSectionHeader(title: 'Newsletter'),
-                _NewsletterCard(onPressed: () => context.push('/newsletter')),
-                const SizedBox(height: 20),
-              ],
+          return _HomePrecacheGate(
+            data: homeData,
+            child: RefreshIndicator(
+              onRefresh: _reloadArticles,
+              child: _HomeContent(
+                data: homeData,
+                onNewsletterPressed: () => context.push('/newsletter'),
+              ),
             ),
           );
         },
       ),
+    );
+  }
+}
+
+class _HomeData {
+  const _HomeData({
+    required this.articles,
+    required this.videos,
+    required this.magazines,
+    required this.events,
+  });
+
+  static const empty = _HomeData(
+    articles: <Article>[],
+    videos: <YouTubeVideo>[],
+    magazines: <MagazineIssue>[],
+    events: <AppEvent>[],
+  );
+
+  final List<Article> articles;
+  final List<YouTubeVideo> videos;
+  final List<MagazineIssue> magazines;
+  final List<AppEvent> events;
+
+  Iterable<String> get firstVisibleImageUrls sync* {
+    yield* articles.take(9).map((article) => article.imageUrl);
+    yield* videos.take(6).map((video) => video.thumbnailUrl);
+    yield* _HomeMagazineCarousel.recentYearIssues(magazines)
+        .take(6)
+        .map((issue) => issue.coverUrl);
+    yield* events.take(4).map((event) => event.imageUrl);
+  }
+}
+
+class _HomePrecacheGate extends StatefulWidget {
+  const _HomePrecacheGate({
+    required this.data,
+    required this.child,
+  });
+
+  final _HomeData data;
+  final Widget child;
+
+  @override
+  State<_HomePrecacheGate> createState() => _HomePrecacheGateState();
+}
+
+class _HomePrecacheGateState extends State<_HomePrecacheGate> {
+  Future<void>? _precacheFuture;
+  Object? _lastData;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _ensurePrecache();
+  }
+
+  @override
+  void didUpdateWidget(covariant _HomePrecacheGate oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _ensurePrecache();
+  }
+
+  void _ensurePrecache() {
+    if (identical(_lastData, widget.data)) {
+      return;
+    }
+    _lastData = widget.data;
+    final urls = widget.data.firstVisibleImageUrls
+        .where((url) => url.trim().isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+    _precacheFuture = Future.wait<void>(
+      urls.map(
+        (url) => precacheImage(CachedNetworkImageProvider(url), context)
+            .timeout(const Duration(seconds: 5))
+            .catchError((_) {}),
+      ),
+    ).timeout(const Duration(seconds: 8)).catchError((_) => <void>[]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<void>(
+      future: _precacheFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const WPPageLoader();
+        }
+        return widget.child;
+      },
+    );
+  }
+}
+
+class _HomeContent extends StatelessWidget {
+  const _HomeContent({
+    required this.data,
+    required this.onNewsletterPressed,
+  });
+
+  final _HomeData data;
+  final VoidCallback onNewsletterPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final articles = data.articles;
+    return ListView(
+      children: [
+        WPHeroNewsCard(article: articles.first),
+        WPSectionHeader(
+          title: 'Latest News',
+          actionLabel: 'See All',
+          onAction: () => context.go('/feed'),
+        ),
+        for (final article in articles.skip(1).take(4))
+          _LatestNewsRow(article: article),
+        const WPSectionHeader(title: 'Trending'),
+        SizedBox(
+          height: 206,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            itemCount: articles.length,
+            itemBuilder: (context, index) =>
+                _TrendingCard(article: articles[index]),
+          ),
+        ),
+        const WPSectionHeader(title: 'News Categories'),
+        SizedBox(
+          height: 112,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            itemCount: NewsCategory.all.length,
+            itemBuilder: (context, index) =>
+                _CategoryTile(category: NewsCategory.all[index]),
+          ),
+        ),
+        WPSectionHeader(
+          title: 'Videos',
+          actionLabel: 'See All',
+          onAction: () => context.push('/videos'),
+        ),
+        _HomeVideoCarousel(videos: data.videos),
+        WPSectionHeader(
+          title: 'Magazine Highlight',
+          actionLabel: 'All Issues',
+          onAction: () => context.go('/magazine'),
+        ),
+        _HomeMagazineCarousel(magazines: data.magazines),
+        WPSectionHeader(
+          title: 'Upcoming Events',
+          actionLabel: 'View',
+          onAction: () => context.push('/events'),
+        ),
+        _HomeEventsCarousel(events: data.events),
+        const WPSectionHeader(title: 'Newsletter'),
+        _NewsletterCard(onPressed: onNewsletterPressed),
+        const SizedBox(height: 20),
+      ],
     );
   }
 }
@@ -234,62 +336,50 @@ class _TrendingCard extends StatelessWidget {
 }
 
 class _HomeVideoCarousel extends StatelessWidget {
-  const _HomeVideoCarousel({required this.videosFuture});
+  const _HomeVideoCarousel({required this.videos});
 
-  final Future<List<YouTubeVideo>> videosFuture;
+  final List<YouTubeVideo> videos;
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<YouTubeVideo>>(
-      future: videosFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const SizedBox(
-            height: 210,
-            child: WPBrandLoader(size: 96, compact: true),
-          );
-        }
-        final videos =
-            (snapshot.data ?? const <YouTubeVideo>[]).take(6).toList();
-        if (snapshot.hasError || videos.isEmpty) {
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 18),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7F1EC),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.line),
+    final visibleVideos = videos.take(6).toList();
+    if (visibleVideos.isEmpty) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 18),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F1EC),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.play_circle_fill_rounded,
+                color: AppColors.copper, size: 34),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Latest YouTube videos will appear here.',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.play_circle_fill_rounded,
-                    color: AppColors.copper, size: 34),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Latest YouTube videos will appear here.',
-                    style: TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => context.push('/videos'),
-                  child: const Text('Open'),
-                ),
-              ],
+            TextButton(
+              onPressed: () => context.push('/videos'),
+              child: const Text('Open'),
             ),
-          );
-        }
-        return SizedBox(
-          height: 210,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            itemCount: videos.length,
-            itemBuilder: (context, index) =>
-                _HomeVideoCard(video: videos[index]),
-          ),
-        );
-      },
+          ],
+        ),
+      );
+    }
+    return SizedBox(
+      height: 210,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        itemCount: visibleVideos.length,
+        itemBuilder: (context, index) =>
+            _HomeVideoCard(video: visibleVideos[index]),
+      ),
     );
   }
 }
@@ -349,66 +439,55 @@ class _HomeVideoCard extends StatelessWidget {
 }
 
 class _HomeMagazineCarousel extends StatelessWidget {
-  const _HomeMagazineCarousel({required this.magazinesFuture});
+  const _HomeMagazineCarousel({required this.magazines});
 
-  final Future<List<MagazineIssue>> magazinesFuture;
+  final List<MagazineIssue> magazines;
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<MagazineIssue>>(
-      future: magazinesFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const SizedBox(
-            height: 230,
-            child: WPBrandLoader(size: 96, compact: true),
-          );
-        }
-        final issues = _recentYearIssues(snapshot.data ?? const []);
-        if (snapshot.hasError || issues.isEmpty) {
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 18),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7F1EC),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.line),
+    final issues = recentYearIssues(magazines);
+    if (issues.isEmpty) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 18),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F1EC),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.menu_book_rounded,
+                color: AppColors.copper, size: 32),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Magazine issues will appear here.',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.menu_book_rounded,
-                    color: AppColors.copper, size: 32),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Magazine issues will appear here.',
-                    style: TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => context.go('/magazine'),
-                  child: const Text('Open'),
-                ),
-              ],
+            TextButton(
+              onPressed: () => context.go('/magazine'),
+              child: const Text('Open'),
             ),
-          );
-        }
-        return SizedBox(
-          height: 242,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            itemCount: issues.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, index) =>
-                _HomeMagazineCard(issue: issues[index]),
-          ),
-        );
-      },
+          ],
+        ),
+      );
+    }
+    return SizedBox(
+      height: 242,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        itemCount: issues.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (context, index) =>
+            _HomeMagazineCard(issue: issues[index]),
+      ),
     );
   }
 
-  List<MagazineIssue> _recentYearIssues(List<MagazineIssue> issues) {
+  static List<MagazineIssue> recentYearIssues(List<MagazineIssue> issues) {
     if (issues.isEmpty) {
       return const [];
     }
@@ -481,45 +560,33 @@ class _HomeMagazineCard extends StatelessWidget {
 }
 
 class _HomeEventsCarousel extends StatelessWidget {
-  const _HomeEventsCarousel({required this.eventsFuture});
+  const _HomeEventsCarousel({required this.events});
 
-  final Future<List<AppEvent>> eventsFuture;
+  final List<AppEvent> events;
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<AppEvent>>(
-      future: eventsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const SizedBox(
-            height: 212,
-            child: WPBrandLoader(size: 96, compact: true),
-          );
-        }
-        final events = snapshot.data ?? const <AppEvent>[];
-        if (snapshot.hasError || events.isEmpty) {
-          return _FeatureBand(
-            icon: Icons.event_busy_rounded,
-            title: 'No website events found',
-            subtitle: 'Events from Wood & Panel will appear here when listed.',
-            button: 'Open Events',
-            onPressed: () => context.push('/events'),
-          );
-        }
-        return SizedBox(
-          height: 224,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            itemCount: events.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, index) => _HomeEventCard(
-              event: events[index],
-              onTap: () => context.push('/events'),
-            ),
-          ),
-        );
-      },
+    if (events.isEmpty) {
+      return _FeatureBand(
+        icon: Icons.event_busy_rounded,
+        title: 'No website events found',
+        subtitle: 'Events from Wood & Panel will appear here when listed.',
+        button: 'Open Events',
+        onPressed: () => context.push('/events'),
+      );
+    }
+    return SizedBox(
+      height: 224,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        itemCount: events.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (context, index) => _HomeEventCard(
+          event: events[index],
+          onTap: () => context.push('/events'),
+        ),
+      ),
     );
   }
 }

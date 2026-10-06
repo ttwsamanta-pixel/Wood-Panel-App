@@ -64,48 +64,12 @@ class WPImage extends StatelessWidget {
         height: height,
         width: width,
         fit: fit,
-        placeholder: (context, _) => _ImageLoadingPlaceholder(
-          color: placeholderColor,
-          height: height,
-          width: width,
-        ),
+        placeholder: (context, _) => Container(color: placeholderColor),
         errorWidget: (context, _, __) => Container(
           color: placeholderColor,
           alignment: Alignment.center,
           child: const Icon(Icons.image_not_supported_outlined),
         ),
-      ),
-    );
-  }
-}
-
-class _ImageLoadingPlaceholder extends StatelessWidget {
-  const _ImageLoadingPlaceholder({
-    required this.color,
-    this.height,
-    this.width,
-  });
-
-  final Color color;
-  final double? height;
-  final double? width;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      width: width,
-      color: color,
-      alignment: Alignment.center,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final available = math.min(
-            constraints.maxWidth.isFinite ? constraints.maxWidth : 72,
-            constraints.maxHeight.isFinite ? constraints.maxHeight : 72,
-          );
-          final size = available.clamp(34.0, 74.0).toDouble();
-          return WPBrandLoader(size: size, compact: true, logoScale: .5);
-        },
       ),
     );
   }

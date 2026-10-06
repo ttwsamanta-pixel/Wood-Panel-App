@@ -51,11 +51,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         contentRepository.magazines().catchError((_) => <MagazineIssue>[]);
     final eventsFuture =
         contentRepository.events().catchError((_) => <AppEvent>[]);
-    final results = await Future.wait([
+    final results = await Future.wait<dynamic>([
       articlesFuture,
       videosFuture,
       magazinesFuture,
       eventsFuture,
+      Future<void>.delayed(const Duration(milliseconds: 900)),
     ]);
     return _HomeData(
       articles: results[0] as List<Article>,

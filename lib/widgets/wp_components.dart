@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 
 import '../core/theme/app_colors.dart';
 import '../data/models/content_models.dart';
-import 'wp_logo.dart';
 
 class WPSectionHeader extends StatelessWidget {
   const WPSectionHeader({
@@ -401,63 +400,18 @@ class WPPageLoader extends StatelessWidget {
   }
 }
 
-class _BrandedPageLoader extends StatefulWidget {
+class _BrandedPageLoader extends StatelessWidget {
   const _BrandedPageLoader();
 
   @override
-  State<_BrandedPageLoader> createState() => _BrandedPageLoaderState();
-}
-
-class _BrandedPageLoaderState extends State<_BrandedPageLoader>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return ColoredBox(
+    return const ColoredBox(
       color: AppColors.ink,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          const CustomPaint(painter: _PageLoaderBackgroundPainter()),
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: WPLogo(
-                width: MediaQuery.sizeOf(context).width * .7,
-                height: 88,
-              ),
-            ),
-          ),
-          Positioned(
-            left: 92,
-            right: 92,
-            bottom: 54,
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return CustomPaint(
-                  size: const Size.fromHeight(4),
-                  painter: _PageLoaderLinePainter(progress: _controller.value),
-                );
-              },
-            ),
-          ),
+          CustomPaint(painter: _PageLoaderBackgroundPainter()),
+          Center(child: WPBrandLoader(size: 188, compact: true)),
         ],
       ),
     );
@@ -497,47 +451,6 @@ class _PageLoaderBackgroundPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _PageLoaderLinePainter extends CustomPainter {
-  const _PageLoaderLinePainter({required this.progress});
-
-  final double progress;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final centerY = size.height / 2;
-    final trackPaint = Paint()
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round
-      ..color = Colors.white.withValues(alpha: .34);
-    canvas.drawLine(Offset.zero.translate(0, centerY),
-        Offset(size.width, centerY), trackPaint);
-
-    final segmentWidth = size.width * .28;
-    final start = (size.width + segmentWidth) * progress - segmentWidth;
-    final end = math.min(start + segmentWidth, size.width);
-    final clampedStart = math.max(start, 0.0);
-    if (end <= 0 || clampedStart >= size.width) {
-      return;
-    }
-
-    final progressPaint = Paint()
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round
-      ..shader = const LinearGradient(
-        colors: [AppColors.brown, AppColors.gold],
-      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
-    canvas.drawLine(
-      Offset(clampedStart, centerY),
-      Offset(end, centerY),
-      progressPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _PageLoaderLinePainter oldDelegate) =>
-      oldDelegate.progress != progress;
 }
 
 class _BrandLoaderPainter extends CustomPainter {

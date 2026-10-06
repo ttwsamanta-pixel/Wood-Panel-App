@@ -104,7 +104,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           _newsError = null;
           _isNewsLoading = false;
         }
-        if (interviews.isNotEmpty) {
+        final preserveScrolledInterviews =
+            _selectedTab == _ExploreTab.interviews &&
+                _contentScrollController.hasClients &&
+                _contentScrollController.position.pixels > 80;
+        if (interviews.isNotEmpty && !preserveScrolledInterviews) {
           _interviewsPage = 1;
           _interviewArticles
             ..clear()
@@ -2707,7 +2711,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             ),
           ),
-          if (_isLoading) const LinearProgressIndicator(),
           if (_query.trim().isEmpty) ...[
             const WPSectionHeader(title: 'Recent Searches'),
             for (final term in [
@@ -2722,13 +2725,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   title: Text(term)),
           ] else ...[
             const WPSectionHeader(title: 'Results'),
-            if (_error != null)
+            if (_isLoading)
+              const SizedBox(
+                height: 260,
+                child: WPBrandLoader(size: 112, compact: true),
+              )
+            else if (_error != null)
               WPErrorState(
                 title: 'Search failed',
                 message: _error!,
                 onRetry: () => _onSearchChanged(_query),
               )
-            else if (!_isLoading && _results.isEmpty)
+            else if (_results.isEmpty)
               const WPEmptyState(
                 icon: Icons.search_off_rounded,
                 title: 'No results found',
@@ -2932,17 +2940,19 @@ class _MagazineWebViewState extends State<_MagazineWebView> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Stack(
       children: [
+        WebViewWidget(controller: _controller),
         if (_progress < 100)
-          LinearProgressIndicator(
-            value: _progress <= 0 ? null : _progress / 100,
-            color: AppColors.copper,
-            backgroundColor: const Color(0xFFF4E8DF),
+          Positioned.fill(
+            child: ColoredBox(
+              color: Colors.black,
+              child: WPBrandLoader(
+                size: 156,
+                label: _progress <= 0 ? null : 'Loading $_progress%',
+              ),
+            ),
           ),
-        Expanded(
-          child: WebViewWidget(controller: _controller),
-        ),
       ],
     );
   }

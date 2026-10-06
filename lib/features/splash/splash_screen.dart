@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -15,25 +13,19 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
-  Timer? _timer;
-
   @override
   void initState() {
     super.initState();
-    _timer = Timer(const Duration(milliseconds: 1400), () async {
-      final completed = await ref
-          .read(appPreferencesRepositoryProvider)
-          .hasCompletedOnboarding();
-      if (mounted) {
-        context.go(completed ? '/feed' : '/onboarding');
-      }
-    });
+    _openNextScreen();
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
+  Future<void> _openNextScreen() async {
+    final completed = await ref
+        .read(appPreferencesRepositoryProvider)
+        .hasCompletedOnboarding();
+    if (mounted) {
+      context.go(completed ? '/feed' : '/onboarding');
+    }
   }
 
   @override

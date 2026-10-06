@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -97,14 +96,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             );
           }
 
-          return _HomePrecacheGate(
-            data: homeData,
-            child: RefreshIndicator(
-              onRefresh: _reloadArticles,
-              child: _HomeContent(
-                data: homeData,
-                onNewsletterPressed: () => context.push('/newsletter'),
-              ),
+          return RefreshIndicator(
+            onRefresh: _reloadArticles,
+            child: _HomeContent(
+              data: homeData,
+              onNewsletterPressed: () => context.push('/newsletter'),
             ),
           );
         },
@@ -132,76 +128,6 @@ class _HomeData {
   final List<YouTubeVideo> videos;
   final List<MagazineIssue> magazines;
   final List<AppEvent> events;
-
-  Iterable<String> get firstVisibleImageUrls sync* {
-    yield* articles.take(9).map((article) => article.imageUrl);
-    yield* videos.take(6).map((video) => video.thumbnailUrl);
-    yield* _HomeMagazineCarousel.recentYearIssues(magazines)
-        .take(6)
-        .map((issue) => issue.coverUrl);
-    yield* events.take(4).map((event) => event.imageUrl);
-  }
-}
-
-class _HomePrecacheGate extends StatefulWidget {
-  const _HomePrecacheGate({
-    required this.data,
-    required this.child,
-  });
-
-  final _HomeData data;
-  final Widget child;
-
-  @override
-  State<_HomePrecacheGate> createState() => _HomePrecacheGateState();
-}
-
-class _HomePrecacheGateState extends State<_HomePrecacheGate> {
-  Future<void>? _precacheFuture;
-  Object? _lastData;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _ensurePrecache();
-  }
-
-  @override
-  void didUpdateWidget(covariant _HomePrecacheGate oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _ensurePrecache();
-  }
-
-  void _ensurePrecache() {
-    if (identical(_lastData, widget.data)) {
-      return;
-    }
-    _lastData = widget.data;
-    final urls = widget.data.firstVisibleImageUrls
-        .where((url) => url.trim().isNotEmpty)
-        .toSet()
-        .toList(growable: false);
-    _precacheFuture = Future.wait<void>(
-      urls.map(
-        (url) => precacheImage(CachedNetworkImageProvider(url), context)
-            .timeout(const Duration(seconds: 5))
-            .catchError((_) {}),
-      ),
-    ).timeout(const Duration(seconds: 8)).catchError((_) => <void>[]);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<void>(
-      future: _precacheFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const WPPageLoader();
-        }
-        return widget.child;
-      },
-    );
-  }
 }
 
 class _HomeContent extends StatelessWidget {

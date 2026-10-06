@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -283,6 +285,170 @@ class WPErrorState extends StatelessWidget {
   }
 }
 
+class WPBrandLoader extends StatefulWidget {
+  const WPBrandLoader({
+    super.key,
+    this.size = 132,
+    this.label,
+    this.compact = false,
+  });
+
+  final double size;
+  final String? label;
+  final bool compact;
+
+  @override
+  State<WPBrandLoader> createState() => _WPBrandLoaderState();
+}
+
+class _WPBrandLoaderState extends State<WPBrandLoader>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1250),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final logoSize = widget.size * .44;
+    final loader = SizedBox(
+      width: widget.size,
+      height: widget.size,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              CustomPaint(
+                size: Size.square(widget.size),
+                painter: _BrandLoaderPainter(progress: _controller.value),
+              ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(logoSize * .18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.gold.withValues(alpha: .18),
+                      blurRadius: widget.size * .16,
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(logoSize * .18),
+                  child: Image.asset(
+                    'assets/app_icon_source.png',
+                    width: logoSize,
+                    height: logoSize,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    if (widget.compact && widget.label == null) {
+      return Center(child: loader);
+    }
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(widget.compact ? 12 : 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            loader,
+            if (widget.label != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                widget.label!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.muted,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BrandLoaderPainter extends CustomPainter {
+  const _BrandLoaderPainter({required this.progress});
+
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+    final radius = size.shortestSide * .43;
+    final stroke = size.shortestSide * .055;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+    final rotation = (progress * math.pi * 2) - math.pi / 2;
+
+    final trackPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round
+      ..color = const Color(0xFFEFEAE4);
+    canvas.drawArc(rect, 0, math.pi * 2, false, trackPaint);
+
+    final greenPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round
+      ..shader = const LinearGradient(
+        colors: [AppColors.green, Color(0xFF0F7041)],
+      ).createShader(rect);
+    canvas.drawArc(rect, rotation, math.pi * .86, false, greenPaint);
+
+    final brownPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round
+      ..shader = const LinearGradient(
+        colors: [AppColors.brown, AppColors.copper],
+      ).createShader(rect);
+    canvas.drawArc(
+        rect, rotation + math.pi * 1.34, math.pi * .64, false, brownPaint);
+
+    final dotAngle = rotation + math.pi * .86;
+    final dotCenter = Offset(
+      center.dx + math.cos(dotAngle) * radius,
+      center.dy + math.sin(dotAngle) * radius,
+    );
+    final glowPaint = Paint()
+      ..color = AppColors.gold.withValues(alpha: .24)
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, stroke * 1.9);
+    canvas.drawCircle(dotCenter, stroke * 1.35, glowPaint);
+    canvas.drawCircle(
+      dotCenter,
+      stroke * .72,
+      Paint()..color = AppColors.gold,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _BrandLoaderPainter oldDelegate) =>
+      oldDelegate.progress != progress;
+}
+
 class WPSkeletonList extends StatelessWidget {
   const WPSkeletonList({
     super.key,
@@ -295,63 +461,6 @@ class WPSkeletonList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
-      children: [
-        if (showHero) ...[
-          const _SkeletonBox(height: 260),
-          const SizedBox(height: 22),
-        ],
-        for (var index = 0; index < itemCount; index++) ...[
-          const _SkeletonRow(),
-          if (index != itemCount - 1) const SizedBox(height: 16),
-        ],
-      ],
-    );
-  }
-}
-
-class _SkeletonRow extends StatelessWidget {
-  const _SkeletonRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SkeletonBox(width: 82, height: 68),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              _SkeletonBox(height: 14),
-              SizedBox(height: 8),
-              _SkeletonBox(width: 180, height: 14),
-              SizedBox(height: 10),
-              _SkeletonBox(width: 130, height: 12),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SkeletonBox extends StatelessWidget {
-  const _SkeletonBox({this.width, required this.height});
-
-  final double? width;
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: SizedBox(width: width ?? double.infinity, height: height),
-    );
+    return const WPBrandLoader(label: 'Loading...');
   }
 }

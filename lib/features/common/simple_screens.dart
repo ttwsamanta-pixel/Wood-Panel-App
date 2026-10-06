@@ -503,48 +503,9 @@ class _ExploreLoadingList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        for (var index = 0; index < itemCount; index++) ...[
-          const _ExploreLoadingCard(),
-          if (index != itemCount - 1) const SizedBox(height: 14),
-        ],
-      ],
-    );
-  }
-}
-
-class _ExploreLoadingCard extends StatelessWidget {
-  const _ExploreLoadingCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 238,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F1EC),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.line),
-      ),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 96,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(6),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Container(height: 16, width: 210, color: Colors.white),
-          const SizedBox(height: 10),
-          Container(height: 16, width: 280, color: Colors.white),
-          const Spacer(),
-          Container(height: 14, width: 130, color: Colors.white),
-        ],
-      ),
+    return const SizedBox(
+      height: 360,
+      child: WPBrandLoader(label: 'Loading...'),
     );
   }
 }
@@ -593,7 +554,7 @@ class _ExploreNewsList extends StatelessWidget {
         if (isLoadingMore)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
-            child: CircularProgressIndicator(),
+            child: WPBrandLoader(size: 64, compact: true),
           ),
       ],
     );
@@ -677,7 +638,7 @@ class _ExploreInterviewsList extends ConsumerWidget {
         if (isLoadingMore)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
-            child: Center(child: CircularProgressIndicator()),
+            child: WPBrandLoader(size: 64, compact: true),
           ),
       ],
     );
@@ -1234,7 +1195,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
           itemBuilder: (context, index) {
             if (index == _articles.length) {
               if (_isLoadingMore || _hasMore) {
-                return const Center(child: CircularProgressIndicator());
+                return const WPBrandLoader(size: 82, compact: true);
               }
               return const WPEmptyState(
                 icon: Icons.done_all_rounded,
@@ -2522,7 +2483,7 @@ class _CategoryNewsScreenState extends ConsumerState<CategoryNewsScreen> {
             if (_isLoadingMore)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
-                child: Center(child: CircularProgressIndicator()),
+                child: WPBrandLoader(size: 64, compact: true),
               ),
           ],
         ),
@@ -4408,7 +4369,7 @@ class _FormScreenState extends ConsumerState<_FormScreen> {
             ],
             const SizedBox(height: 18),
             if (_isSending)
-              const Center(child: CircularProgressIndicator())
+              const WPBrandLoader(size: 70, compact: true)
             else
               WPPrimaryButton(label: widget.button, onPressed: _submit),
             if (_status != null)

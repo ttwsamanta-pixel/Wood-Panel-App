@@ -246,7 +246,7 @@ class _HomeVideoCarousel extends StatelessWidget {
         if (snapshot.connectionState != ConnectionState.done) {
           return const SizedBox(
             height: 210,
-            child: Center(child: CircularProgressIndicator()),
+            child: WPBrandLoader(size: 96, compact: true),
           );
         }
         final videos =
@@ -361,7 +361,7 @@ class _HomeMagazineCarousel extends StatelessWidget {
         if (snapshot.connectionState != ConnectionState.done) {
           return const SizedBox(
             height: 230,
-            child: Center(child: CircularProgressIndicator()),
+            child: WPBrandLoader(size: 96, compact: true),
           );
         }
         final issues = _recentYearIssues(snapshot.data ?? const []);
@@ -493,7 +493,7 @@ class _HomeEventsCarousel extends StatelessWidget {
         if (snapshot.connectionState != ConnectionState.done) {
           return const SizedBox(
             height: 212,
-            child: Center(child: CircularProgressIndicator()),
+            child: WPBrandLoader(size: 96, compact: true),
           );
         }
         final events = snapshot.data ?? const <AppEvent>[];

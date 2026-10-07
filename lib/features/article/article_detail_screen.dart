@@ -73,7 +73,36 @@ class _ArticleDetailScreenState extends ConsumerState<ArticleDetailScreen> {
       return;
     }
     setState(() => _isSpeaking = true);
-    await _tts.speak('${article.title}. ${article.excerpt}');
+    await _tts.speak(_articleSpeechText(article));
+  }
+
+  String _articleSpeechText(Article article) {
+    final body = _plainTextFromHtml(article.html);
+    final content = body.isEmpty ? article.excerpt.trim() : body;
+    return [article.title.trim(), content]
+        .where((part) => part.isNotEmpty)
+        .join('. ');
+  }
+
+  String _plainTextFromHtml(String html) {
+    return html
+        .replaceAll(
+            RegExp(r'<script[\s\S]*?</script>', caseSensitive: false), ' ')
+        .replaceAll(
+            RegExp(r'<style[\s\S]*?</style>', caseSensitive: false), ' ')
+        .replaceAll(RegExp(r'<[^>]+>'), ' ')
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#39;', "'")
+        .replaceAll('&rsquo;', "'")
+        .replaceAll('&lsquo;', "'")
+        .replaceAll('&rdquo;', '"')
+        .replaceAll('&ldquo;', '"')
+        .replaceAll('&ndash;', '-')
+        .replaceAll('&mdash;', '-')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
   }
 
   @override
@@ -118,15 +147,6 @@ class _ArticleDetailScreenState extends ConsumerState<ArticleDetailScreen> {
                                   fontSize: 22,
                                   height: 1.06,
                                 ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        article.excerpt,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: AppColors.muted,
-                              fontSize: 14,
-                              height: 1.28,
-                            ),
                       ),
                       const SizedBox(height: 12),
                       _ArticleInfoBar(

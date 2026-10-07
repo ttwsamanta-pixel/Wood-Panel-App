@@ -17,18 +17,27 @@ class WPAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showNotifications;
 
   @override
-  Size get preferredSize => const Size.fromHeight(58);
+  Size get preferredSize => const Size.fromHeight(64);
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      centerTitle: true,
       leading: IconButton(
         tooltip: 'Menu',
         icon: const Icon(Icons.menu_rounded),
         onPressed: () => Scaffold.maybeOf(context)?.openDrawer(),
       ),
       titleSpacing: 0,
-      title: const Center(child: WPLogo()),
+      title: const SizedBox.shrink(),
+      flexibleSpace: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 166),
+            child: const WPLogo(height: 36),
+          ),
+        ),
+      ),
       actions: [
         IconButton(
           tooltip: 'Search',

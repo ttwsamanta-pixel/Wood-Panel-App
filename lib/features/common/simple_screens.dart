@@ -1882,6 +1882,7 @@ class _MagazineCoverImage extends StatelessWidget {
     required this.width,
     this.framed = true,
     this.fit = BoxFit.contain,
+    this.borderRadius = 8,
   });
 
   final String url;
@@ -1889,17 +1890,19 @@ class _MagazineCoverImage extends StatelessWidget {
   final double width;
   final bool framed;
   final BoxFit fit;
+  final double borderRadius;
 
   @override
   Widget build(BuildContext context) {
     if (!framed) {
       return ClipRRect(
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(borderRadius),
         child: WPImage(
           url: url,
           width: width,
           height: height,
           fit: fit,
+          borderRadius: borderRadius,
         ),
       );
     }
@@ -1917,6 +1920,7 @@ class _MagazineCoverImage extends StatelessWidget {
         width: double.infinity,
         height: double.infinity,
         fit: fit,
+        borderRadius: borderRadius,
       ),
     );
   }
@@ -2061,6 +2065,7 @@ class _MagazineIssueCard extends StatelessWidget {
             ? (availableWidth * .64).clamp(360.0, 460.0).toDouble()
             : 244.0;
         final imageFit = fullWidth ? BoxFit.cover : BoxFit.contain;
+        final imageRadius = fullWidth ? 8.0 : 10.0;
 
         return Container(
           width: cardWidth,
@@ -2081,7 +2086,7 @@ class _MagazineIssueCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               InkWell(
-                borderRadius: BorderRadius.circular(7),
+                borderRadius: BorderRadius.circular(imageRadius),
                 onTap: () => context.push('/magazine/${issue.id}'),
                 child: SizedBox(
                   width: double.infinity,
@@ -2091,6 +2096,7 @@ class _MagazineIssueCard extends StatelessWidget {
                     width: double.infinity,
                     framed: false,
                     fit: imageFit,
+                    borderRadius: imageRadius,
                   ),
                 ),
               ),

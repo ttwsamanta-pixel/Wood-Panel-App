@@ -1637,7 +1637,7 @@ class MagazineScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 10),
                 SizedBox(
-                  height: 424,
+                  height: 406,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: previous.length,
@@ -2063,9 +2063,9 @@ class _MagazineIssueCard extends StatelessWidget {
             : 232.0;
         final imageHeight = fullWidth
             ? (availableWidth * .64).clamp(360.0, 460.0).toDouble()
-            : 244.0;
-        final imageFit = fullWidth ? BoxFit.cover : BoxFit.contain;
-        final imageRadius = fullWidth ? 8.0 : 10.0;
+            : 232.0;
+        final imageFit = BoxFit.cover;
+        final imageRadius = fullWidth ? 8.0 : 14.0;
 
         return Container(
           width: cardWidth,

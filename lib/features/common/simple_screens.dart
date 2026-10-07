@@ -1633,7 +1633,7 @@ class MagazineScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 10),
                 SizedBox(
-                  height: 392,
+                  height: 360,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: previous.length,
@@ -1688,13 +1688,10 @@ class _LatestMagazinePanel extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 680;
-        final sideBySide = constraints.maxWidth >= 330;
         final compact = !wide;
         final cover = _LatestMagazineCover(
           issue: issue,
           wide: wide,
-          compact: compact,
-          sideBySide: sideBySide,
         );
         final details = _LatestMagazineDetails(
           issue: issue,
@@ -1740,24 +1737,14 @@ class _LatestMagazinePanel extends StatelessWidget {
                   color: AppColors.copper.withValues(alpha: .08),
                 ),
               ),
-              if (sideBySide)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(flex: wide ? 11 : 9, child: cover),
-                    SizedBox(width: wide ? 28 : 12),
-                    Expanded(flex: wide ? 10 : 11, child: details),
-                  ],
-                )
-              else
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    cover,
-                    const SizedBox(height: 16),
-                    details,
-                  ],
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  cover,
+                  const SizedBox(height: 16),
+                  details,
+                ],
+              ),
             ],
           ),
         );
@@ -1770,84 +1757,19 @@ class _LatestMagazineCover extends StatelessWidget {
   const _LatestMagazineCover({
     required this.issue,
     required this.wide,
-    required this.compact,
-    required this.sideBySide,
   });
 
   final MagazineIssue issue;
   final bool wide;
-  final bool compact;
-  final bool sideBySide;
 
   @override
   Widget build(BuildContext context) {
-    final height = wide
-        ? 330.0
-        : sideBySide
-            ? 268.0
-            : 240.0;
-    final coverWidth = wide ? 210.0 : 130.0;
-    final coverHeight = wide ? 286.0 : 220.0;
-    return SizedBox(
-      height: height,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned.fill(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: WPImage(
-                url: issue.coverUrl,
-                width: double.infinity,
-                height: height,
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.black.withValues(alpha: .10),
-                    Colors.white.withValues(alpha: .18),
-                    Colors.black.withValues(alpha: .08),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: wide ? 34 : 16,
-            top: wide ? 26 : 24,
-            bottom: wide ? 18 : 18,
-            child: Transform.rotate(
-              angle: -.045,
-              child: DecoratedBox(
-                decoration: const BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0x3A000000),
-                      blurRadius: 20,
-                      offset: Offset(0, 12),
-                    ),
-                  ],
-                ),
-                child: _MagazineCoverImage(
-                  url: issue.coverUrl,
-                  height: coverHeight,
-                  width: coverWidth,
-                  framed: false,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+    return _MagazineCoverImage(
+      url: issue.coverUrl,
+      height: wide ? 380 : 310,
+      width: double.infinity,
+      framed: false,
+      fit: BoxFit.contain,
     );
   }
 }
@@ -1922,12 +1844,10 @@ class _LatestMagazineDetails extends StatelessWidget {
         Row(
           children: [
             _MagazineMeta(icon: Icons.menu_book_rounded, label: 'Vol. 18'),
-            const SizedBox(width: 12),
+            const SizedBox(width: 18),
             _MagazineMeta(
                 icon: Icons.article_outlined,
                 label: 'Issue ${issue.date.month}'),
-            const SizedBox(width: 12),
-            const _MagazineMeta(icon: Icons.picture_as_pdf, label: 'PDF'),
           ],
         ),
         SizedBox(height: compact ? 10 : 16),
@@ -2157,38 +2077,18 @@ class _MagazineIssueCard extends StatelessWidget {
           InkWell(
             borderRadius: BorderRadius.circular(7),
             onTap: () => context.push('/magazine/${issue.id}'),
-            child: Stack(
-              children: [
-                _MagazineCoverImage(
-                  url: issue.coverUrl,
-                  height: 166,
-                  width: double.infinity,
-                  framed: false,
-                  fit: BoxFit.cover,
-                ),
-                Positioned(
-                  left: 10,
-                  bottom: 10,
-                  right: 10,
-                  child: Text(
-                    DateFormat('MMMM yyyy').format(issue.date),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black54,
-                          blurRadius: 5,
-                          offset: Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F3EE),
+                borderRadius: BorderRadius.circular(7),
+              ),
+              child: _MagazineCoverImage(
+                url: issue.coverUrl,
+                height: 166,
+                width: double.infinity,
+                framed: false,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -2219,17 +2119,14 @@ class _MagazineIssueCard extends StatelessWidget {
             children: [
               const _MagazineIssueMeta(
                   icon: Icons.menu_book_rounded, label: 'Vol. 18'),
-              const SizedBox(width: 7),
+              const SizedBox(width: 12),
               _MagazineIssueMeta(
                 icon: Icons.article_outlined,
                 label: 'Issue ${issue.date.month}',
               ),
-              const SizedBox(width: 7),
-              const _MagazineIssueMeta(
-                  icon: Icons.picture_as_pdf, label: 'PDF'),
             ],
           ),
-          const Spacer(),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(

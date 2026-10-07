@@ -1613,12 +1613,27 @@ class MagazineScreen extends ConsumerWidget {
             children: [
               _LatestMagazinePanel(issue: latest),
               if (previous.isNotEmpty) ...[
-                const SizedBox(height: 18),
-                Text('Previous Issues',
-                    style: Theme.of(context).textTheme.headlineMedium),
-                const SizedBox(height: 8),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Previous Issues',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () =>
+                          context.push('/magazine/archive/${latest.date.year}'),
+                      iconAlignment: IconAlignment.end,
+                      icon: const Icon(Icons.arrow_forward_rounded),
+                      label: const Text('View All'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
                 SizedBox(
-                  height: 322,
+                  height: 392,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: previous.length,
@@ -1667,70 +1682,284 @@ class _LatestMagazinePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9F4EF),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _MagazineCoverImage(
-            url: issue.coverUrl,
-            height: 330,
-            width: double.infinity,
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(
-              color: AppColors.copper,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Text(
-              'LATEST ISSUE',
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(issue.title, style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 6),
-          Text(
-            issue.description,
-            style: const TextStyle(color: AppColors.muted, height: 1.25),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              _MagazineMeta(icon: Icons.menu_book_rounded, label: 'Vol. 18'),
-              const SizedBox(width: 12),
-              _MagazineMeta(
-                  icon: Icons.article_outlined,
-                  label: 'Issue ${issue.date.month}'),
-              const SizedBox(width: 12),
-              const _MagazineMeta(icon: Icons.picture_as_pdf, label: 'PDF'),
+    final title = issue.description.trim().isEmpty
+        ? issue.title
+        : issue.description.split(',').take(3).join(', ');
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= 680;
+        final sideBySide = constraints.maxWidth >= 330;
+        final compact = !wide;
+        final cover = _LatestMagazineCover(
+          issue: issue,
+          wide: wide,
+          compact: compact,
+          sideBySide: sideBySide,
+        );
+        final details = _LatestMagazineDetails(
+          issue: issue,
+          title: title,
+          compact: compact,
+        );
+
+        return Container(
+          padding: EdgeInsets.all(wide ? 20 : 14),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFFBF6),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.line),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x12000000),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
             ],
           ),
-          const SizedBox(height: 14),
-          Row(
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
             children: [
-              Expanded(
-                child: WPPrimaryButton(
-                  label: 'Read Now',
-                  onPressed: () => context.push('/magazine/${issue.id}/read'),
+              Positioned(
+                right: -72,
+                top: -80,
+                child: Container(
+                  width: 220,
+                  height: 220,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFFEBD6C5).withValues(alpha: .38),
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _MagazinePdfActionButton(issue: issue),
+              Positioned(
+                right: -46,
+                top: -44,
+                child: Icon(
+                  Icons.grain_rounded,
+                  size: 170,
+                  color: AppColors.copper.withValues(alpha: .08),
+                ),
               ),
+              if (sideBySide)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(flex: wide ? 11 : 9, child: cover),
+                    SizedBox(width: wide ? 28 : 12),
+                    Expanded(flex: wide ? 10 : 11, child: details),
+                  ],
+                )
+              else
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    cover,
+                    const SizedBox(height: 16),
+                    details,
+                  ],
+                ),
             ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _LatestMagazineCover extends StatelessWidget {
+  const _LatestMagazineCover({
+    required this.issue,
+    required this.wide,
+    required this.compact,
+    required this.sideBySide,
+  });
+
+  final MagazineIssue issue;
+  final bool wide;
+  final bool compact;
+  final bool sideBySide;
+
+  @override
+  Widget build(BuildContext context) {
+    final height = wide
+        ? 330.0
+        : sideBySide
+            ? 268.0
+            : 240.0;
+    final coverWidth = wide ? 210.0 : 130.0;
+    final coverHeight = wide ? 286.0 : 220.0;
+    return SizedBox(
+      height: height,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: WPImage(
+                url: issue.coverUrl,
+                width: double.infinity,
+                height: height,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.black.withValues(alpha: .10),
+                    Colors.white.withValues(alpha: .18),
+                    Colors.black.withValues(alpha: .08),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: wide ? 34 : 16,
+            top: wide ? 26 : 24,
+            bottom: wide ? 18 : 18,
+            child: Transform.rotate(
+              angle: -.045,
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x3A000000),
+                      blurRadius: 20,
+                      offset: Offset(0, 12),
+                    ),
+                  ],
+                ),
+                child: _MagazineCoverImage(
+                  url: issue.coverUrl,
+                  height: coverHeight,
+                  width: coverWidth,
+                  framed: false,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LatestMagazineDetails extends StatelessWidget {
+  const _LatestMagazineDetails({
+    required this.issue,
+    required this.title,
+    required this.compact,
+  });
+
+  final MagazineIssue issue;
+  final String title;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: compact ? 9 : 12,
+            vertical: compact ? 6 : 8,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.copper,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: const Text(
+            'LATEST ISSUE',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          issue.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: AppColors.copper,
+            fontWeight: FontWeight.w800,
+            fontSize: compact ? 12 : 15,
+          ),
+        ),
+        SizedBox(height: compact ? 6 : 8),
+        Text(
+          title,
+          maxLines: compact ? 3 : 4,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontSize: compact ? 20 : 27,
+                height: 1.05,
+              ),
+        ),
+        SizedBox(height: compact ? 6 : 10),
+        Text(
+          issue.description.isEmpty
+              ? 'An in-depth look at the latest trends, technologies and market insights in the global wood and panel industry.'
+              : issue.description,
+          maxLines: compact ? 2 : 4,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: AppColors.muted,
+            fontSize: compact ? 12 : 15,
+            height: 1.22,
+          ),
+        ),
+        SizedBox(height: compact ? 8 : 14),
+        const Divider(height: 1),
+        SizedBox(height: compact ? 8 : 12),
+        Row(
+          children: [
+            _MagazineMeta(icon: Icons.menu_book_rounded, label: 'Vol. 18'),
+            const SizedBox(width: 12),
+            _MagazineMeta(
+                icon: Icons.article_outlined,
+                label: 'Issue ${issue.date.month}'),
+            const SizedBox(width: 12),
+            const _MagazineMeta(icon: Icons.picture_as_pdf, label: 'PDF'),
+          ],
+        ),
+        SizedBox(height: compact ? 10 : 16),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  minimumSize: Size.fromHeight(compact ? 44 : 52),
+                  backgroundColor: AppColors.copper,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                ),
+                onPressed: () => context.push('/magazine/${issue.id}/read'),
+                icon: const Icon(Icons.menu_book_rounded),
+                label: const FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'Read Now',
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _MagazinePdfActionButton(issue: issue, compact: compact),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -1741,12 +1970,14 @@ class _MagazineCoverImage extends StatelessWidget {
     required this.height,
     required this.width,
     this.framed = true,
+    this.fit = BoxFit.contain,
   });
 
   final String url;
   final double height;
   final double width;
   final bool framed;
+  final BoxFit fit;
 
   @override
   Widget build(BuildContext context) {
@@ -1757,7 +1988,7 @@ class _MagazineCoverImage extends StatelessWidget {
           url: url,
           width: width,
           height: height,
-          fit: BoxFit.contain,
+          fit: fit,
         ),
       );
     }
@@ -1774,7 +2005,7 @@ class _MagazineCoverImage extends StatelessWidget {
         url: url,
         width: double.infinity,
         height: double.infinity,
-        fit: BoxFit.contain,
+        fit: fit,
       ),
     );
   }
@@ -1906,51 +2137,164 @@ class _MagazineIssueCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 170,
-      padding: const EdgeInsets.all(8),
+      width: 232,
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.line),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D000000),
+            blurRadius: 12,
+            offset: Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           InkWell(
+            borderRadius: BorderRadius.circular(7),
             onTap: () => context.push('/magazine/${issue.id}'),
-            child: _MagazineCoverImage(
-              url: issue.coverUrl,
-              height: 150,
-              width: 170,
-              framed: false,
+            child: Stack(
+              children: [
+                _MagazineCoverImage(
+                  url: issue.coverUrl,
+                  height: 166,
+                  width: double.infinity,
+                  framed: false,
+                  fit: BoxFit.cover,
+                ),
+                Positioned(
+                  left: 10,
+                  bottom: 10,
+                  right: 10,
+                  child: Text(
+                    DateFormat('MMMM yyyy').format(issue.date),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black54,
+                          blurRadius: 5,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             issue.title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
-          ),
-          Text(
-            'Vol. 18 | Issue ${issue.date.month}',
-            style: const TextStyle(color: AppColors.muted),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            height: 34,
-            child: FilledButton.icon(
-              onPressed: () => context.push('/magazine/${issue.id}/read'),
-              icon: const Icon(Icons.menu_book_rounded, size: 18),
-              label: const Text('Read'),
-            ),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontSize: 18,
+                  height: 1.04,
+                ),
           ),
           const SizedBox(height: 6),
-          SizedBox(
-            width: double.infinity,
-            height: 34,
-            child: _MagazinePdfActionButton(issue: issue, compact: true),
+          Text(
+            issue.description.isEmpty
+                ? 'Wood and panel industry insights'
+                : issue.description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.muted,
+              height: 1.14,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const _MagazineIssueMeta(
+                  icon: Icons.menu_book_rounded, label: 'Vol. 18'),
+              const SizedBox(width: 7),
+              _MagazineIssueMeta(
+                icon: Icons.article_outlined,
+                label: 'Issue ${issue.date.month}',
+              ),
+              const SizedBox(width: 7),
+              const _MagazineIssueMeta(
+                  icon: Icons.picture_as_pdf, label: 'PDF'),
+            ],
+          ),
+          const Spacer(),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 42,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.copper,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                    ),
+                    onPressed: () => context.push('/magazine/${issue.id}/read'),
+                    icon: const Icon(Icons.menu_book_rounded, size: 18),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Read',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SizedBox(
+                  height: 42,
+                  child: _MagazinePdfActionButton(issue: issue, compact: true),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MagazineIssueMeta extends StatelessWidget {
+  const _MagazineIssueMeta({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Flexible(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: AppColors.muted),
+          const SizedBox(width: 3),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.muted,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ),
         ],
       ),

@@ -1465,31 +1465,18 @@ class _FeedNewsCardState extends ConsumerState<_FeedNewsCard> {
                               const SizedBox(width: 8),
                               DecoratedBox(
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(999),
-                                  border: Border.all(
-                                      color: const Color(0xFFE6C9B2)),
+                                  color: const Color(0xFFFDF2E8),
+                                  shape: BoxShape.circle,
                                 ),
-                                child: TextButton.icon(
-                                  style: TextButton.styleFrom(
-                                    minimumSize: const Size(64, 38),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 9),
-                                  ),
+                                child: IconButton(
+                                  tooltip: _isBookmarked ? 'Saved' : 'Bookmark',
                                   onPressed: _toggleBookmark,
+                                  color: AppColors.copper,
+                                  iconSize: 24,
                                   icon: Icon(
                                     _isBookmarked
                                         ? Icons.bookmark_rounded
                                         : Icons.bookmark_border_rounded,
-                                    color: AppColors.copper,
-                                  ),
-                                  label: Text(
-                                    _isBookmarked ? 'Saved' : 'Save',
-                                    style: const TextStyle(
-                                      color: AppColors.copper,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w900,
-                                    ),
                                   ),
                                 ),
                               ),
@@ -1653,7 +1640,7 @@ class MagazineScreen extends ConsumerWidget {
                   crossAxisCount: 2,
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
-                  mainAxisExtent: 184,
+                  mainAxisExtent: 132,
                 ),
                 itemBuilder: (context, index) {
                   final year = archiveYears[index];
@@ -1980,69 +1967,182 @@ class _ArchiveYearTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final issue = issues.isEmpty ? null : issues.first;
+    final isEven = year.isEven;
+    final accent = isEven ? AppColors.green : AppColors.copper;
+    final background =
+        isEven ? const Color(0xFFF1FAF4) : const Color(0xFFFFF5EB);
     return InkWell(
       onTap: () => context.push('/magazine/archive/$year'),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.all(9),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.line),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(7),
-              child: issue != null
-                  ? WPImage(
-                      url: issue.coverUrl,
-                      width: double.infinity,
-                      height: 88,
-                      fit: BoxFit.contain,
-                    )
-                  : Container(
-                      width: double.infinity,
-                      height: 88,
-                      color: const Color(0xFFF8F3EE),
-                      child: const Icon(Icons.menu_book_rounded,
-                          color: AppColors.copper),
+      borderRadius: BorderRadius.circular(7),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(7),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(10, 10, 8, 8),
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(7),
+            border: Border.all(color: AppColors.line),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0D000000),
+                blurRadius: 10,
+                offset: Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                right: -36,
+                top: -28,
+                child: Container(
+                  width: 118,
+                  height: 118,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .58),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 42,
+                bottom: -42,
+                child: Container(
+                  width: 112,
+                  height: 112,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .42),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                top: 0,
+                child: Container(
+                  width: 16,
+                  height: 2,
+                  decoration: BoxDecoration(
+                    color: AppColors.gold,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 4,
+                top: 12,
+                child: Transform.rotate(
+                  angle: isEven ? -.13 : .13,
+                  child: DecoratedBox(
+                    decoration: const BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0x26000000),
+                          blurRadius: 10,
+                          offset: Offset(0, 6),
+                        ),
+                      ],
                     ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '$year',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: issue != null
+                          ? WPImage(
+                              url: issue.coverUrl,
+                              width: 68,
+                              height: 92,
+                              fit: BoxFit.cover,
+                            )
+                          : Container(
+                              width: 68,
+                              height: 92,
+                              color: Colors.white,
+                              child:
+                                  Icon(Icons.menu_book_rounded, color: accent),
+                            ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-            Text(
-              '${issues.length} issues',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppColors.muted,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
+              Positioned.fill(
+                right: 66,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 12),
+                    Text(
+                      '$year',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: accent,
+                        fontSize: 22,
+                        height: 1,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _ArchiveYearMeta(
+                      icon: Icons.menu_book_outlined,
+                      label: '${issues.length} issues',
+                    ),
+                    const SizedBox(height: 3),
+                    _ArchiveYearMeta(
+                      icon: Icons.calendar_month_outlined,
+                      label: 'Jan - Dec',
+                    ),
+                    const Spacer(),
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: accent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_forward_rounded,
+                        color: Colors.white,
+                        size: 15,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Text(
-              'Jan - Dec $year',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppColors.muted,
-                fontSize: 11,
-                height: 1.05,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _ArchiveYearMeta extends StatelessWidget {
+  const _ArchiveYearMeta({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 11, color: AppColors.muted),
+        const SizedBox(width: 3),
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.muted,
+              fontSize: 9,
+              height: 1,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

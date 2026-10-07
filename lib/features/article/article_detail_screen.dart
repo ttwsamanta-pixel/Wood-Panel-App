@@ -25,21 +25,35 @@ class ArticleDetailScreen extends ConsumerStatefulWidget {
 class _ArticleDetailScreenState extends ConsumerState<ArticleDetailScreen> {
   final _tts = FlutterTts();
   late Future<Article> _articleFuture;
+  late final Future<void> _ttsReady;
   var _isBookmarked = false;
   var _isSpeaking = false;
   var _fontScale = 1.0;
+  var _speechChunks = <String>[];
+  var _speechChunkIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _articleFuture = _fetchArticle();
     _loadBookmark();
-    _tts.setCompletionHandler(() {
-      if (mounted) setState(() => _isSpeaking = false);
-    });
+    _ttsReady = _configureTts();
+    _tts.setCompletionHandler(_speakNextChunk);
     _tts.setCancelHandler(() {
       if (mounted) setState(() => _isSpeaking = false);
     });
+    _tts.setErrorHandler((_) {
+      if (mounted) setState(() => _isSpeaking = false);
+    });
+  }
+
+  Future<void> _configureTts() async {
+    await _tts.setLanguage('en-US');
+    await _tts.setSpeechRate(.45);
+    await _tts.setVolume(1);
+    await _tts.setPitch(1);
+    await _tts.setQueueMode(0);
+    await _tts.setAudioAttributesForNavigation();
   }
 
   Future<Article> _fetchArticle() =>
@@ -72,16 +86,63 @@ class _ArticleDetailScreenState extends ConsumerState<ArticleDetailScreen> {
       if (mounted) setState(() => _isSpeaking = false);
       return;
     }
+    await _ttsReady;
+    _speechChunks = _speechChunksFor(article);
+    _speechChunkIndex = 0;
+    if (_speechChunks.isEmpty) return;
     setState(() => _isSpeaking = true);
-    await _tts.speak(_articleSpeechText(article));
+    await _tts.speak(_speechChunks.first, focus: true);
   }
 
-  String _articleSpeechText(Article article) {
+  Future<void> _speakNextChunk() async {
+    if (!_isSpeaking) return;
+    _speechChunkIndex += 1;
+    if (_speechChunkIndex >= _speechChunks.length) {
+      if (mounted) setState(() => _isSpeaking = false);
+      return;
+    }
+    await _tts.speak(_speechChunks[_speechChunkIndex], focus: true);
+  }
+
+  List<String> _speechChunksFor(Article article) {
     final body = _plainTextFromHtml(article.html);
     final content = body.isEmpty ? article.excerpt.trim() : body;
-    return [article.title.trim(), content]
+    final text = [article.title.trim(), content]
         .where((part) => part.isNotEmpty)
         .join('. ');
+    return _chunkSpeechText(text);
+  }
+
+  List<String> _chunkSpeechText(String text) {
+    const maxChunkLength = 2800;
+    final sentences = text
+        .split(RegExp(r'(?<=[.!?])\s+'))
+        .map((sentence) => sentence.trim())
+        .where((sentence) => sentence.isNotEmpty);
+    final chunks = <String>[];
+    final buffer = StringBuffer();
+    for (final sentence in sentences) {
+      if (buffer.isNotEmpty &&
+          buffer.length + sentence.length + 1 > maxChunkLength) {
+        chunks.add(buffer.toString());
+        buffer.clear();
+      }
+      if (sentence.length > maxChunkLength) {
+        if (buffer.isNotEmpty) {
+          chunks.add(buffer.toString());
+          buffer.clear();
+        }
+        for (var start = 0; start < sentence.length; start += maxChunkLength) {
+          final end = (start + maxChunkLength).clamp(0, sentence.length);
+          chunks.add(sentence.substring(start, end));
+        }
+        continue;
+      }
+      if (buffer.isNotEmpty) buffer.write(' ');
+      buffer.write(sentence);
+    }
+    if (buffer.isNotEmpty) chunks.add(buffer.toString());
+    return chunks;
   }
 
   String _plainTextFromHtml(String html) {
@@ -107,6 +168,7 @@ class _ArticleDetailScreenState extends ConsumerState<ArticleDetailScreen> {
 
   @override
   void dispose() {
+    _speechChunks = [];
     _tts.stop();
     super.dispose();
   }

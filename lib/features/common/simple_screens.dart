@@ -1602,7 +1602,11 @@ class MagazineScreen extends ConsumerWidget {
             );
           }
           final latest = issues.first;
-          final previous = issues.skip(1).take(8).toList();
+          final previous = issues
+              .where((issue) =>
+                  issue.date.year == latest.date.year && issue.id != latest.id)
+              .take(8)
+              .toList();
           final archiveYears = issues
               .map((issue) => issue.date.year)
               .toSet()
@@ -1633,7 +1637,7 @@ class MagazineScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 10),
                 SizedBox(
-                  height: 386,
+                  height: 424,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: previous.length,
@@ -1682,7 +1686,7 @@ class _LatestMagazinePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = issue.description.trim().isEmpty
+    final headline = issue.description.trim().isEmpty
         ? issue.title
         : issue.description.split(',').take(3).join(', ');
     return LayoutBuilder(
@@ -1695,12 +1699,12 @@ class _LatestMagazinePanel extends StatelessWidget {
         );
         final details = _LatestMagazineDetails(
           issue: issue,
-          title: title,
+          title: headline,
           compact: compact,
         );
 
         return Container(
-          padding: EdgeInsets.all(wide ? 20 : 14),
+          padding: EdgeInsets.all(wide ? 20 : 10),
           decoration: BoxDecoration(
             color: const Color(0xFFFFFBF6),
             borderRadius: BorderRadius.circular(8),
@@ -1741,7 +1745,7 @@ class _LatestMagazinePanel extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   cover,
-                  const SizedBox(height: 16),
+                  SizedBox(height: wide ? 16 : 10),
                   details,
                 ],
               ),
@@ -1766,10 +1770,10 @@ class _LatestMagazineCover extends StatelessWidget {
   Widget build(BuildContext context) {
     return _MagazineCoverImage(
       url: issue.coverUrl,
-      height: wide ? 420 : 350,
+      height: wide ? 400 : 330,
       width: double.infinity,
       framed: false,
-      fit: BoxFit.contain,
+      fit: BoxFit.cover,
     );
   }
 }
@@ -1804,7 +1808,7 @@ class _LatestMagazineDetails extends StatelessWidget {
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900),
           ),
         ),
-        const SizedBox(height: 14),
+        SizedBox(height: compact ? 8 : 14),
         Text(
           issue.title,
           maxLines: 1,
@@ -1815,32 +1819,19 @@ class _LatestMagazineDetails extends StatelessWidget {
             fontSize: compact ? 12 : 15,
           ),
         ),
-        SizedBox(height: compact ? 6 : 8),
+        SizedBox(height: compact ? 4 : 8),
         Text(
           title,
           maxLines: compact ? 3 : 4,
           overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontSize: compact ? 20 : 27,
+                fontSize: compact ? 19 : 27,
                 height: 1.05,
               ),
         ),
-        SizedBox(height: compact ? 6 : 10),
-        Text(
-          issue.description.isEmpty
-              ? 'An in-depth look at the latest trends, technologies and market insights in the global wood and panel industry.'
-              : issue.description,
-          maxLines: compact ? 2 : 4,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: AppColors.muted,
-            fontSize: compact ? 12 : 15,
-            height: 1.22,
-          ),
-        ),
-        SizedBox(height: compact ? 8 : 14),
+        SizedBox(height: compact ? 6 : 14),
         const Divider(height: 1),
-        SizedBox(height: compact ? 8 : 12),
+        SizedBox(height: compact ? 6 : 12),
         Row(
           children: [
             _MagazineMeta(icon: Icons.menu_book_rounded, label: 'Vol. 18'),
@@ -1850,7 +1841,7 @@ class _LatestMagazineDetails extends StatelessWidget {
                 label: 'Issue ${issue.date.month}'),
           ],
         ),
-        SizedBox(height: compact ? 10 : 16),
+        SizedBox(height: compact ? 8 : 16),
         Row(
           children: [
             Expanded(
@@ -2081,14 +2072,14 @@ class _MagazineIssueCard extends StatelessWidget {
               width: double.infinity,
               child: _MagazineCoverImage(
                 url: issue.coverUrl,
-                height: 190,
+                height: 244,
                 width: double.infinity,
                 framed: false,
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(
             issue.title,
             maxLines: 2,
@@ -2098,7 +2089,7 @@ class _MagazineIssueCard extends StatelessWidget {
                   height: 1.04,
                 ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             issue.description.isEmpty
                 ? 'Wood and panel industry insights'
@@ -2111,7 +2102,7 @@ class _MagazineIssueCard extends StatelessWidget {
               fontSize: 13,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Row(
             children: [
               const _MagazineIssueMeta(
@@ -2123,7 +2114,7 @@ class _MagazineIssueCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(
@@ -2422,18 +2413,23 @@ class MagazineArchiveScreen extends ConsumerWidget {
               Text('Archive $year',
                   style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 12),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: issues.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.47,
-                ),
-                itemBuilder: (context, index) =>
-                    _MagazineIssueCard(issue: issues[index]),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final crossAxisCount = constraints.maxWidth >= 620 ? 2 : 1;
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: issues.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 12,
+                      mainAxisExtent: 424,
+                    ),
+                    itemBuilder: (context, index) =>
+                        _MagazineIssueCard(issue: issues[index]),
+                  );
+                },
               ),
             ],
           );

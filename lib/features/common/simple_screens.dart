@@ -2435,7 +2435,20 @@ class MagazineArchiveScreen extends ConsumerWidget {
               LayoutBuilder(
                 builder: (context, constraints) {
                   final crossAxisCount = constraints.maxWidth >= 620 ? 2 : 1;
-                  final itemHeight = crossAxisCount == 1 ? 600.0 : 520.0;
+                  if (crossAxisCount == 1) {
+                    return Column(
+                      children: [
+                        for (var index = 0; index < issues.length; index++) ...[
+                          _MagazineIssueCard(
+                            issue: issues[index],
+                            fullWidth: true,
+                          ),
+                          if (index != issues.length - 1)
+                            const SizedBox(height: 16),
+                        ],
+                      ],
+                    );
+                  }
                   return GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -2444,7 +2457,7 @@ class MagazineArchiveScreen extends ConsumerWidget {
                       crossAxisCount: crossAxisCount,
                       mainAxisSpacing: 16,
                       crossAxisSpacing: 12,
-                      mainAxisExtent: itemHeight,
+                      mainAxisExtent: 520,
                     ),
                     itemBuilder: (context, index) => _MagazineIssueCard(
                       issue: issues[index],

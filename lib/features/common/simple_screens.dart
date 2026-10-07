@@ -1633,7 +1633,7 @@ class MagazineScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 10),
                 SizedBox(
-                  height: 360,
+                  height: 386,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: previous.length,
@@ -1766,7 +1766,7 @@ class _LatestMagazineCover extends StatelessWidget {
   Widget build(BuildContext context) {
     return _MagazineCoverImage(
       url: issue.coverUrl,
-      height: wide ? 380 : 310,
+      height: wide ? 420 : 350,
       width: double.infinity,
       framed: false,
       fit: BoxFit.contain,
@@ -1989,7 +1989,7 @@ class _MagazinePdfActionButton extends ConsumerWidget {
       return _MagazineDownloadButton(
         label: compact ? 'PDF' : 'Download PDF',
         icon: Icons.download_rounded,
-        height: compact ? 34 : 48,
+        height: compact ? 42 : 48,
         onPressed: null,
       );
     }
@@ -2002,14 +2002,14 @@ class _MagazinePdfActionButton extends ConsumerWidget {
           return _MagazineDownloadButton(
             label: compact ? 'View PDF' : 'View PDF',
             icon: Icons.visibility_outlined,
-            height: compact ? 34 : 48,
+            height: compact ? 42 : 48,
             onPressed: () => _openDownloadedPdf(context, downloaded),
           );
         }
         return _MagazineDownloadButton(
           label: compact ? 'Download' : 'Download PDF',
           icon: Icons.download_rounded,
-          height: compact ? 34 : 48,
+          height: compact ? 42 : 48,
           onPressed: () async {
             await _downloadMagazinePdf(context, issue);
             ref.invalidate(downloadRepositoryProvider);
@@ -2057,7 +2057,7 @@ class _MagazineIssueCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 232,
+      width: 252,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -2077,17 +2077,14 @@ class _MagazineIssueCard extends StatelessWidget {
           InkWell(
             borderRadius: BorderRadius.circular(7),
             onTap: () => context.push('/magazine/${issue.id}'),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8F3EE),
-                borderRadius: BorderRadius.circular(7),
-              ),
+            child: SizedBox(
+              width: double.infinity,
               child: _MagazineCoverImage(
                 url: issue.coverUrl,
-                height: 166,
+                height: 190,
                 width: double.infinity,
                 framed: false,
-                fit: BoxFit.contain,
+                fit: BoxFit.cover,
               ),
             ),
           ),

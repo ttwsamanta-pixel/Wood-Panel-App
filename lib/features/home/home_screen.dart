@@ -558,7 +558,7 @@ class _HomeEventsCarousel extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: 156,
+      height: 142,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -585,7 +585,7 @@ class _HomeEventCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        width: MediaQuery.sizeOf(context).width * .88,
+        width: MediaQuery.sizeOf(context).width * .78,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
@@ -602,11 +602,11 @@ class _HomeEventCard extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              flex: 44,
+              flex: 43,
               child: ColoredBox(
                 color: Colors.white,
                 child: Padding(
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.all(16),
                   child: WPImage(
                     url: event.imageUrl,
                     width: double.infinity,
@@ -618,11 +618,11 @@ class _HomeEventCard extends StatelessWidget {
               ),
             ),
             Expanded(
-              flex: 56,
+              flex: 57,
               child: Container(
                 height: double.infinity,
                 color: AppColors.green,
-                padding: const EdgeInsets.fromLTRB(16, 14, 14, 12),
+                padding: const EdgeInsets.fromLTRB(14, 12, 12, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -633,7 +633,7 @@ class _HomeEventCard extends StatelessWidget {
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
-                        fontSize: 18,
+                        fontSize: 16,
                         height: 1.1,
                       ),
                     ),
@@ -644,19 +644,19 @@ class _HomeEventCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: .78),
-                        fontSize: 15,
+                        fontSize: 14,
                         height: 1.15,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     Text(
                       'Venue: ${event.location}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: .82),
-                        fontSize: 14,
+                        fontSize: 13,
                         height: 1.18,
                         fontWeight: FontWeight.w800,
                       ),
@@ -1253,56 +1253,71 @@ class _NewsletterPopupState extends ConsumerState<_NewsletterPopup> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: RichText(
-                          text: const TextSpan(
-                            style: TextStyle(
-                              fontSize: 28,
-                              height: 1.04,
-                              color: AppColors.green,
-                              fontWeight: FontWeight.w900,
-                            ),
-                            children: [
-                              TextSpan(text: 'Join Our\n'),
-                              TextSpan(
-                                text: 'Newsletter',
-                                style: TextStyle(color: AppColors.copper),
+                  SizedBox(
+                    height: 166,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Positioned(
+                          left: 0,
+                          top: 22,
+                          child: RichText(
+                            text: const TextSpan(
+                              style: TextStyle(
+                                fontSize: 28,
+                                height: 1.04,
+                                color: AppColors.green,
+                                fontWeight: FontWeight.w900,
                               ),
-                            ],
+                              children: [
+                                TextSpan(text: 'Join Our\n'),
+                                TextSpan(
+                                  text: 'Newsletter',
+                                  style: TextStyle(color: AppColors.copper),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      SizedBox(
-                        width: 126,
-                        height: 128,
-                        child: _NewsletterArtwork(
-                          coverUrl: widget.coverUrl,
-                          phoneWidth: 78,
-                          phoneHeight: 132,
-                          circleSize: 132,
-                          mailSize: 58,
-                          leafSize: 38,
-                          phoneRight: 6,
-                          phoneTop: -6,
-                          mailLeft: 0,
-                          mailTop: 48,
+                        const Positioned(
+                          left: 0,
+                          right: 120,
+                          top: 102,
+                          child: Text(
+                            'Get the latest news, events, magazine highlights and industry insights.',
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Color(0xFF56504A),
+                              fontSize: 12,
+                              height: 1.25,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Get the latest news, events, magazine highlights and industry insights.',
-                    style: TextStyle(
-                      color: Color(0xFF56504A),
-                      fontSize: 12,
-                      height: 1.25,
+                        Positioned(
+                          right: -12,
+                          top: 0,
+                          child: SizedBox(
+                            width: 138,
+                            height: 132,
+                            child: _NewsletterArtwork(
+                              coverUrl: widget.coverUrl,
+                              phoneWidth: 68,
+                              phoneHeight: 116,
+                              circleSize: 122,
+                              mailSize: 52,
+                              leafSize: 32,
+                              phoneRight: 18,
+                              phoneTop: 10,
+                              mailLeft: 2,
+                              mailTop: 56,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   _NewsletterTextField(
                     controller: _name,
                     icon: Icons.person_outline_rounded,
@@ -1363,14 +1378,16 @@ class _NewsletterPopupState extends ConsumerState<_NewsletterPopup> {
             ),
           ),
           Positioned(
-            top: 10,
-            right: 10,
+            top: 8,
+            right: 8,
             child: IconButton.filled(
               onPressed: () => Navigator.of(context).pop(),
               icon: const Icon(Icons.close_rounded),
               style: IconButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.black,
+                minimumSize: const Size(42, 42),
+                fixedSize: const Size(42, 42),
               ),
             ),
           ),

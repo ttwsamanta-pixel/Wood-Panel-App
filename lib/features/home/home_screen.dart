@@ -10,6 +10,7 @@ import '../../data/models/content_models.dart';
 import '../../data/models/news_category.dart';
 import '../../data/repositories/cache_refresh_bus.dart';
 import '../../data/repositories/content_providers.dart';
+import '../../data/repositories/download_repository.dart';
 import '../../data/repositories/youtube_video_repository.dart';
 import '../../widgets/wp_components.dart';
 import '../../widgets/wp_scaffold.dart';
@@ -402,7 +403,7 @@ class _HomeMagazineCarousel extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: 242,
+      height: 456,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -428,60 +429,261 @@ class _HomeMagazineCarousel extends StatelessWidget {
   }
 }
 
-class _HomeMagazineCard extends StatelessWidget {
+class _HomeMagazineCard extends ConsumerWidget {
   const _HomeMagazineCard({required this.issue});
 
   final MagazineIssue issue;
 
   @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => context.push('/magazine/${issue.id}'),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: 156,
-        padding: const EdgeInsets.all(9),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.line),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            WPImage(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      width: 252,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.line),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D000000),
+            blurRadius: 12,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => context.push('/magazine/${issue.id}'),
+            child: WPImage(
               url: issue.coverUrl,
               width: double.infinity,
-              height: 132,
-              fit: BoxFit.contain,
+              height: 270,
+              fit: BoxFit.cover,
+              borderRadius: 8,
             ),
-            const SizedBox(height: 9),
-            Text(
-              issue.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w900, height: 1.1),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            issue.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontSize: 18,
+                  height: 1.04,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            issue.description.isEmpty
+                ? 'Wood and panel industry insights'
+                : issue.description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.muted,
+              height: 1.14,
+              fontSize: 13,
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Vol. 18 | Issue ${issue.date.month}',
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const _HomeMagazineIssueMeta(
+                  icon: Icons.menu_book_rounded, label: 'Vol. 18'),
+              const SizedBox(width: 12),
+              _HomeMagazineIssueMeta(
+                icon: Icons.article_outlined,
+                label: 'Issue ${issue.date.month}',
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 42,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.copper,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                    ),
+                    onPressed: () => context.push('/magazine/${issue.id}/read'),
+                    icon: const Icon(Icons.menu_book_rounded, size: 18),
+                    label: const FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Read',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: SizedBox(
+                  height: 42,
+                  child: _HomeMagazinePdfButton(issue: issue),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeMagazineIssueMeta extends StatelessWidget {
+  const _HomeMagazineIssueMeta({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Flexible(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: AppColors.muted),
+          const SizedBox(width: 3),
+          Flexible(
+            child: Text(
+              label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppColors.muted, fontSize: 12),
-            ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              height: 34,
-              child: FilledButton.icon(
-                onPressed: () => context.push('/magazine/${issue.id}/read'),
-                icon: const Icon(Icons.menu_book_rounded, size: 17),
-                label: const Text('Read'),
+              style: const TextStyle(
+                color: AppColors.muted,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
               ),
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeMagazinePdfButton extends ConsumerWidget {
+  const _HomeMagazinePdfButton({required this.issue});
+
+  final MagazineIssue issue;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (issue.pdfUrl.isEmpty) {
+      return _HomeMagazineOutlineButton(
+        label: 'PDF',
+        icon: Icons.download_rounded,
+        onPressed: null,
+      );
+    }
+    final repository = ref.watch(downloadRepositoryProvider);
+    return FutureBuilder<DownloadedFile?>(
+      future: repository.fileForUrl(issue.pdfUrl),
+      builder: (context, snapshot) {
+        final downloaded = snapshot.data;
+        if (downloaded != null) {
+          return _HomeMagazineOutlineButton(
+            label: 'View PDF',
+            icon: Icons.visibility_outlined,
+            onPressed: () => context.push('/downloaded-pdf', extra: downloaded),
+          );
+        }
+        return _HomeMagazineOutlineButton(
+          label: 'Download',
+          icon: Icons.download_rounded,
+          onPressed: () async {
+            await _downloadHomeMagazinePdf(context, ref, issue);
+          },
+        );
+      },
+    );
+  }
+}
+
+class _HomeMagazineOutlineButton extends StatelessWidget {
+  const _HomeMagazineOutlineButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        minimumSize: const Size.fromHeight(42),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 5),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+Future<void> _downloadHomeMagazinePdf(
+  BuildContext context,
+  WidgetRef ref,
+  MagazineIssue issue,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
+  messenger.showSnackBar(
+    SnackBar(content: Text('Downloading ${issue.title}...')),
+  );
+  try {
+    final repository = ref.read(downloadRepositoryProvider);
+    await repository.downloadPdf(
+      title: issue.title,
+      url: issue.pdfUrl,
+      coverUrl: issue.coverUrl,
+    );
+    ref.invalidate(downloadRepositoryProvider);
+    messenger.hideCurrentSnackBar();
+    if (!context.mounted) return;
+    messenger.showSnackBar(
+      SnackBar(
+        content: const Text('PDF downloaded'),
+        action: SnackBarAction(
+          label: 'Downloads',
+          onPressed: () => context.push('/downloads'),
         ),
       ),
+    );
+  } on Object {
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Download failed. Please try again.')),
     );
   }
 }

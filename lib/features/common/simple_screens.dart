@@ -3217,31 +3217,41 @@ class MagazineDetailScreen extends ConsumerWidget {
             );
           }
           return ListView(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
             children: [
-              _MagazineCoverImage(
-                url: issue.coverUrl,
-                height: 430,
-                width: double.infinity,
-                framed: false,
-                fit: BoxFit.cover,
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final coverHeight =
+                      (constraints.maxWidth * 0.84).clamp(300.0, 334.0);
+                  return _MagazineCoverImage(
+                    url: issue.coverUrl,
+                    height: coverHeight,
+                    width: double.infinity,
+                    framed: false,
+                    fit: BoxFit.cover,
+                  );
+                },
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Text(issue.title,
                   style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 8),
-              Text(issue.description),
               const SizedBox(height: 6),
+              Text(
+                issue.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
               Text(
                 DateFormat('MMMM yyyy').format(issue.date),
                 style: const TextStyle(color: AppColors.muted),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 12),
               WPPrimaryButton(
                 label: 'Read Online',
                 onPressed: () => context.push('/magazine/${issue.id}/read'),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               _MagazinePdfActionButton(issue: issue),
             ],
           );

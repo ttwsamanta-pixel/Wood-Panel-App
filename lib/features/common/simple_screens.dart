@@ -3222,7 +3222,7 @@ class MagazineDetailScreen extends ConsumerWidget {
               LayoutBuilder(
                 builder: (context, constraints) {
                   final coverHeight =
-                      (constraints.maxWidth * 0.84).clamp(300.0, 334.0);
+                      (constraints.maxWidth * 1.02).clamp(360.0, 406.0);
                   return _MagazineCoverImage(
                     url: issue.coverUrl,
                     height: coverHeight,

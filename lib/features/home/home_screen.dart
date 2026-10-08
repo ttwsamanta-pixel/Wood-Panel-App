@@ -190,7 +190,7 @@ class _HomeContent extends StatelessWidget {
         const SizedBox(height: 22),
         _NewsletterCard(
           coverUrl: newsletterCoverUrl,
-          onPressed: () => _showNewsletterPopup(context),
+          onPressed: () => _showNewsletterPopup(context, newsletterCoverUrl),
         ),
         const SizedBox(height: 20),
       ],
@@ -965,7 +965,7 @@ class _NewsletterCard extends StatelessWidget {
       onTap: onPressed,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        height: 286,
+        height: 306,
         margin: const EdgeInsets.symmetric(horizontal: 18),
         decoration: BoxDecoration(
           color: const Color(0xFFFFF7EC),
@@ -1005,16 +1005,16 @@ class _NewsletterCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
-                    Text(
+                    const SizedBox(height: 14),
+                    const Text(
                       'Stay Ahead in the\nWood & Panel\nIndustry',
-                      maxLines: 3,
-                      style:
-                          Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                fontSize: 24,
-                                height: 1.04,
-                                color: AppColors.green,
-                              ),
+                      maxLines: 4,
+                      style: TextStyle(
+                        color: AppColors.green,
+                        fontSize: 23,
+                        height: 1.04,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                     const SizedBox(height: 9),
                     const Text(
@@ -1053,18 +1053,17 @@ class _NewsletterCard extends StatelessWidget {
               ),
             ),
             Expanded(
-              flex: 42,
+              flex: 40,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  coverUrl.isEmpty
-                      ? const ColoredBox(color: AppColors.green)
-                      : WPImage(
-                          url: coverUrl,
-                          width: double.infinity,
-                          height: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
+                  Center(
+                    child: _NewsletterPhonePreview(
+                      coverUrl: coverUrl,
+                      width: 108,
+                      height: 204,
+                    ),
+                  ),
                   Positioned.fill(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
@@ -1102,16 +1101,97 @@ class _NewsletterCard extends StatelessWidget {
   }
 }
 
-Future<void> _showNewsletterPopup(BuildContext context) {
+class _NewsletterPhonePreview extends StatelessWidget {
+  const _NewsletterPhonePreview({
+    required this.coverUrl,
+    required this.width,
+    required this.height,
+  });
+
+  final String coverUrl;
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: const Color(0xFF17130F),
+        borderRadius: BorderRadius.circular(width * .16),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33000000),
+            blurRadius: 14,
+            offset: Offset(0, 7),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(width * .12),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            coverUrl.isEmpty
+                ? const ColoredBox(color: AppColors.green)
+                : WPImage(
+                    url: coverUrl,
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+            Positioned(
+              left: width * .28,
+              right: width * .28,
+              top: 5,
+              child: Container(
+                height: 3,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: .45),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 8,
+              right: 8,
+              bottom: 8,
+              child: Text(
+                'WOOD & PANEL',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: width * .1,
+                  fontWeight: FontWeight.w900,
+                  shadows: const [
+                    Shadow(color: Colors.black54, blurRadius: 6),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _showNewsletterPopup(BuildContext context, String coverUrl) {
   return showDialog<void>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: .72),
-    builder: (_) => const _NewsletterPopup(),
+    builder: (_) => _NewsletterPopup(coverUrl: coverUrl),
   );
 }
 
 class _NewsletterPopup extends ConsumerStatefulWidget {
-  const _NewsletterPopup();
+  const _NewsletterPopup({required this.coverUrl});
+
+  final String coverUrl;
 
   @override
   ConsumerState<_NewsletterPopup> createState() => _NewsletterPopupState();
@@ -1121,7 +1201,7 @@ class _NewsletterPopupState extends ConsumerState<_NewsletterPopup> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _email = TextEditingController();
-  var _country = 'India';
+  final _country = TextEditingController(text: 'India');
   var _isSending = false;
   String? _status;
   bool _isError = false;
@@ -1130,6 +1210,7 @@ class _NewsletterPopupState extends ConsumerState<_NewsletterPopup> {
   void dispose() {
     _name.dispose();
     _email.dispose();
+    _country.dispose();
     super.dispose();
   }
 
@@ -1185,29 +1266,53 @@ class _NewsletterPopupState extends ConsumerState<_NewsletterPopup> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
+                      const Expanded(
                         child: Text(
                           'Join Our\nNewsletter',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineMedium
-                              ?.copyWith(
-                                fontSize: 30,
-                                height: 1.04,
-                                color: AppColors.green,
-                              ),
+                          style: TextStyle(
+                            fontSize: 30,
+                            height: 1.04,
+                            color: AppColors.green,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       ),
-                      Container(
-                        width: 82,
-                        height: 82,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: .55),
-                          border: Border.all(color: Colors.white, width: 2),
+                      SizedBox(
+                        width: 104,
+                        height: 118,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Positioned(
+                              right: 0,
+                              top: -12,
+                              child: Transform.rotate(
+                                angle: .12,
+                                child: _NewsletterPhonePreview(
+                                  coverUrl: widget.coverUrl,
+                                  width: 74,
+                                  height: 126,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              left: 0,
+                              top: 40,
+                              child: Container(
+                                width: 54,
+                                height: 54,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withValues(alpha: .55),
+                                  border:
+                                      Border.all(color: Colors.white, width: 2),
+                                ),
+                                child: const Icon(Icons.mail_outline_rounded,
+                                    color: Colors.white, size: 30),
+                              ),
+                            ),
+                          ],
                         ),
-                        child: const Icon(Icons.mail_outline_rounded,
-                            color: Colors.white, size: 42),
                       ),
                     ],
                   ),
@@ -1236,22 +1341,11 @@ class _NewsletterPopupState extends ConsumerState<_NewsletterPopup> {
                     validator: _emailValidator,
                   ),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: _country,
-                    decoration: _newsletterInputDecoration(
-                      icon: Icons.language_rounded,
-                      hint: 'Select Country',
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'India', child: Text('India')),
-                      DropdownMenuItem(value: 'USA', child: Text('USA')),
-                      DropdownMenuItem(value: 'UK', child: Text('UK')),
-                      DropdownMenuItem(
-                          value: 'Germany', child: Text('Germany')),
-                      DropdownMenuItem(value: 'Other', child: Text('Other')),
-                    ],
-                    onChanged: (value) =>
-                        setState(() => _country = value ?? _country),
+                  _NewsletterTextField(
+                    controller: _country,
+                    icon: Icons.language_rounded,
+                    hint: 'Country',
+                    validator: _required,
                   ),
                   const SizedBox(height: 20),
                   SizedBox(

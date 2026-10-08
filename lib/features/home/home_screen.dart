@@ -637,7 +637,7 @@ class _HomeEventCard extends StatelessWidget {
                         height: 1.1,
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(height: 8),
                     Text(
                       _compactEventDate(event.date),
                       maxLines: 1,
@@ -649,7 +649,7 @@ class _HomeEventCard extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 7),
                     Text(
                       'Venue: ${event.location}',
                       maxLines: 2,
@@ -1238,8 +1238,9 @@ class _NewsletterPopupState extends ConsumerState<_NewsletterPopup> {
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 18),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      clipBehavior: Clip.antiAlias,
       child: Stack(
-        clipBehavior: Clip.none,
+        clipBehavior: Clip.hardEdge,
         children: [
           Container(
             padding: const EdgeInsets.fromLTRB(18, 24, 18, 18),
@@ -1256,7 +1257,7 @@ class _NewsletterPopupState extends ConsumerState<_NewsletterPopup> {
                   SizedBox(
                     height: 166,
                     child: Stack(
-                      clipBehavior: Clip.none,
+                      clipBehavior: Clip.hardEdge,
                       children: [
                         Positioned(
                           left: 0,
@@ -1295,22 +1296,24 @@ class _NewsletterPopupState extends ConsumerState<_NewsletterPopup> {
                           ),
                         ),
                         Positioned(
-                          right: -12,
+                          right: 0,
                           top: 0,
-                          child: SizedBox(
-                            width: 138,
-                            height: 132,
-                            child: _NewsletterArtwork(
-                              coverUrl: widget.coverUrl,
-                              phoneWidth: 68,
-                              phoneHeight: 116,
-                              circleSize: 122,
-                              mailSize: 52,
-                              leafSize: 32,
-                              phoneRight: 18,
-                              phoneTop: 10,
-                              mailLeft: 2,
-                              mailTop: 56,
+                          child: ClipRect(
+                            child: SizedBox(
+                              width: 126,
+                              height: 132,
+                              child: _NewsletterArtwork(
+                                coverUrl: widget.coverUrl,
+                                phoneWidth: 68,
+                                phoneHeight: 116,
+                                circleSize: 112,
+                                mailSize: 52,
+                                leafSize: 32,
+                                phoneRight: 14,
+                                phoneTop: 10,
+                                mailLeft: 2,
+                                mailTop: 56,
+                              ),
                             ),
                           ),
                         ),

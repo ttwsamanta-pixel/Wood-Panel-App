@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../data/models/content_models.dart';
@@ -153,7 +154,7 @@ class _HomeContent extends StatelessWidget {
           _LatestNewsRow(article: article),
         const WPSectionHeader(title: 'Trending'),
         SizedBox(
-          height: 206,
+          height: 258,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -238,23 +239,89 @@ class _TrendingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
       onTap: () => context.push('/article/${article.id}'),
       child: Container(
-        width: 224,
+        width: 238,
         margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.line),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x12000000),
+              blurRadius: 16,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            WPImage(url: article.imageUrl, height: 124, width: 224),
-            const SizedBox(height: 8),
-            WPTag(article.category),
-            const SizedBox(height: 7),
+            Stack(
+              children: [
+                WPImage(
+                  url: article.imageUrl,
+                  height: 126,
+                  width: double.infinity,
+                  borderRadius: 8,
+                ),
+                Positioned(
+                  left: 8,
+                  top: 8,
+                  child: WPTag(article.category),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
             Text(
               article.title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.w900, height: 1.16),
+            ),
+            const Spacer(),
+            Row(
+              children: [
+                const Icon(Icons.calendar_today_rounded,
+                    size: 14, color: AppColors.muted),
+                const SizedBox(width: 5),
+                Text(
+                  DateFormat('d MMM yyyy').format(article.date),
+                  style: const TextStyle(
+                    color: AppColors.muted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(Icons.schedule_rounded,
+                    size: 14, color: AppColors.muted),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    '${article.readingMinutes} min',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  tooltip: 'Share',
+                  onPressed: () =>
+                      Share.share('${article.title}\n${article.url}'),
+                  icon: const Icon(Icons.share_rounded,
+                      color: AppColors.copper, size: 19),
+                ),
+              ],
             ),
           ],
         ),
@@ -300,7 +367,7 @@ class _HomeVideoCarousel extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: 210,
+      height: 226,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -319,17 +386,36 @@ class _HomeVideoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
       onTap: () => context.push('/video/${video.id}'),
       child: Container(
         width: 224,
         margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.line),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x12000000),
+              blurRadius: 16,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Stack(
               children: [
-                WPImage(url: video.thumbnailUrl, height: 124, width: 224),
+                WPImage(
+                  url: video.thumbnailUrl,
+                  height: 116,
+                  width: double.infinity,
+                  borderRadius: 8,
+                ),
                 Positioned.fill(
                   child: Center(
                     child: DecoratedBox(
@@ -347,7 +433,7 @@ class _HomeVideoCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Text(
               video.title,
               maxLines: 3,

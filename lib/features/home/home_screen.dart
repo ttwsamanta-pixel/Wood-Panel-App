@@ -558,7 +558,7 @@ class _HomeEventsCarousel extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: 274,
+      height: 156,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -581,14 +581,13 @@ class _HomeEventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateParts = _eventDateParts(event.date);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        width: MediaQuery.sizeOf(context).width * .76,
+        width: MediaQuery.sizeOf(context).width * .88,
         decoration: BoxDecoration(
-          color: const Color(0xFFFFFBF6),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.line),
           boxShadow: const [
@@ -600,129 +599,70 @@ class _HomeEventCard extends StatelessWidget {
           ],
         ),
         clipBehavior: Clip.antiAlias,
-        child: Column(
+        child: Row(
           children: [
             Expanded(
-              flex: 5,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: ColoredBox(
-                      color: const Color(0xFFF7F1EC),
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: WPImage(
-                          url: event.imageUrl,
-                          width: double.infinity,
-                          height: double.infinity,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    ),
+              flex: 44,
+              child: ColoredBox(
+                color: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: WPImage(
+                    url: event.imageUrl,
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.contain,
+                    borderRadius: 0,
                   ),
-                  Positioned(
-                    left: 12,
-                    bottom: 12,
-                    child: Container(
-                      width: 68,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 10, horizontal: 7),
-                      decoration: BoxDecoration(
-                        color: AppColors.copper,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x22000000),
-                            blurRadius: 10,
-                            offset: Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            dateParts.month,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 13,
-                              height: 1,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            dateParts.day,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 16,
-                              height: 1.05,
-                            ),
-                          ),
-                          const SizedBox(height: 7),
-                          const Icon(Icons.calendar_month_rounded,
-                              color: Colors.white, size: 20),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-            Container(
-              height: 104,
-              width: double.infinity,
-              color: AppColors.green,
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 14),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          event.title.toUpperCase(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 21,
-                            height: 1,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          event.location,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            height: 1.22,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+            Expanded(
+              flex: 56,
+              child: Container(
+                height: double.infinity,
+                color: AppColors.green,
+                padding: const EdgeInsets.fromLTRB(16, 14, 14, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      event.title.toUpperCase(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                        height: 1.1,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    width: 46,
-                    height: 46,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
+                    const Spacer(),
+                    Text(
+                      _compactEventDate(event.date),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: .78),
+                        fontSize: 15,
+                        height: 1.15,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                    child: const Icon(Icons.arrow_forward_rounded,
-                        color: AppColors.copper),
-                  ),
-                ],
+                    const SizedBox(height: 10),
+                    Text(
+                      'Venue: ${event.location}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: .82),
+                        fontSize: 14,
+                        height: 1.18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -731,36 +671,49 @@ class _HomeEventCard extends StatelessWidget {
     );
   }
 
-  _EventDateParts _eventDateParts(String rawDate) {
-    final upper = rawDate.toUpperCase();
-    final monthMatch =
-        RegExp(r'\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\b')
-            .firstMatch(upper);
-    final numbers = RegExp(r'\d{1,4}')
-        .allMatches(rawDate)
+  String _compactEventDate(String rawDate) {
+    final normalized = rawDate.replaceAll(RegExp(r'\s+'), ' ').trim();
+    final year = RegExp(r'\b(19|20)\d{2}\b').firstMatch(normalized)?.group(0);
+    final monthMatches = RegExp(
+      r'\b(Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\b',
+      caseSensitive: false,
+    ).allMatches(normalized).toList();
+    final days = RegExp(r'\b\d{1,2}\b')
+        .allMatches(normalized)
         .map((match) => match.group(0) ?? '')
         .where((value) => value.isNotEmpty)
         .toList();
-    final month = monthMatch?.group(1) ?? 'EVENT';
-    final day = numbers.length >= 2
-        ? '${numbers[0]}-${numbers[1]}'
-        : (numbers.isNotEmpty ? numbers[0] : '');
-    final parsedYear = numbers.lastWhere(
-      (value) => value.length == 4,
-      orElse: () => '',
-    );
-    final year =
-        parsedYear.isNotEmpty ? parsedYear : DateTime.now().year.toString();
-    return _EventDateParts(
-        month, [day, year].where((part) => part.isNotEmpty).join('\n'));
+    if (monthMatches.isEmpty || days.isEmpty) {
+      return normalized;
+    }
+    final firstMonth = _shortMonth(monthMatches.first.group(0) ?? '');
+    final lastMonth = _shortMonth(monthMatches.last.group(0) ?? firstMonth);
+    final firstDay = days.first;
+    final lastDay = days.length > 1 ? days.last : '';
+    final dateText = lastDay.isEmpty
+        ? '$firstMonth $firstDay'
+        : firstMonth == lastMonth
+            ? '$firstMonth $firstDay - $lastDay'
+            : '$firstMonth $firstDay - $lastMonth $lastDay';
+    return year == null ? dateText : '$dateText, $year';
   }
-}
 
-class _EventDateParts {
-  const _EventDateParts(this.month, this.day);
-
-  final String month;
-  final String day;
+  String _shortMonth(String month) {
+    final lower = month.toLowerCase();
+    if (lower.startsWith('jan')) return 'Jan';
+    if (lower.startsWith('feb')) return 'Feb';
+    if (lower.startsWith('mar')) return 'Mar';
+    if (lower.startsWith('apr')) return 'Apr';
+    if (lower.startsWith('may')) return 'May';
+    if (lower.startsWith('jun')) return 'Jun';
+    if (lower.startsWith('jul')) return 'Jul';
+    if (lower.startsWith('aug')) return 'Aug';
+    if (lower.startsWith('sep')) return 'Sep';
+    if (lower.startsWith('oct')) return 'Oct';
+    if (lower.startsWith('nov')) return 'Nov';
+    if (lower.startsWith('dec')) return 'Dec';
+    return month;
+  }
 }
 
 class _CategoryTile extends StatelessWidget {
@@ -906,7 +859,7 @@ class _NewsletterCard extends StatelessWidget {
       onTap: onPressed,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        height: 214,
+        height: 184,
         margin: const EdgeInsets.symmetric(horizontal: 18),
         decoration: BoxDecoration(
           color: const Color(0xFFFFF7EC),
@@ -924,9 +877,9 @@ class _NewsletterCard extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              flex: 59,
+              flex: 57,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 6, 14),
+                padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -946,14 +899,14 @@ class _NewsletterCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     RichText(
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       text: const TextSpan(
                         style: TextStyle(
                           color: AppColors.green,
-                          fontSize: 18,
+                          fontSize: 17,
                           height: 1.04,
                           fontWeight: FontWeight.w900,
                         ),
@@ -966,21 +919,21 @@ class _NewsletterCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 7),
+                    const SizedBox(height: 5),
                     const Text(
                       'Get the latest news, events, magazine highlights and industry insights.',
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Color(0xFF55504A),
-                        fontSize: 11,
-                        height: 1.18,
+                        fontSize: 10,
+                        height: 1.16,
                       ),
                     ),
                     const Spacer(),
                     SizedBox(
-                      height: 38,
-                      width: 150,
+                      height: 34,
+                      width: 144,
                       child: FilledButton.icon(
                         onPressed: onPressed,
                         iconAlignment: IconAlignment.end,
@@ -989,7 +942,7 @@ class _NewsletterCard extends StatelessWidget {
                           'Subscribe Now',
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
-                            fontSize: 12,
+                            fontSize: 11,
                           ),
                         ),
                         style: FilledButton.styleFrom(
@@ -1006,57 +959,18 @@ class _NewsletterCard extends StatelessWidget {
               ),
             ),
             Expanded(
-              flex: 41,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Positioned(
-                    right: -26,
-                    top: -28,
-                    child: Container(
-                      width: 166,
-                      height: 166,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: const Color(0xFFE8C8A4).withValues(alpha: .55),
-                      ),
-                    ),
-                  ),
-                  Center(
-                    child: _NewsletterPhonePreview(
-                      coverUrl: coverUrl,
-                      width: 76,
-                      height: 146,
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [
-                            const Color(0xFFFFF7EC).withValues(alpha: .55),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Center(
-                    child: Container(
-                      width: 54,
-                      height: 54,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: .5),
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      child: const Icon(Icons.mail_outline_rounded,
-                          color: Colors.white, size: 28),
-                    ),
-                  ),
-                ],
+              flex: 43,
+              child: _NewsletterArtwork(
+                coverUrl: coverUrl,
+                phoneWidth: 78,
+                phoneHeight: 132,
+                circleSize: 142,
+                mailSize: 54,
+                leafSize: 42,
+                phoneRight: 20,
+                phoneTop: 20,
+                mailLeft: 4,
+                mailTop: 60,
               ),
             ),
           ],
@@ -1141,6 +1055,117 @@ class _NewsletterPhonePreview extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _NewsletterArtwork extends StatelessWidget {
+  const _NewsletterArtwork({
+    required this.coverUrl,
+    required this.phoneWidth,
+    required this.phoneHeight,
+    required this.circleSize,
+    required this.mailSize,
+    required this.leafSize,
+    required this.phoneRight,
+    required this.phoneTop,
+    required this.mailLeft,
+    required this.mailTop,
+  });
+
+  final String coverUrl;
+  final double phoneWidth;
+  final double phoneHeight;
+  final double circleSize;
+  final double mailSize;
+  final double leafSize;
+  final double phoneRight;
+  final double phoneTop;
+  final double mailLeft;
+  final double mailTop;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          right: -circleSize * .22,
+          top: -circleSize * .18,
+          child: Container(
+            width: circleSize,
+            height: circleSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFFE7C297).withValues(alpha: .55),
+            ),
+          ),
+        ),
+        Positioned(
+          right: phoneRight,
+          top: phoneTop,
+          child: Transform.rotate(
+            angle: .16,
+            child: _NewsletterPhonePreview(
+              coverUrl: coverUrl,
+              width: phoneWidth,
+              height: phoneHeight,
+            ),
+          ),
+        ),
+        Positioned(
+          left: mailLeft,
+          top: mailTop,
+          child: Container(
+            width: mailSize,
+            height: mailSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withValues(alpha: .58),
+              border: Border.all(color: Colors.white, width: 2),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x16000000),
+                  blurRadius: 10,
+                  offset: Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.mail_outline_rounded,
+              color: Colors.white,
+              size: mailSize * .52,
+            ),
+          ),
+        ),
+        Positioned(
+          right: -leafSize * .2,
+          bottom: -leafSize * .25,
+          child: Transform.rotate(
+            angle: -.5,
+            child: Container(
+              width: leafSize,
+              height: leafSize * 1.35,
+              decoration: BoxDecoration(
+                color: AppColors.green.withValues(alpha: .82),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(leafSize),
+                  topRight: Radius.circular(leafSize * .35),
+                  bottomLeft: Radius.circular(leafSize * .35),
+                  bottomRight: Radius.circular(leafSize),
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x18000000),
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1253,54 +1278,17 @@ class _NewsletterPopupState extends ConsumerState<_NewsletterPopup> {
                       SizedBox(
                         width: 126,
                         height: 128,
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            Positioned(
-                              right: 8,
-                              top: -24,
-                              child: Container(
-                                width: 128,
-                                height: 128,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: const Color(0xFFE8C8A4)
-                                      .withValues(alpha: .55),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              right: 0,
-                              top: -8,
-                              child: Transform.rotate(
-                                angle: .12,
-                                child: _NewsletterPhonePreview(
-                                  coverUrl: widget.coverUrl,
-                                  width: 76,
-                                  height: 128,
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              left: 0,
-                              top: 44,
-                              child: Container(
-                                width: 58,
-                                height: 58,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white.withValues(alpha: .55),
-                                  border:
-                                      Border.all(color: Colors.white, width: 2),
-                                ),
-                                child: const Icon(
-                                  Icons.mail_outline_rounded,
-                                  color: Colors.white,
-                                  size: 30,
-                                ),
-                              ),
-                            ),
-                          ],
+                        child: _NewsletterArtwork(
+                          coverUrl: widget.coverUrl,
+                          phoneWidth: 78,
+                          phoneHeight: 132,
+                          circleSize: 132,
+                          mailSize: 58,
+                          leafSize: 38,
+                          phoneRight: 6,
+                          phoneTop: -6,
+                          mailLeft: 0,
+                          mailTop: 48,
                         ),
                       ),
                     ],

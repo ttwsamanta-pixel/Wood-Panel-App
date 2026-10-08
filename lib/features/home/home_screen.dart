@@ -403,14 +403,16 @@ class _HomeMagazineCarousel extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: 456,
+      height: 446,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 18),
         itemCount: issues.length,
         separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (context, index) =>
-            _HomeMagazineCard(issue: issues[index]),
+        itemBuilder: (context, index) => Align(
+          alignment: Alignment.topCenter,
+          child: _HomeMagazineCard(issue: issues[index]),
+        ),
       ),
     );
   }
@@ -452,6 +454,7 @@ class _HomeMagazineCard extends ConsumerWidget {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           InkWell(

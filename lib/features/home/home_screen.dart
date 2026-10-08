@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/content_models.dart';
 import '../../data/models/news_category.dart';
+import '../../data/repositories/app_api_repository.dart';
 import '../../data/repositories/cache_refresh_bus.dart';
 import '../../data/repositories/content_providers.dart';
 import '../../data/repositories/youtube_video_repository.dart';
@@ -101,7 +102,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onRefresh: _reloadArticles,
             child: _HomeContent(
               data: homeData,
-              onNewsletterPressed: () => context.push('/newsletter'),
             ),
           );
         },
@@ -132,17 +132,15 @@ class _HomeData {
 }
 
 class _HomeContent extends StatelessWidget {
-  const _HomeContent({
-    required this.data,
-    required this.onNewsletterPressed,
-  });
+  const _HomeContent({required this.data});
 
   final _HomeData data;
-  final VoidCallback onNewsletterPressed;
 
   @override
   Widget build(BuildContext context) {
     final articles = data.articles;
+    final newsletterCoverUrl =
+        data.magazines.isNotEmpty ? data.magazines.first.coverUrl : '';
     return ListView(
       children: [
         WPHeroNewsCard(article: articles.first),
@@ -187,14 +185,13 @@ class _HomeContent extends StatelessWidget {
           onAction: () => context.go('/magazine'),
         ),
         _HomeMagazineCarousel(magazines: data.magazines),
-        WPSectionHeader(
-          title: 'Upcoming Events',
-          actionLabel: 'View',
-          onAction: () => context.push('/events'),
-        ),
+        _HomeEventsHeader(onViewAll: () => context.push('/events')),
         _HomeEventsCarousel(events: data.events),
-        const WPSectionHeader(title: 'Newsletter'),
-        _NewsletterCard(onPressed: onNewsletterPressed),
+        const SizedBox(height: 22),
+        _NewsletterCard(
+          coverUrl: newsletterCoverUrl,
+          onPressed: () => _showNewsletterPopup(context),
+        ),
         const SizedBox(height: 20),
       ],
     );
@@ -557,7 +554,7 @@ class _HomeEventsCarousel extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: 224,
+      height: 318,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -572,6 +569,68 @@ class _HomeEventsCarousel extends StatelessWidget {
   }
 }
 
+class _HomeEventsHeader extends StatelessWidget {
+  const _HomeEventsHeader({required this.onViewAll});
+
+  final VoidCallback onViewAll;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(18, 26, 18, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: RichText(
+                  text: TextSpan(
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontSize: 30,
+                          height: 1,
+                        ),
+                    children: const [
+                      TextSpan(text: 'Upcoming '),
+                      TextSpan(
+                        text: 'Events',
+                        style: TextStyle(color: AppColors.copper),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: onViewAll,
+                iconAlignment: IconAlignment.end,
+                label: const Text(
+                  'View All',
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+                icon: const Icon(Icons.arrow_forward_rounded),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: 28,
+            height: 3,
+            decoration: BoxDecoration(
+              color: AppColors.copper,
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Explore global trade shows, exhibitions and industry events.',
+            style: TextStyle(color: AppColors.muted, fontSize: 15),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _HomeEventCard extends StatelessWidget {
   const _HomeEventCard({required this.event, required this.onTap});
 
@@ -580,61 +639,146 @@ class _HomeEventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dateParts = _eventDateParts(event.date);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        width: 250,
+        width: MediaQuery.sizeOf(context).width * .78,
         decoration: BoxDecoration(
-          color: AppColors.green,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.line),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x12000000),
+              blurRadius: 16,
+              offset: Offset(0, 8),
+            ),
+          ],
         ),
         clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
             WPImage(
               url: event.imageUrl,
               width: double.infinity,
-              height: 92,
+              height: double.infinity,
               fit: BoxFit.cover,
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.white.withValues(alpha: .08),
+                      Colors.white.withValues(alpha: .20),
+                      AppColors.green.withValues(alpha: .96),
+                    ],
+                    stops: const [.0, .47, .68],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 14,
+              top: 84,
+              child: Container(
+                width: 74,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.copper,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x22000000),
+                      blurRadius: 10,
+                      offset: Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      dateParts.month,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                        height: 1,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      dateParts.day,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 17,
+                        height: 1.05,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    const Icon(Icons.calendar_month_rounded,
+                        color: Colors.white, size: 20),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 18,
+              right: 18,
+              bottom: 18,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    event.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          event.title.toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 23,
+                            height: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          event.location,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            height: 1.22,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: const BoxDecoration(
                       color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      height: 1.12,
+                      shape: BoxShape.circle,
                     ),
-                  ),
-                  const SizedBox(height: 7),
-                  Text(
-                    event.date,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFFE9D8C6),
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    event.location,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Color(0xFFE9D8C6),
-                      height: 1.12,
-                      fontSize: 12,
-                    ),
+                    child: const Icon(Icons.arrow_forward_rounded,
+                        color: AppColors.copper),
                   ),
                 ],
               ),
@@ -644,6 +788,35 @@ class _HomeEventCard extends StatelessWidget {
       ),
     );
   }
+
+  _EventDateParts _eventDateParts(String rawDate) {
+    final upper = rawDate.toUpperCase();
+    final monthMatch =
+        RegExp(r'\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\b')
+            .firstMatch(upper);
+    final numbers = RegExp(r'\d{1,4}')
+        .allMatches(rawDate)
+        .map((match) => match.group(0) ?? '')
+        .where((value) => value.isNotEmpty)
+        .toList();
+    final month = monthMatch?.group(1) ?? 'EVENT';
+    final day = numbers.length >= 2
+        ? '${numbers[0]}-${numbers[1]}'
+        : (numbers.isNotEmpty ? numbers[0] : '');
+    final year = numbers.lastWhere(
+      (value) => value.length == 4,
+      orElse: () => numbers.isNotEmpty ? numbers.last : '',
+    );
+    return _EventDateParts(
+        month, [day, year].where((part) => part.isNotEmpty).join('\n'));
+  }
+}
+
+class _EventDateParts {
+  const _EventDateParts(this.month, this.day);
+
+  final String month;
+  final String day;
 }
 
 class _CategoryTile extends StatelessWidget {
@@ -775,35 +948,419 @@ class _FeatureBand extends StatelessWidget {
 }
 
 class _NewsletterCard extends StatelessWidget {
-  const _NewsletterCard({required this.onPressed});
+  const _NewsletterCard({
+    required this.coverUrl,
+    required this.onPressed,
+  });
 
+  final String coverUrl;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 18),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8F1E9),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.line),
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        height: 286,
+        margin: const EdgeInsets.symmetric(horizontal: 18),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF7EC),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE7D6C7)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x10000000),
+              blurRadius: 16,
+              offset: Offset(0, 8),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            Positioned(
+              right: -18,
+              top: -14,
+              bottom: -8,
+              width: 210,
+              child: Transform.rotate(
+                angle: .12,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x26000000),
+                        blurRadius: 16,
+                        offset: Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: coverUrl.isEmpty
+                        ? const ColoredBox(color: AppColors.green)
+                        : WPImage(
+                            url: coverUrl,
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 94,
+              top: 84,
+              child: Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: .42),
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: const Icon(Icons.mail_outline_rounded,
+                    color: Colors.white, size: 38),
+              ),
+            ),
+            Positioned(
+              left: 22,
+              top: 26,
+              right: 150,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.mail_outline_rounded,
+                          color: AppColors.copper, size: 27),
+                      SizedBox(width: 10),
+                      Text(
+                        'N E W S L E T T E R',
+                        style: TextStyle(
+                          color: AppColors.copper,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    'Stay Ahead\nin the Wood &\nPanel Industry',
+                    maxLines: 3,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontSize: 31,
+                          height: .98,
+                          color: AppColors.green,
+                        ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Get the latest news, events, magazine highlights and industry insights.',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Color(0xFF55504A),
+                      fontSize: 14,
+                      height: 1.25,
+                    ),
+                  ),
+                  const SizedBox(height: 17),
+                  SizedBox(
+                    height: 48,
+                    width: 214,
+                    child: FilledButton.icon(
+                      onPressed: onPressed,
+                      iconAlignment: IconAlignment.end,
+                      icon: const Icon(Icons.arrow_forward_rounded),
+                      label: const Text(
+                        'Subscribe Now',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.copper,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    );
+  }
+}
+
+Future<void> _showNewsletterPopup(BuildContext context) {
+  return showDialog<void>(
+    context: context,
+    barrierColor: Colors.black.withValues(alpha: .72),
+    builder: (_) => const _NewsletterPopup(),
+  );
+}
+
+class _NewsletterPopup extends ConsumerStatefulWidget {
+  const _NewsletterPopup();
+
+  @override
+  ConsumerState<_NewsletterPopup> createState() => _NewsletterPopupState();
+}
+
+class _NewsletterPopupState extends ConsumerState<_NewsletterPopup> {
+  final _formKey = GlobalKey<FormState>();
+  final _name = TextEditingController();
+  final _email = TextEditingController();
+  var _country = 'India';
+  var _isSending = false;
+  String? _status;
+  bool _isError = false;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _email.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+    setState(() {
+      _isSending = true;
+      _status = null;
+      _isError = false;
+    });
+    try {
+      await ref.read(appApiRepositoryProvider).subscribeNewsletter(
+            name: _name.text.trim(),
+            email: _email.text.trim(),
+          );
+      if (!mounted) return;
+      setState(() {
+        _isSending = false;
+        _status = 'Thank you. You are subscribed.';
+      });
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isSending = false;
+        _isError = true;
+        _status = error.toString().replaceFirst('ApiException: ', '');
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 18),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          const Icon(Icons.mark_email_read_rounded,
-              color: AppColors.copper, size: 34),
-          const SizedBox(height: 10),
-          Text('Get the latest wood and panel updates',
-              style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          const Text(
-              'A concise industry briefing with news, events, and magazine highlights.'),
-          const SizedBox(height: 14),
-          WPPrimaryButton(label: 'Subscribe', onPressed: onPressed),
+          Container(
+            padding: const EdgeInsets.fromLTRB(22, 30, 22, 22),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7EC),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Join Our\nNewsletter',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(
+                                fontSize: 30,
+                                height: 1.04,
+                                color: AppColors.green,
+                              ),
+                        ),
+                      ),
+                      Container(
+                        width: 82,
+                        height: 82,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: .55),
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(Icons.mail_outline_rounded,
+                            color: Colors.white, size: 42),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  const Text(
+                    'Get the latest news, events, magazine highlights and industry insights.',
+                    style: TextStyle(
+                      color: Color(0xFF56504A),
+                      fontSize: 15,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  _NewsletterTextField(
+                    controller: _name,
+                    icon: Icons.person_outline_rounded,
+                    hint: 'Full Name',
+                    validator: _required,
+                  ),
+                  const SizedBox(height: 12),
+                  _NewsletterTextField(
+                    controller: _email,
+                    icon: Icons.mail_outline_rounded,
+                    hint: 'Email Address',
+                    keyboardType: TextInputType.emailAddress,
+                    validator: _emailValidator,
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: _country,
+                    decoration: _newsletterInputDecoration(
+                      icon: Icons.language_rounded,
+                      hint: 'Select Country',
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'India', child: Text('India')),
+                      DropdownMenuItem(value: 'USA', child: Text('USA')),
+                      DropdownMenuItem(value: 'UK', child: Text('UK')),
+                      DropdownMenuItem(
+                          value: 'Germany', child: Text('Germany')),
+                      DropdownMenuItem(value: 'Other', child: Text('Other')),
+                    ],
+                    onChanged: (value) =>
+                        setState(() => _country = value ?? _country),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: FilledButton.icon(
+                      onPressed: _isSending ? null : _submit,
+                      iconAlignment: IconAlignment.end,
+                      icon: _isSending
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.arrow_forward_rounded),
+                      label: Text(_isSending ? 'Submitting' : 'Submit'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.copper,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (_status != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Text(
+                        _status!,
+                        style: TextStyle(
+                          color: _isError ? AppColors.error : AppColors.success,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: 10,
+            right: 10,
+            child: IconButton.filled(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close_rounded),
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
+
+  String? _required(String? value) =>
+      value == null || value.trim().isEmpty ? 'Required' : null;
+
+  String? _emailValidator(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return 'Required';
+    if (!text.contains('@') || !text.contains('.')) {
+      return 'Enter a valid email';
+    }
+    return null;
+  }
+}
+
+class _NewsletterTextField extends StatelessWidget {
+  const _NewsletterTextField({
+    required this.controller,
+    required this.icon,
+    required this.hint,
+    required this.validator,
+    this.keyboardType,
+  });
+
+  final TextEditingController controller;
+  final IconData icon;
+  final String hint;
+  final String? Function(String?) validator;
+  final TextInputType? keyboardType;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      validator: validator,
+      decoration: _newsletterInputDecoration(icon: icon, hint: hint),
+    );
+  }
+}
+
+InputDecoration _newsletterInputDecoration({
+  required IconData icon,
+  required String hint,
+}) {
+  return InputDecoration(
+    hintText: hint,
+    prefixIcon: Icon(icon, color: Colors.black87),
+    filled: true,
+    fillColor: Colors.white,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: AppColors.line),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(8),
+      borderSide: const BorderSide(color: AppColors.line),
+    ),
+  );
 }

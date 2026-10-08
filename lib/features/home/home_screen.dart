@@ -554,7 +554,7 @@ class _HomeEventsCarousel extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: 318,
+      height: 286,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -585,10 +585,12 @@ class _HomeEventsHeader extends StatelessWidget {
             children: [
               Expanded(
                 child: RichText(
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   text: TextSpan(
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontSize: 30,
-                          height: 1,
+                          fontSize: 26,
+                          height: 1.08,
                         ),
                     children: const [
                       TextSpan(text: 'Upcoming '),
@@ -658,83 +660,82 @@ class _HomeEventCard extends StatelessWidget {
           ],
         ),
         clipBehavior: Clip.antiAlias,
-        child: Stack(
+        child: Column(
           children: [
-            WPImage(
-              url: event.imageUrl,
-              width: double.infinity,
-              height: double.infinity,
-              fit: BoxFit.cover,
-            ),
-            Positioned.fill(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.white.withValues(alpha: .08),
-                      Colors.white.withValues(alpha: .20),
-                      AppColors.green.withValues(alpha: .96),
-                    ],
-                    stops: const [.0, .47, .68],
+            Expanded(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: ColoredBox(
+                      color: const Color(0xFFF7F1EC),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: WPImage(
+                          url: event.imageUrl,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ),
-            Positioned(
-              left: 14,
-              top: 84,
-              child: Container(
-                width: 74,
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.copper,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x22000000),
-                      blurRadius: 10,
-                      offset: Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      dateParts.month,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 13,
-                        height: 1,
+                  Positioned(
+                    left: 14,
+                    bottom: 14,
+                    child: Container(
+                      width: 74,
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 12, horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.copper,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x22000000),
+                            blurRadius: 10,
+                            offset: Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            dateParts.month,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            dateParts.day,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                              height: 1.05,
+                            ),
+                          ),
+                          const SizedBox(height: 7),
+                          const Icon(Icons.calendar_month_rounded,
+                              color: Colors.white, size: 20),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      dateParts.day,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 17,
-                        height: 1.05,
-                      ),
-                    ),
-                    const SizedBox(height: 7),
-                    const Icon(Icons.calendar_month_rounded,
-                        color: Colors.white, size: 20),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-            Positioned(
-              left: 18,
-              right: 18,
-              bottom: 18,
+            Container(
+              height: 112,
+              width: double.infinity,
+              color: AppColors.green,
+              padding: const EdgeInsets.fromLTRB(18, 24, 18, 16),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -750,7 +751,7 @@ class _HomeEventCard extends StatelessWidget {
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w900,
-                            fontSize: 23,
+                            fontSize: 21,
                             height: 1,
                           ),
                         ),
@@ -803,10 +804,12 @@ class _HomeEventCard extends StatelessWidget {
     final day = numbers.length >= 2
         ? '${numbers[0]}-${numbers[1]}'
         : (numbers.isNotEmpty ? numbers[0] : '');
-    final year = numbers.lastWhere(
+    final parsedYear = numbers.lastWhere(
       (value) => value.length == 4,
-      orElse: () => numbers.isNotEmpty ? numbers.last : '',
+      orElse: () => '',
     );
+    final year =
+        parsedYear.isNotEmpty ? parsedYear : DateTime.now().year.toString();
     return _EventDateParts(
         month, [day, year].where((part) => part.isNotEmpty).join('\n'));
   }
@@ -977,117 +980,116 @@ class _NewsletterCard extends StatelessWidget {
           ],
         ),
         clipBehavior: Clip.antiAlias,
-        child: Stack(
+        child: Row(
           children: [
-            Positioned(
-              right: -18,
-              top: -14,
-              bottom: -8,
-              width: 210,
-              child: Transform.rotate(
-                angle: .12,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x26000000),
-                        blurRadius: 16,
-                        offset: Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: coverUrl.isEmpty
-                        ? const ColoredBox(color: AppColors.green)
-                        : WPImage(
-                            url: coverUrl,
-                            width: double.infinity,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
+            Expanded(
+              flex: 58,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 22, 8, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.mail_outline_rounded,
+                            color: AppColors.copper, size: 24),
+                        SizedBox(width: 8),
+                        Text(
+                          'NEWSLETTER',
+                          style: TextStyle(
+                            color: AppColors.copper,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
                           ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              right: 94,
-              top: 84,
-              child: Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: .42),
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
-                child: const Icon(Icons.mail_outline_rounded,
-                    color: Colors.white, size: 38),
-              ),
-            ),
-            Positioned(
-              left: 22,
-              top: 26,
-              right: 150,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.mail_outline_rounded,
-                          color: AppColors.copper, size: 27),
-                      SizedBox(width: 10),
-                      Text(
-                        'N E W S L E T T E R',
-                        style: TextStyle(
-                          color: AppColors.copper,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      'Stay Ahead in the\nWood & Panel\nIndustry',
+                      maxLines: 3,
+                      style:
+                          Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                fontSize: 24,
+                                height: 1.04,
+                                color: AppColors.green,
+                              ),
+                    ),
+                    const SizedBox(height: 9),
+                    const Text(
+                      'Get the latest news, events, magazine highlights and industry insights.',
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Color(0xFF55504A),
+                        fontSize: 13,
+                        height: 1.22,
+                      ),
+                    ),
+                    const Spacer(),
+                    SizedBox(
+                      height: 45,
+                      width: 188,
+                      child: FilledButton.icon(
+                        onPressed: onPressed,
+                        iconAlignment: IconAlignment.end,
+                        icon: const Icon(Icons.arrow_forward_rounded),
+                        label: const Text(
+                          'Subscribe Now',
+                          style: TextStyle(fontWeight: FontWeight.w900),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.copper,
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    'Stay Ahead\nin the Wood &\nPanel Industry',
-                    maxLines: 3,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontSize: 31,
-                          height: .98,
-                          color: AppColors.green,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 42,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  coverUrl.isEmpty
+                      ? const ColoredBox(color: AppColors.green)
+                      : WPImage(
+                          url: coverUrl,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.cover,
                         ),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Get the latest news, events, magazine highlights and industry insights.',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Color(0xFF55504A),
-                      fontSize: 14,
-                      height: 1.25,
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            const Color(0xFFFFF7EC).withValues(alpha: .55),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 17),
-                  SizedBox(
-                    height: 48,
-                    width: 214,
-                    child: FilledButton.icon(
-                      onPressed: onPressed,
-                      iconAlignment: IconAlignment.end,
-                      icon: const Icon(Icons.arrow_forward_rounded),
-                      label: const Text(
-                        'Subscribe Now',
-                        style: TextStyle(fontWeight: FontWeight.w900),
+                  Center(
+                    child: Container(
+                      width: 66,
+                      height: 66,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: .36),
+                        border: Border.all(color: Colors.white, width: 2),
                       ),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.copper,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
+                      child: const Icon(Icons.mail_outline_rounded,
+                          color: Colors.white, size: 34),
                     ),
                   ),
                 ],

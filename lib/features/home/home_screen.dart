@@ -10,7 +10,6 @@ import '../../data/models/content_models.dart';
 import '../../data/models/news_category.dart';
 import '../../data/repositories/cache_refresh_bus.dart';
 import '../../data/repositories/content_providers.dart';
-import '../../data/repositories/download_repository.dart';
 import '../../data/repositories/youtube_video_repository.dart';
 import '../../widgets/wp_components.dart';
 import '../../widgets/wp_scaffold.dart';
@@ -403,7 +402,7 @@ class _HomeMagazineCarousel extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: 446,
+      height: 398,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -431,13 +430,13 @@ class _HomeMagazineCarousel extends StatelessWidget {
   }
 }
 
-class _HomeMagazineCard extends ConsumerWidget {
+class _HomeMagazineCard extends StatelessWidget {
   const _HomeMagazineCard({required this.issue});
 
   final MagazineIssue issue;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Container(
       width: 252,
       padding: const EdgeInsets.all(10),
@@ -503,41 +502,6 @@ class _HomeMagazineCard extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 42,
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.copper,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(7),
-                      ),
-                    ),
-                    onPressed: () => context.push('/magazine/${issue.id}/read'),
-                    icon: const Icon(Icons.menu_book_rounded, size: 18),
-                    label: const FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        'Read',
-                        style: TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: SizedBox(
-                  height: 42,
-                  child: _HomeMagazinePdfButton(issue: issue),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -572,121 +536,6 @@ class _HomeMagazineIssueMeta extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _HomeMagazinePdfButton extends ConsumerWidget {
-  const _HomeMagazinePdfButton({required this.issue});
-
-  final MagazineIssue issue;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (issue.pdfUrl.isEmpty) {
-      return _HomeMagazineOutlineButton(
-        label: 'PDF',
-        icon: Icons.download_rounded,
-        onPressed: null,
-      );
-    }
-    final repository = ref.watch(downloadRepositoryProvider);
-    return FutureBuilder<DownloadedFile?>(
-      future: repository.fileForUrl(issue.pdfUrl),
-      builder: (context, snapshot) {
-        final downloaded = snapshot.data;
-        if (downloaded != null) {
-          return _HomeMagazineOutlineButton(
-            label: 'View PDF',
-            icon: Icons.visibility_outlined,
-            onPressed: () => context.push('/downloaded-pdf', extra: downloaded),
-          );
-        }
-        return _HomeMagazineOutlineButton(
-          label: 'Download',
-          icon: Icons.download_rounded,
-          onPressed: () async {
-            await _downloadHomeMagazinePdf(context, ref, issue);
-          },
-        );
-      },
-    );
-  }
-}
-
-class _HomeMagazineOutlineButton extends StatelessWidget {
-  const _HomeMagazineOutlineButton({
-    required this.label,
-    required this.icon,
-    required this.onPressed,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        minimumSize: const Size.fromHeight(42),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18),
-          const SizedBox(width: 5),
-          Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                label,
-                maxLines: 1,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-Future<void> _downloadHomeMagazinePdf(
-  BuildContext context,
-  WidgetRef ref,
-  MagazineIssue issue,
-) async {
-  final messenger = ScaffoldMessenger.of(context);
-  messenger.showSnackBar(
-    SnackBar(content: Text('Downloading ${issue.title}...')),
-  );
-  try {
-    final repository = ref.read(downloadRepositoryProvider);
-    await repository.downloadPdf(
-      title: issue.title,
-      url: issue.pdfUrl,
-      coverUrl: issue.coverUrl,
-    );
-    ref.invalidate(downloadRepositoryProvider);
-    messenger.hideCurrentSnackBar();
-    if (!context.mounted) return;
-    messenger.showSnackBar(
-      SnackBar(
-        content: const Text('PDF downloaded'),
-        action: SnackBarAction(
-          label: 'Downloads',
-          onPressed: () => context.push('/downloads'),
-        ),
-      ),
-    );
-  } on Object {
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Download failed. Please try again.')),
     );
   }
 }

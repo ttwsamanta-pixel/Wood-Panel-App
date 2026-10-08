@@ -3223,6 +3223,8 @@ class MagazineDetailScreen extends ConsumerWidget {
                 url: issue.coverUrl,
                 height: 430,
                 width: double.infinity,
+                framed: false,
+                fit: BoxFit.cover,
               ),
               const SizedBox(height: 14),
               Text(issue.title,

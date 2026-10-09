@@ -144,7 +144,8 @@ class _HomeContent extends StatelessWidget {
         data.magazines.isNotEmpty ? data.magazines.first.coverUrl : '';
     return ListView(
       children: [
-        WPHeroNewsCard(article: articles.first),
+        const _HomePromoBannerCarousel(),
+        const _TopCategoryCarousel(),
         WPSectionHeader(
           title: 'Latest News',
           actionLabel: 'See All',
@@ -161,17 +162,6 @@ class _HomeContent extends StatelessWidget {
             itemCount: articles.length,
             itemBuilder: (context, index) =>
                 _TrendingCard(article: articles[index]),
-          ),
-        ),
-        const WPSectionHeader(title: 'News Categories'),
-        SizedBox(
-          height: 112,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            itemCount: NewsCategory.all.length,
-            itemBuilder: (context, index) =>
-                _CategoryTile(category: NewsCategory.all[index]),
           ),
         ),
         WPSectionHeader(
@@ -199,6 +189,232 @@ class _HomeContent extends StatelessWidget {
         ),
         const SizedBox(height: 20),
       ],
+    );
+  }
+}
+
+const _homePromoBannerAssets = <String>[
+  'assets/home_banners/banner_1.png',
+  'assets/home_banners/banner_2.png',
+  'assets/home_banners/banner_3.png',
+  'assets/home_banners/banner_4.png',
+  'assets/home_banners/banner_5.png',
+];
+
+class _HomePromoBannerCarousel extends StatefulWidget {
+  const _HomePromoBannerCarousel();
+
+  @override
+  State<_HomePromoBannerCarousel> createState() =>
+      _HomePromoBannerCarouselState();
+}
+
+class _HomePromoBannerCarouselState extends State<_HomePromoBannerCarousel> {
+  Timer? _timer;
+  int _activeIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!mounted) return;
+      setState(() {
+        _activeIndex = (_activeIndex + 1) % _homePromoBannerAssets.length;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          margin: const EdgeInsets.fromLTRB(18, 14, 18, 0),
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x10000000),
+                blurRadius: 14,
+                offset: Offset(0, 7),
+              ),
+            ],
+          ),
+          child: AspectRatio(
+            aspectRatio: 3,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 360),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeOut,
+              child: Image.asset(
+                _homePromoBannerAssets[_activeIndex],
+                key: ValueKey(_activeIndex),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    _PromoBannerFallback(index: _activeIndex),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (var i = 0; i < _homePromoBannerAssets.length; i++)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width: i == _activeIndex ? 16 : 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: i == _activeIndex ? AppColors.copper : AppColors.line,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _PromoBannerFallback extends StatelessWidget {
+  const _PromoBannerFallback({required this.index});
+
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final titles = const [
+      'Your Trusted Source for\nWood & Panel Industry',
+      'From Forest to Future\nWood. Panels. Possibilities.',
+      'Connecting the Global\nWood Industry',
+      'Global Platform for the\nWood Industry',
+      'Global Platform for the\nWood Industry',
+    ];
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [Color(0xFFFFF7EC), Color(0xFFE8F3EA)],
+        ),
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned(
+            right: -20,
+            top: -14,
+            bottom: -18,
+            child: Icon(
+              Icons.layers_rounded,
+              size: 170,
+              color: AppColors.copper.withValues(alpha: .14),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 122, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  titles[index % titles.length],
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.green,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
+                    height: 1.02,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'News | Insights | Products | Technology | Events',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Color(0xFF4D4842),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 9,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.copper,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Explore Now',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 10,
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        Icon(Icons.arrow_forward_rounded,
+                            color: Colors.white, size: 14),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            right: 18,
+            bottom: 20,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .74),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: const Padding(
+                padding: EdgeInsets.all(9),
+                child: Icon(
+                  Icons.newspaper_rounded,
+                  color: AppColors.copper,
+                  size: 26,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TopCategoryCarousel extends StatelessWidget {
+  const _TopCategoryCarousel();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 96,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
+        itemCount: NewsCategory.all.length,
+        itemBuilder: (context, index) =>
+            _CategoryTile(category: NewsCategory.all[index]),
+      ),
     );
   }
 }
@@ -846,24 +1062,37 @@ class _CategoryTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       onTap: () => context.push('/category/${category.id}'),
       child: Container(
-        width: 150,
+        width: 98,
         margin: const EdgeInsets.only(right: 10),
-        padding: const EdgeInsets.all(13),
+        padding: const EdgeInsets.fromLTRB(7, 10, 7, 8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF7F1EC),
+          color: const Color(0xFFF8F0E6),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.line),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0A000000),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(_categoryIcon(category.id), color: AppColors.copper),
-            const Spacer(),
+            Icon(_categoryIcon(category.id), color: AppColors.copper, size: 27),
+            const SizedBox(height: 7),
             Text(
-              category.name,
+              _categoryLabel(category.name),
+              textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w800, height: 1.1),
+              style: const TextStyle(
+                color: AppColors.ink,
+                fontWeight: FontWeight.w800,
+                fontSize: 11,
+                height: 1.08,
+              ),
             ),
           ],
         ),
@@ -888,6 +1117,18 @@ class _CategoryTile extends StatelessWidget {
       31115 => Icons.construction_rounded,
       33799 => Icons.precision_manufacturing_rounded,
       _ => Icons.article_rounded,
+    };
+  }
+
+  String _categoryLabel(String name) {
+    return switch (name) {
+      'Woodworking Events' => 'Events',
+      'Woodworking News' => 'Woodworking\nNews',
+      'Appointments and Acquisitions' => 'Appointments',
+      'Tools for Wood Processing' => 'Tools',
+      'Woodworking Machinery' => 'Machinery',
+      'Adhesives and Coatings' => 'Adhesives',
+      _ => name,
     };
   }
 }

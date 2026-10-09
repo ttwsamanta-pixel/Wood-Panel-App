@@ -199,6 +199,7 @@ const _homePromoBannerAssets = <String>[
   'assets/home_banners/banner_3.png',
   'assets/home_banners/banner_4.png',
   'assets/home_banners/banner_5.png',
+  'assets/home_banners/banner_6.png',
 ];
 
 class _HomePromoBannerCarousel extends StatefulWidget {
@@ -238,7 +239,7 @@ class _HomePromoBannerCarouselState extends State<_HomePromoBannerCarousel> {
           margin: const EdgeInsets.fromLTRB(18, 14, 18, 0),
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x10000000),
@@ -247,19 +248,15 @@ class _HomePromoBannerCarouselState extends State<_HomePromoBannerCarousel> {
               ),
             ],
           ),
-          child: AspectRatio(
-            aspectRatio: 3,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 360),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeOut,
-              child: Image.asset(
-                _homePromoBannerAssets[_activeIndex],
-                key: ValueKey(_activeIndex),
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) =>
-                    _PromoBannerFallback(index: _activeIndex),
-              ),
+          child: SizedBox(
+            height: 162,
+            width: double.infinity,
+            child: Image.asset(
+              _homePromoBannerAssets[_activeIndex],
+              key: ValueKey(_activeIndex),
+              fit: BoxFit.fill,
+              errorBuilder: (_, __, ___) =>
+                  _PromoBannerFallback(index: _activeIndex),
             ),
           ),
         ),
@@ -407,7 +404,7 @@ class _TopCategoryCarousel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 96,
+      height: 78,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
@@ -1062,9 +1059,9 @@ class _CategoryTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       onTap: () => context.push('/category/${category.id}'),
       child: Container(
-        width: 98,
-        margin: const EdgeInsets.only(right: 10),
-        padding: const EdgeInsets.fromLTRB(7, 10, 7, 8),
+        width: 74,
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.fromLTRB(5, 7, 5, 6),
         decoration: BoxDecoration(
           color: const Color(0xFFF8F0E6),
           borderRadius: BorderRadius.circular(8),
@@ -1080,8 +1077,8 @@ class _CategoryTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(_categoryIcon(category.id), color: AppColors.copper, size: 27),
-            const SizedBox(height: 7),
+            Icon(_categoryIcon(category.id), color: AppColors.copper, size: 21),
+            const SizedBox(height: 5),
             Text(
               _categoryLabel(category.name),
               textAlign: TextAlign.center,
@@ -1090,7 +1087,7 @@ class _CategoryTile extends StatelessWidget {
               style: const TextStyle(
                 color: AppColors.ink,
                 fontWeight: FontWeight.w800,
-                fontSize: 11,
+                fontSize: 9,
                 height: 1.08,
               ),
             ),
@@ -1124,7 +1121,7 @@ class _CategoryTile extends StatelessWidget {
     return switch (name) {
       'Woodworking Events' => 'Events',
       'Woodworking News' => 'Woodworking\nNews',
-      'Appointments and Acquisitions' => 'Appointments',
+      'Appointments and Acquisitions' => 'Appoints',
       'Tools for Wood Processing' => 'Tools',
       'Woodworking Machinery' => 'Machinery',
       'Adhesives and Coatings' => 'Adhesives',

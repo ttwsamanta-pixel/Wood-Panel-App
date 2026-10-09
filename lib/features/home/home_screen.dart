@@ -448,7 +448,7 @@ class _LatestNewsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 3),
       leading: WPImage(url: article.imageUrl, width: 82, height: 68),
       title: Text(
         article.title,

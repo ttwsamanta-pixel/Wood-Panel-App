@@ -154,7 +154,7 @@ class _HomeContent extends StatelessWidget {
           _LatestNewsRow(article: article),
         const WPSectionHeader(title: 'Trending'),
         SizedBox(
-          height: 270,
+          height: 260,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -260,75 +260,68 @@ class _TrendingCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(8)),
-                  child: WPImage(
-                    url: article.imageUrl,
-                    height: 132,
-                    width: double.infinity,
-                    borderRadius: 0,
-                  ),
-                ),
-                Positioned(
-                  left: 8,
-                  top: 8,
-                  child: WPTag(article.category),
-                ),
-              ],
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(8)),
+              child: WPImage(
+                url: article.imageUrl,
+                height: 132,
+                width: double.infinity,
+                borderRadius: 0,
+              ),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 9, 10, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      article.title,
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        height: 1.08,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        const Icon(Icons.headphones_rounded,
-                            size: 18, color: AppColors.ink),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${article.readingMinutes} min read',
-                          style: const TextStyle(
-                            color: AppColors.muted,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          tooltip: 'Share',
-                          onPressed: () =>
-                              Share.share('${article.title}\n${article.url}'),
-                          icon: const Icon(Icons.share_rounded,
-                              color: AppColors.copper, size: 19),
-                        ),
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          tooltip: 'Bookmark',
-                          onPressed: () {},
-                          icon: const Icon(Icons.bookmark_border_rounded,
-                              color: AppColors.ink, size: 20),
-                        ),
-                      ],
-                    ),
-                  ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 9, 10, 0),
+              child: Text(
+                article.title,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  height: 1.08,
+                  fontSize: 16,
                 ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                children: [
+                  const Icon(Icons.headphones_rounded,
+                      size: 18, color: AppColors.ink),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${article.readingMinutes} min read',
+                    style: const TextStyle(
+                      color: AppColors.muted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    constraints:
+                        const BoxConstraints.tightFor(width: 32, height: 32),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    tooltip: 'Share',
+                    onPressed: () =>
+                        Share.share('${article.title}\n${article.url}'),
+                    icon: const Icon(Icons.share_rounded,
+                        color: AppColors.copper, size: 19),
+                  ),
+                  IconButton(
+                    constraints:
+                        const BoxConstraints.tightFor(width: 32, height: 32),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    tooltip: 'Bookmark',
+                    onPressed: () {},
+                    icon: const Icon(Icons.bookmark_border_rounded,
+                        color: AppColors.ink, size: 20),
+                  ),
+                ],
               ),
             ),
           ],
@@ -444,46 +437,45 @@ class _HomeVideoCard extends StatelessWidget {
                 ),
               ],
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 9, 10, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      video.title,
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        height: 1.08,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            DateFormat('d MMM yyyy').format(video.publishedAt),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: AppColors.muted, fontSize: 12),
-                          ),
-                        ),
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          tooltip: 'Share',
-                          onPressed: () =>
-                              Share.share('${video.title}\n${video.url}'),
-                          icon: const Icon(Icons.share_rounded,
-                              color: AppColors.copper, size: 19),
-                        ),
-                      ],
-                    ),
-                  ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 9, 10, 0),
+              child: Text(
+                video.title,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  height: 1.08,
+                  fontSize: 15,
                 ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      DateFormat('d MMM yyyy').format(video.publishedAt),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          const TextStyle(color: AppColors.muted, fontSize: 12),
+                    ),
+                  ),
+                  IconButton(
+                    constraints:
+                        const BoxConstraints.tightFor(width: 32, height: 32),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                    tooltip: 'Share',
+                    onPressed: () =>
+                        Share.share('${video.title}\n${video.url}'),
+                    icon: const Icon(Icons.share_rounded,
+                        color: AppColors.copper, size: 19),
+                  ),
+                ],
               ),
             ),
           ],

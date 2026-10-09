@@ -261,58 +261,60 @@ class _TrendingCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Stack(
-              children: [
-                WPImage(
-                  url: article.imageUrl,
-                  height: 126,
-                  width: double.infinity,
-                  borderRadius: 8,
-                ),
-                Positioned(
-                  left: 8,
-                  top: 8,
-                  child: WPTag(article.category),
-                ),
-              ],
+            WPImage(
+              url: article.imageUrl,
+              height: 100,
+              width: double.infinity,
+              borderRadius: 8,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
+            Text(
+              '${article.category}  •  ${DateFormat('d MMM yyyy').format(article.date)}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.muted,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 4),
             Text(
               article.title,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w900, height: 1.16),
+              style: const TextStyle(
+                fontWeight: FontWeight.w900,
+                height: 1.08,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              article.excerpt,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.muted,
+                height: 1.18,
+                fontSize: 12,
+              ),
             ),
             const Spacer(),
             Row(
               children: [
-                const Icon(Icons.calendar_today_rounded,
-                    size: 14, color: AppColors.muted),
-                const SizedBox(width: 5),
+                const Icon(Icons.headphones_rounded,
+                    size: 18, color: AppColors.ink),
+                const SizedBox(width: 6),
                 Text(
-                  DateFormat('d MMM yyyy').format(article.date),
+                  '${article.readingMinutes} min read',
                   style: const TextStyle(
                     color: AppColors.muted,
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Icon(Icons.schedule_rounded,
-                    size: 14, color: AppColors.muted),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    '${article.readingMinutes} min',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.muted,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
+                const Spacer(),
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   tooltip: 'Share',
@@ -320,6 +322,13 @@ class _TrendingCard extends StatelessWidget {
                       Share.share('${article.title}\n${article.url}'),
                   icon: const Icon(Icons.share_rounded,
                       color: AppColors.copper, size: 19),
+                ),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  tooltip: 'Bookmark',
+                  onPressed: () {},
+                  icon: const Icon(Icons.bookmark_border_rounded,
+                      color: AppColors.ink, size: 20),
                 ),
               ],
             ),
@@ -392,7 +401,6 @@ class _HomeVideoCard extends StatelessWidget {
       child: Container(
         width: 224,
         margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
@@ -412,9 +420,9 @@ class _HomeVideoCard extends StatelessWidget {
               children: [
                 WPImage(
                   url: video.thumbnailUrl,
-                  height: 116,
+                  height: 112,
                   width: double.infinity,
-                  borderRadius: 8,
+                  borderRadius: 0,
                 ),
                 Positioned.fill(
                   child: Center(
@@ -433,17 +441,29 @@ class _HomeVideoCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            Text(
-              video.title,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w900, height: 1.12),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              DateFormat('d MMM yyyy').format(video.publishedAt),
-              style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 9, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    video.title,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      height: 1.08,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    DateFormat('d MMM yyyy').format(video.publishedAt),
+                    style:
+                        const TextStyle(color: AppColors.muted, fontSize: 12),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

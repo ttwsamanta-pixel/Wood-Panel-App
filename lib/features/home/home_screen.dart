@@ -154,7 +154,7 @@ class _HomeContent extends StatelessWidget {
           _LatestNewsRow(article: article),
         const WPSectionHeader(title: 'Trending'),
         SizedBox(
-          height: 258,
+          height: 270,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -245,7 +245,6 @@ class _TrendingCard extends StatelessWidget {
       child: Container(
         width: 238,
         margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
@@ -261,76 +260,76 @@ class _TrendingCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            WPImage(
-              url: article.imageUrl,
-              height: 100,
-              width: double.infinity,
-              borderRadius: 8,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${article.category}  •  ${DateFormat('d MMM yyyy').format(article.date)}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppColors.muted,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              article.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontWeight: FontWeight.w900,
-                height: 1.08,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              article.excerpt,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppColors.muted,
-                height: 1.18,
-                fontSize: 12,
-              ),
-            ),
-            const Spacer(),
-            Row(
+            Stack(
               children: [
-                const Icon(Icons.headphones_rounded,
-                    size: 18, color: AppColors.ink),
-                const SizedBox(width: 6),
-                Text(
-                  '${article.readingMinutes} min read',
-                  style: const TextStyle(
-                    color: AppColors.muted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                ClipRRect(
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(8)),
+                  child: WPImage(
+                    url: article.imageUrl,
+                    height: 132,
+                    width: double.infinity,
+                    borderRadius: 0,
                   ),
                 ),
-                const Spacer(),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  tooltip: 'Share',
-                  onPressed: () =>
-                      Share.share('${article.title}\n${article.url}'),
-                  icon: const Icon(Icons.share_rounded,
-                      color: AppColors.copper, size: 19),
-                ),
-                IconButton(
-                  visualDensity: VisualDensity.compact,
-                  tooltip: 'Bookmark',
-                  onPressed: () {},
-                  icon: const Icon(Icons.bookmark_border_rounded,
-                      color: AppColors.ink, size: 20),
+                Positioned(
+                  left: 8,
+                  top: 8,
+                  child: WPTag(article.category),
                 ),
               ],
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 9, 10, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      article.title,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        height: 1.08,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: [
+                        const Icon(Icons.headphones_rounded,
+                            size: 18, color: AppColors.ink),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${article.readingMinutes} min read',
+                          style: const TextStyle(
+                            color: AppColors.muted,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          tooltip: 'Share',
+                          onPressed: () =>
+                              Share.share('${article.title}\n${article.url}'),
+                          icon: const Icon(Icons.share_rounded,
+                              color: AppColors.copper, size: 19),
+                        ),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          tooltip: 'Bookmark',
+                          onPressed: () {},
+                          icon: const Icon(Icons.bookmark_border_rounded,
+                              color: AppColors.ink, size: 20),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -376,7 +375,7 @@ class _HomeVideoCarousel extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: 226,
+      height: 236,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -418,11 +417,15 @@ class _HomeVideoCard extends StatelessWidget {
           children: [
             Stack(
               children: [
-                WPImage(
-                  url: video.thumbnailUrl,
-                  height: 112,
-                  width: double.infinity,
-                  borderRadius: 0,
+                ClipRRect(
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(8)),
+                  child: WPImage(
+                    url: video.thumbnailUrl,
+                    height: 112,
+                    width: double.infinity,
+                    borderRadius: 0,
+                  ),
                 ),
                 Positioned.fill(
                   child: Center(
@@ -441,28 +444,46 @@ class _HomeVideoCard extends StatelessWidget {
                 ),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(10, 9, 10, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    video.title,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      height: 1.08,
-                      fontSize: 15,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(10, 9, 10, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      video.title,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        height: 1.08,
+                        fontSize: 15,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    DateFormat('d MMM yyyy').format(video.publishedAt),
-                    style:
-                        const TextStyle(color: AppColors.muted, fontSize: 12),
-                  ),
-                ],
+                    const Spacer(),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            DateFormat('d MMM yyyy').format(video.publishedAt),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                color: AppColors.muted, fontSize: 12),
+                          ),
+                        ),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          tooltip: 'Share',
+                          onPressed: () =>
+                              Share.share('${video.title}\n${video.url}'),
+                          icon: const Icon(Icons.share_rounded,
+                              color: AppColors.copper, size: 19),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

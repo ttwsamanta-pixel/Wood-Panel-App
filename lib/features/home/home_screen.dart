@@ -213,15 +213,17 @@ class _HomePromoBannerCarousel extends StatefulWidget {
 class _HomePromoBannerCarouselState extends State<_HomePromoBannerCarousel> {
   late final PageController _controller;
   Timer? _timer;
+  late int _currentPage;
   int _activeIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _controller = PageController();
+    _currentPage = _homePromoBannerAssets.length * 1000;
+    _controller = PageController(initialPage: _currentPage);
     _timer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (!mounted || !_controller.hasClients) return;
-      final next = (_activeIndex + 1) % _homePromoBannerAssets.length;
+      final next = _currentPage + 1;
       _controller.animateToPage(
         next,
         duration: const Duration(milliseconds: 360),
@@ -259,14 +261,17 @@ class _HomePromoBannerCarouselState extends State<_HomePromoBannerCarousel> {
             width: double.infinity,
             child: PageView.builder(
               controller: _controller,
-              itemCount: _homePromoBannerAssets.length,
-              onPageChanged: (index) => setState(() => _activeIndex = index),
+              onPageChanged: (index) => setState(() {
+                _currentPage = index;
+                _activeIndex = index % _homePromoBannerAssets.length;
+              }),
               itemBuilder: (context, index) {
+                final assetIndex = index % _homePromoBannerAssets.length;
                 return Image.asset(
-                  _homePromoBannerAssets[index],
+                  _homePromoBannerAssets[assetIndex],
                   fit: BoxFit.fill,
                   errorBuilder: (_, __, ___) =>
-                      _PromoBannerFallback(index: index),
+                      _PromoBannerFallback(index: assetIndex),
                 );
               },
             ),
@@ -1071,7 +1076,7 @@ class _CategoryTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       onTap: () => context.push('/category/${category.id}'),
       child: Container(
-        width: 82,
+        width: 74,
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.fromLTRB(5, 7, 5, 6),
         decoration: BoxDecoration(

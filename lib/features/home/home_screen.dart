@@ -1354,166 +1354,179 @@ class _NewsletterPopupState extends ConsumerState<_NewsletterPopup> {
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final maxDialogHeight = media.size.height - media.viewInsets.bottom - 48;
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 18),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       clipBehavior: Clip.antiAlias,
-      child: Stack(
-        clipBehavior: Clip.hardEdge,
-        children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(18, 24, 18, 18),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF7EC),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    height: 166,
-                    child: Stack(
-                      clipBehavior: Clip.hardEdge,
-                      children: [
-                        Positioned(
-                          left: 0,
-                          top: 22,
-                          child: RichText(
-                            text: const TextSpan(
-                              style: TextStyle(
-                                fontSize: 28,
-                                height: 1.04,
-                                color: AppColors.green,
-                                fontWeight: FontWeight.w900,
-                              ),
-                              children: [
-                                TextSpan(text: 'Join Our\n'),
-                                TextSpan(
-                                  text: 'Newsletter',
-                                  style: TextStyle(color: AppColors.copper),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: maxDialogHeight.clamp(320.0, media.size.height - 48),
+        ),
+        child: Stack(
+          clipBehavior: Clip.hardEdge,
+          children: [
+            SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(18, 24, 18, 18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7EC),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: 166,
+                        child: Stack(
+                          clipBehavior: Clip.hardEdge,
+                          children: [
+                            Positioned(
+                              left: 0,
+                              top: 22,
+                              child: RichText(
+                                text: const TextSpan(
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    height: 1.04,
+                                    color: AppColors.green,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                  children: [
+                                    TextSpan(text: 'Join Our\n'),
+                                    TextSpan(
+                                      text: 'Newsletter',
+                                      style: TextStyle(color: AppColors.copper),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const Positioned(
-                          left: 0,
-                          right: 120,
-                          top: 102,
-                          child: Text(
-                            'Get the latest news, events, magazine highlights and industry insights.',
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Color(0xFF56504A),
-                              fontSize: 12,
-                              height: 1.25,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: ClipRect(
-                            child: SizedBox(
-                              width: 126,
-                              height: 132,
-                              child: _NewsletterArtwork(
-                                coverUrl: widget.coverUrl,
-                                phoneWidth: 68,
-                                phoneHeight: 116,
-                                circleSize: 112,
-                                mailSize: 52,
-                                leafSize: 32,
-                                phoneRight: 14,
-                                phoneTop: 10,
-                                mailLeft: 2,
-                                mailTop: 56,
                               ),
                             ),
+                            const Positioned(
+                              left: 0,
+                              right: 120,
+                              top: 102,
+                              child: Text(
+                                'Get the latest news, events, magazine highlights and industry insights.',
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Color(0xFF56504A),
+                                  fontSize: 12,
+                                  height: 1.25,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: ClipRect(
+                                child: SizedBox(
+                                  width: 126,
+                                  height: 132,
+                                  child: _NewsletterArtwork(
+                                    coverUrl: widget.coverUrl,
+                                    phoneWidth: 68,
+                                    phoneHeight: 116,
+                                    circleSize: 112,
+                                    mailSize: 52,
+                                    leafSize: 32,
+                                    phoneRight: 14,
+                                    phoneTop: 10,
+                                    mailLeft: 2,
+                                    mailTop: 56,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      _NewsletterTextField(
+                        controller: _name,
+                        icon: Icons.person_outline_rounded,
+                        hint: 'Full Name',
+                        validator: _required,
+                      ),
+                      const SizedBox(height: 12),
+                      _NewsletterTextField(
+                        controller: _email,
+                        icon: Icons.mail_outline_rounded,
+                        hint: 'Email Address',
+                        keyboardType: TextInputType.emailAddress,
+                        validator: _emailValidator,
+                      ),
+                      const SizedBox(height: 12),
+                      _NewsletterTextField(
+                        controller: _country,
+                        icon: Icons.language_rounded,
+                        hint: 'Country',
+                        validator: _required,
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: FilledButton.icon(
+                          onPressed: _isSending ? null : _submit,
+                          iconAlignment: IconAlignment.end,
+                          icon: _isSending
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.arrow_forward_rounded),
+                          label: Text(_isSending ? 'Submitting' : 'Submit'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.copper,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _NewsletterTextField(
-                    controller: _name,
-                    icon: Icons.person_outline_rounded,
-                    hint: 'Full Name',
-                    validator: _required,
-                  ),
-                  const SizedBox(height: 12),
-                  _NewsletterTextField(
-                    controller: _email,
-                    icon: Icons.mail_outline_rounded,
-                    hint: 'Email Address',
-                    keyboardType: TextInputType.emailAddress,
-                    validator: _emailValidator,
-                  ),
-                  const SizedBox(height: 12),
-                  _NewsletterTextField(
-                    controller: _country,
-                    icon: Icons.language_rounded,
-                    hint: 'Country',
-                    validator: _required,
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: FilledButton.icon(
-                      onPressed: _isSending ? null : _submit,
-                      iconAlignment: IconAlignment.end,
-                      icon: _isSending
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.arrow_forward_rounded),
-                      label: Text(_isSending ? 'Submitting' : 'Submit'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.copper,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
                       ),
-                    ),
-                  ),
-                  if (_status != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Text(
-                        _status!,
-                        style: TextStyle(
-                          color: _isError ? AppColors.error : AppColors.success,
-                          fontWeight: FontWeight.w700,
+                      if (_status != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Text(
+                            _status!,
+                            style: TextStyle(
+                              color: _isError
+                                  ? AppColors.error
+                                  : AppColors.success,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                ],
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
-          Positioned(
-            top: 8,
-            right: 8,
-            child: IconButton.filled(
-              onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.close_rounded),
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                minimumSize: const Size(42, 42),
-                fixedSize: const Size(42, 42),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton.filled(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close_rounded),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  minimumSize: const Size(42, 42),
+                  fixedSize: const Size(42, 42),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -140,6 +140,7 @@ class _HomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final articles = data.articles;
+    final latestArticles = articles.skip(1).take(4).toList();
     final newsletterCoverUrl =
         data.magazines.isNotEmpty ? data.magazines.first.coverUrl : '';
     return ListView(
@@ -151,8 +152,14 @@ class _HomeContent extends StatelessWidget {
           actionLabel: 'See All',
           onAction: () => context.go('/feed'),
         ),
-        for (final article in articles.skip(1).take(4))
-          _LatestNewsRow(article: article),
+        for (var index = 0; index < latestArticles.length; index++) ...[
+          _LatestNewsRow(article: latestArticles[index]),
+          if (index != latestArticles.length - 1)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 18),
+              child: Divider(height: 1, color: AppColors.line),
+            ),
+        ],
         const WPSectionHeader(title: 'Trending'),
         SizedBox(
           height: 260,

@@ -211,23 +211,29 @@ class _HomePromoBannerCarousel extends StatefulWidget {
 }
 
 class _HomePromoBannerCarouselState extends State<_HomePromoBannerCarousel> {
+  late final PageController _controller;
   Timer? _timer;
   int _activeIndex = 0;
 
   @override
   void initState() {
     super.initState();
+    _controller = PageController();
     _timer = Timer.periodic(const Duration(seconds: 4), (_) {
-      if (!mounted) return;
-      setState(() {
-        _activeIndex = (_activeIndex + 1) % _homePromoBannerAssets.length;
-      });
+      if (!mounted || !_controller.hasClients) return;
+      final next = (_activeIndex + 1) % _homePromoBannerAssets.length;
+      _controller.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 360),
+        curve: Curves.easeOutCubic,
+      );
     });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -251,12 +257,18 @@ class _HomePromoBannerCarouselState extends State<_HomePromoBannerCarousel> {
           child: SizedBox(
             height: 162,
             width: double.infinity,
-            child: Image.asset(
-              _homePromoBannerAssets[_activeIndex],
-              key: ValueKey(_activeIndex),
-              fit: BoxFit.fill,
-              errorBuilder: (_, __, ___) =>
-                  _PromoBannerFallback(index: _activeIndex),
+            child: PageView.builder(
+              controller: _controller,
+              itemCount: _homePromoBannerAssets.length,
+              onPageChanged: (index) => setState(() => _activeIndex = index),
+              itemBuilder: (context, index) {
+                return Image.asset(
+                  _homePromoBannerAssets[index],
+                  fit: BoxFit.fill,
+                  errorBuilder: (_, __, ___) =>
+                      _PromoBannerFallback(index: index),
+                );
+              },
             ),
           ),
         ),
@@ -1059,7 +1071,7 @@ class _CategoryTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       onTap: () => context.push('/category/${category.id}'),
       child: Container(
-        width: 74,
+        width: 82,
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.fromLTRB(5, 7, 5, 6),
         decoration: BoxDecoration(

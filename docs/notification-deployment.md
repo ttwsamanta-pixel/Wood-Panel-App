@@ -51,3 +51,10 @@ Plugin 0.7.1 groups Newsletter, Contact and Profile beneath Submissions in the a
 Notification cards use a shared category/time row, two-line headline and preview, thumbnail, unread dot and chevron. All/Unread buttons use edition colours. Flutter widget checks at 320 and 390 logical pixels and local WordPress browser checks passed; Flutter analysis reported no issues. Install the updated plugin ZIP on both websites.
 
 Installed the updated Android APK on device c2a40481 and visually checked populated Europe (1 notification) and USA (8 notifications, 7 unread) inboxes. Category/time alignment, compact cards, thumbnails, chevrons and unread dots displayed without overflow. Screenshots saved in artifacts/dual-edition/inbox-compact-europe.png and inbox-compact-usa.png.
+
+
+## Both-edition push subscriptions ? 30 October 2026
+
+The global notification preference now subscribes to both wood_panel_europe and wood_panel_usa. Browsing/switching editions does not unsubscribe the other topic. Turning notifications off removes both subscriptions. Foreground messages refresh the source edition inbox and can open that edition article; inbox/read state remain separate. Existing enabled installations repair subscriptions on startup. No server/plugin/Firebase configuration change required.
+
+Validation: subscription and inbox tests passed; Flutter analysis clean; Android build installed on c2a40481. Firebase logs confirmed successful subscriptions to both topics. Two token-targeted (not broadcast) background tests, one per edition, were accepted and both appeared in Android notification records. iOS uses the same subscription logic but still requires Mac/iPhone verification.

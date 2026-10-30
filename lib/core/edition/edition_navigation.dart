@@ -19,7 +19,6 @@ final notificationStatusProvider =
 final editionNavigationProvider = Provider<EditionNavigation>((ref) {
   final service = EditionNavigation(ref);
   ref.onDispose(service.dispose);
-  ref.listen(editionProvider, (_, __) => service.syncTopics());
   ref.listen(notificationsEnabledProvider, (_, __) => service.syncTopics());
   unawaited(service.start());
   return service;
@@ -70,19 +69,20 @@ class EditionNavigation {
       if (_disposed) return;
       _firebaseReady = true;
       ref.read(notificationStatusProvider.notifier).state =
-          'Receive news from the selected edition.';
+          'Receive news from Europe and USA.';
       _subscriptions
           .add(FirebaseMessaging.onMessageOpenedApp.listen(_openMessage));
       _subscriptions.add(
           FirebaseMessaging.instance.onRegistered.listen((_) => syncTopics()));
       _subscriptions.add(FirebaseMessaging.onMessage.listen((message) {
-        if (_disposed ||
-            message.data['edition'] != ref.read(editionProvider).name) {
-          return;
-        }
-        ref
-            .read(notificationInboxProvider(ref.read(editionProvider)).notifier)
-            .refresh();
+        if (_disposed) return;
+        final source = switch (message.data['edition']) {
+          'europe' => Edition.europe,
+          'usa' => Edition.usa,
+          _ => null,
+        };
+        if (source == null) return;
+        ref.read(notificationInboxProvider(source).notifier).refresh();
         final context = ref
             .read(appRouterProvider)
             .routerDelegate
@@ -179,23 +179,19 @@ class EditionNavigation {
 
   void syncTopics() {
     if (_disposed || !_firebaseReady) return;
-    // Serialize topic updates so rapid edition switches cannot subscribe out of order.
+    // Serialize preference/token updates; browsing an edition never changes subscriptions.
     _topicQueue = _topicQueue.then((_) async {
       if (_disposed) return;
-      final edition = ref.read(editionProvider);
       final enabled = ref.read(notificationsEnabledProvider);
       await FirebaseMessaging.instance.setAutoInitEnabled(enabled);
-      for (final item in Edition.values) {
-        if (!enabled || item != edition) {
-          await FirebaseMessaging.instance.unsubscribeFromTopic(item.topic);
-        }
-      }
-      if (enabled) {
-        await FirebaseMessaging.instance.subscribeToTopic(edition.topic);
-      }
+      await syncEditionPushSubscriptions(
+        enabled: enabled,
+        subscribe: FirebaseMessaging.instance.subscribeToTopic,
+        unsubscribe: FirebaseMessaging.instance.unsubscribeFromTopic,
+      );
       if (!_disposed) {
         ref.read(notificationStatusProvider.notifier).state = enabled
-            ? '${edition.label} notifications enabled.'
+            ? 'Europe and USA notifications enabled.'
             : 'Notifications are off.';
       }
     }).catchError((Object _) {
@@ -214,6 +210,21 @@ class EditionNavigation {
   }
 }
 
+/// The notification preference covers both editions, independent of browsing mode.
+Future<void> syncEditionPushSubscriptions({
+  required bool enabled,
+  required Future<void> Function(String) subscribe,
+  required Future<void> Function(String) unsubscribe,
+}) async {
+  for (final edition in Edition.values) {
+    if (enabled) {
+      await subscribe(edition.topic);
+    } else {
+      await unsubscribe(edition.topic);
+    }
+  }
+}
+
 void showNotificationSettings(BuildContext context) {
   showDialog<void>(
       context: context,
@@ -222,8 +233,7 @@ void showNotificationSettings(BuildContext context) {
                 title: const Text('Notifications'),
                 content: SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title:
-                      Text('Wood & Panel ${ref.watch(editionProvider).label}'),
+                  title: const Text('Wood & Panel Europe and USA'),
                   subtitle: Text(ref.watch(notificationStatusProvider)),
                   value: ref.watch(notificationsEnabledProvider),
                   onChanged: (value) =>

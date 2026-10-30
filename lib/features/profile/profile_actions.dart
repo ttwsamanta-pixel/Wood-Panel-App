@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/edition/edition.dart';
-import '../../core/edition/edition_navigation.dart';
 import '../../data/repositories/content_providers.dart';
 import '../home/home_screen.dart' show showNewsletterPopup;
 
@@ -45,7 +44,7 @@ Future<void> openProfileAction(
       }
     }
   } else if (route == 'notifications') {
-    showNotificationSettings(context);
+    context.push('/notifications');
   } else {
     context.push(route);
   }

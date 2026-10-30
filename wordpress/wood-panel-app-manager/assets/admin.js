@@ -89,7 +89,7 @@
     });
     nav.append(button); panels.push({panel, button});
   });
-  const selected = panels.find(({panel}) => panel.id === sessionStorage.getItem('wpam-tab')) || panels[0];
+  const selected = panels.find(({panel}) => panel.id === location.hash.slice(1)) || panels.find(({panel}) => panel.id === sessionStorage.getItem('wpam-tab')) || panels[0];
   selected?.button.click();
   form.addEventListener('invalid', event => {
     panels.find(({panel}) => panel.contains(event.target))?.button.click();

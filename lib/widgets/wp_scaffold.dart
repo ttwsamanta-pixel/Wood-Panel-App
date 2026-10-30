@@ -1,3 +1,4 @@
+import 'back_to_top.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -33,7 +34,16 @@ class WPScaffold extends StatelessWidget {
         title: title,
         showNotifications: showNotifications,
       ),
-      body: SafeArea(top: false, child: child),
+      body: SafeArea(
+          top: false,
+          child: (GoRouterState.of(context).uri.path.startsWith('/article/') ||
+                  GoRouterState.of(context)
+                      .uri
+                      .path
+                      .startsWith('/interview/') ||
+                  GoRouterState.of(context).uri.path == '/legacy-interview')
+              ? BackToTop(child: child)
+              : child),
       bottomNavigationBar: SafeArea(
           top: false,
           child: Column(mainAxisSize: MainAxisSize.min, children: [

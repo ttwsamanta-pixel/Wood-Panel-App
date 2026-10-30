@@ -24,6 +24,17 @@ User requested Android testing now and iOS testing later when building on a Mac.
 
 ## Verification
 
+### Notification inbox update (plugin 0.7.0)
+
+- Install the updated plugin ZIP on **both** websites before installing the updated app. No Firebase console changes are needed for the inbox.
+- The header bell and Profile Notifications entry now open the edition's inbox. Notification permission/subscription controls stay in Preferences.
+- `/wp-json/wood-panel-app/v1/notifications?page=1` exposes accepted notification jobs about currently public news only. It returns 100 jobs per page and a page count. Failed, cancelled and scheduled jobs are excluded; private or password-protected articles are excluded even after a send.
+- History includes accepted jobs already recorded by the scheduling-enabled plugin. Older sends made before job history existed cannot be reconstructed.
+- Read IDs and cached history persist on the device separately for Europe and USA. Dismissing an Android/iOS system notification does not mark an inbox item read. New push payloads include `notification_id`; tapping them marks that item read and still opens its article directly.
+- The app refreshes history on launch/edition access, resume, foreground push, opening the inbox, pull-to-refresh, and once per minute while active. Read status is local to the installation, not synchronized between different phones.
+- The plugin's internal sidebar provides settings, banners, reports, notifications, profiles and submissions. Registered legacy admin URLs remain available. Contact details are independently editable under **Contact details**, with identical initial defaults for both editions. The existing URL/highlights method for **In This Issue** is unchanged.
+- Verification for this update: PHP payload/job tests, real local WordPress REST privacy tests, browser checks for sidebar navigation/contact saving/mobile layout, and Flutter tests for pagination, offline read-state retention, edition separation, inbox navigation and back-to-top scrolling. Live inbox delivery needs the new plugin deployed on both sites. The connected Android phone disconnected before APK installation; device review remains pending unless recorded separately below.
+
 - Isolated PHP notification checks cover payload, fallback, timezone, authorization, cancellation state, future jobs, duplicate workers and failed delivery; no real recipients are used in these tests.
 - Android single-device image delivery verified on the connected phone, including visible expanded featured image. Test sends target only that device token, not edition subscriber topics. The existing installed Android build already supports this system notification image format.
 - `tool/test_notification_device.py` is an explicit single-device smoke-test utility; supply a private credentials path, adb path and PHP path. It never prints tokens/private keys and never sends to a topic.

@@ -26,6 +26,23 @@ function wpam_social_defaults(): array {
  return ['facebook'=>'https://www.facebook.com/woodpanel', 'x'=>'https://twitter.com/WoodandPanel', 'linkedin'=>'https://www.linkedin.com/company/wood-and-panel', 'instagram'=>'https://www.instagram.com/woodandpanel/', 'youtube'=>'https://www.youtube.com/woodandpanel', 'whatsapp'=>'https://wa.me/4915222067848'];
 }
 
+function wpam_contact_defaults(): array {
+    return [
+        'usa_address' => "244 5th Avenue, Suite 2468,\nNew York, N.Y. 10001",
+        'usa_phone' => "+1 917 677 7753",
+        'usa_whatsapp' => "+49 152 22067848",
+        'india_address' => "S-303 Ideal Plaza, 11/1\nSarat Bose Road, Kolkata 700020",
+        'india_phone' => "+91 33 4603 4660",
+        'india_mobile' => "+91 9836877999",
+        'email' => "editor@woodandpanel.com",
+        'email_secondary' => "woodandpanel@gmail.com",
+        'team_name' => "Ms. Chitralekha Banerjee",
+        'team_role' => "Editor, Manager - Public Relations",
+        'team_email' => "pr@woodandpanel.com",
+        'team_phone' => "+91 33 4603 4660",
+    ];
+}
+
 function wpam_defaults(): array {
 
     $logo = wp_get_attachment_image_url((int) get_theme_mod('custom_logo'), 'full');
@@ -59,7 +76,7 @@ function wpam_defaults(): array {
         'app_store_url' => '', 'ios_store_url' => '',
         'youtube_channel_id' => WPAM_CHANNEL,
 
-        'social_links' => wpam_social_defaults(), 'wallpapers' => [], 'default_wallpapers_enabled' => true,
+        'contact_details' => wpam_contact_defaults(), 'social_links' => wpam_social_defaults(), 'wallpapers' => [], 'default_wallpapers_enabled' => true,
 
     ];
 
@@ -254,6 +271,10 @@ function wpam_sanitize_settings($input): array {
     $out['ios_store_url'] = $ios;
     $out['youtube_channel_id'] = WPAM_CHANNEL;
 
+    foreach (wpam_contact_defaults() as $key => $default) {
+        $value = $input['contact_details'][$key] ?? $default;
+        $out['contact_details'][$key] = is_scalar($value) ? (strpos($key, 'email') !== false ? sanitize_email((string) $value) : sanitize_textarea_field((string) $value)) : $default;
+    }
     return $out;
 
 }
@@ -307,7 +328,7 @@ function wpam_public_config(): array {
         'inline_ads' => $s['inline_ads'], 'footer_ads' => $s['footer_ads'],
 
         'app_store_url' => $s['app_store_url'], 'ios_store_url' => $s['ios_store_url'],
-        'social_links' => $s['social_links'], 'wallpapers' => $s['wallpapers'],
+        'contact_details' => array_replace(wpam_contact_defaults(), (array) $s['contact_details']), 'social_links' => $s['social_links'], 'wallpapers' => $s['wallpapers'],
 
         'default_wallpapers_enabled' => $s['default_wallpapers_enabled'],
 

@@ -205,6 +205,10 @@ class _ContactPageState extends ConsumerState<ContactPage> {
 
   @override
   Widget build(BuildContext context) {
+    final details = ref.watch(activeConfigProvider).contactDetails;
+    String d(String key) => details[key] ?? defaultContactDetails[key]!;
+    String phone(String key) =>
+        'tel:${d(key).replaceAll(RegExp(r"[^+0-9]"), "")}';
     final colors = Theme.of(context).colorScheme;
     return WPScaffold(
         showBack: true,
@@ -244,23 +248,21 @@ class _ContactPageState extends ConsumerState<ContactPage> {
               _InfoCard(
                   icon: Icons.location_on,
                   title: 'USA Address',
-                  text: '244 5th Avenue, Suite 2468,\nNew York, N.Y. 10001',
+                  text: d('usa_address'),
                   contacts: [
-                    ('+1 917 677 7753', 'tel:+19176777753'),
+                    (d('usa_phone'), phone('usa_phone')),
                     (
-                      '+49 152 22067848',
-                      ref.watch(activeConfigProvider).socialLinks['whatsapp'] ??
-                          'https://wa.me/4915222067848'
+                      d('usa_whatsapp'),
+                      'https://wa.me/${d('usa_whatsapp').replaceAll(RegExp(r'[^0-9]'), '')}'
                     )
                   ]),
               _InfoCard(
                   icon: Icons.location_on,
                   title: 'India Address',
-                  text:
-                      'S-303 Ideal Plaza, 11/1\nSarat Bose Road, Kolkata 700020',
-                  contacts: const [
-                    ('+91 33 4603 4660', 'tel:+913346034660'),
-                    ('+91 9836877999', 'tel:+919836877999')
+                  text: d('india_address'),
+                  contacts: [
+                    (d('india_phone'), phone('india_phone')),
+                    (d('india_mobile'), phone('india_mobile'))
                   ]),
               _Surface(
                   child: Row(children: [
@@ -275,10 +277,9 @@ class _ContactPageState extends ConsumerState<ContactPage> {
                               color: colors.secondary,
                               fontSize: 16,
                               fontWeight: FontWeight.w800)),
-                      _ContactLink('editor@woodandpanel.com',
-                          'mailto:editor@woodandpanel.com'),
-                      _ContactLink('woodandpanel@gmail.com',
-                          'mailto:woodandpanel@gmail.com'),
+                      _ContactLink(d('email'), 'mailto:${d('email')}'),
+                      _ContactLink(d('email_secondary'),
+                          'mailto:${d('email_secondary')}'),
                     ])),
                 Icon(Icons.send_rounded,
                     color: colors.primary.withValues(alpha: .18), size: 32),
@@ -395,20 +396,19 @@ class _ContactPageState extends ConsumerState<ContactPage> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                    Text('Ms. Chitralekha Banerjee',
+                                    Text(d('team_name'),
                                         style: TextStyle(
                                             color: colors.secondary,
                                             fontSize: 13,
                                             fontWeight: FontWeight.w800)),
                                     const SizedBox(height: 5),
-                                    const Text(
-                                        'Editor, Manager - Public Relations',
+                                    Text(d('team_role'),
                                         style: TextStyle(fontSize: 11)),
                                     const SizedBox(height: 5),
-                                    const _ContactLink('pr@woodandpanel.com',
-                                        'mailto:pr@woodandpanel.com'),
-                                    const _ContactLink('+91 33 4603 4660',
-                                        'tel:+913346034660'),
+                                    _ContactLink(d('team_email'),
+                                        'mailto:${d('team_email')}'),
+                                    _ContactLink(
+                                        d('team_phone'), phone('team_phone')),
                                   ])),
                             ])),
                   ])),

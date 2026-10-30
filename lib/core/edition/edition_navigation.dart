@@ -1,3 +1,4 @@
+import 'notification_inbox.dart';
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
@@ -79,6 +80,9 @@ class EditionNavigation {
             message.data['edition'] != ref.read(editionProvider).name) {
           return;
         }
+        ref
+            .read(notificationInboxProvider(ref.read(editionProvider)).notifier)
+            .refresh();
         final context = ref
             .read(appRouterProvider)
             .routerDelegate
@@ -111,6 +115,13 @@ class EditionNavigation {
     };
     final id = int.tryParse('${message.data['article_id']}');
     if (edition != null && id != null && id > 0) {
+      final notificationId = message.data['notification_id'];
+      if (notificationId != null) {
+        ref
+            .read(notificationInboxProvider(edition).notifier)
+            .markRead('$notificationId');
+      }
+      ref.read(notificationInboxProvider(edition).notifier).refresh();
       openLink(Uri.parse('${edition.site}/?p=$id'));
     }
   }

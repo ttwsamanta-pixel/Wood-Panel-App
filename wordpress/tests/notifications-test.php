@@ -73,6 +73,7 @@ try {
     $allowed = true;
     job(10); wpam_notification_run(10);
     check($meta[10]['state'] === 'accepted' && count($sent) === 1, 'Cron works without logged-in user');
+    check($sent[0]['message']['data']['notification_id'] === '10', 'Push links to the persistent inbox item');
     wpam_notification_run(10);
     check(count($sent) === 1, 'Repeated cron does not resend');
     job(11); add_option('wpam_push_lock_11', time()); wpam_notification_run(11);

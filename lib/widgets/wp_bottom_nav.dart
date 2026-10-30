@@ -47,6 +47,7 @@ class WPBottomNav extends StatelessWidget {
       return '/explore';
     }
     if (path == '/bookmarks' ||
+        path == '/notifications' ||
         path == '/downloads' ||
         path == '/wallpapers' ||
         path == '/subscribe' ||

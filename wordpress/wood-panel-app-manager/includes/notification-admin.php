@@ -105,7 +105,7 @@ function wpam_notification_run(int $id): void {
         if (!$job || !user_can((int) $job->post_author, 'manage_options')) {
             $result = new WP_Error('permission', 'The scheduling user no longer has permission to send notifications.');
         } else {
-            $result = wpam_deliver_notification((int) get_post_meta($id, 'article_id', true), (string) get_post_meta($id, 'edition', true));
+            $result = wpam_deliver_notification((int) get_post_meta($id, 'article_id', true), (string) get_post_meta($id, 'edition', true), $id);
         }
         update_post_meta($id, 'state', is_wp_error($result) ? 'failed' : 'accepted');
         update_post_meta($id, 'result', is_wp_error($result) ? $result->get_error_message() : 'Firebase accepted the notification. Delivery depends on device permissions and connectivity.');

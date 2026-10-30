@@ -3,6 +3,7 @@ defined('ABSPATH') || exit;
 
 // UI, search and durable scheduled jobs are separate from the FCM transport.
 require_once __DIR__ . '/notification-admin.php';
+require_once __DIR__ . '/notification-inbox.php';
 
 function wpam_notification_post(int $id) {
     $post = get_post($id);
@@ -61,7 +62,7 @@ function wpam_send_notification(int $id) {
 }
 
 // Internal transport: only the protected admin handler or an authorized queued job calls this.
-function wpam_deliver_notification(int $id, string $edition) {
+function wpam_deliver_notification(int $id, string $edition, int $job_id = 0) {
     if (!in_array($edition, ['europe', 'usa'], true) || $edition !== wpam_edition()) {
         return new WP_Error('wrong_edition', 'The website edition changed; create a new notification.');
     }
@@ -93,9 +94,11 @@ function wpam_deliver_notification(int $id, string $edition) {
     }
     $token = json_decode(wp_remote_retrieve_body($token_response), true)['access_token'] ?? '';
     if (!$token) return new WP_Error('auth_failed', 'Firebase did not return an access token.');
+    $message = wpam_notification_message($post, $edition);
+    if ($job_id > 0) $message['data']['notification_id'] = (string) $job_id;
     $response = wp_remote_post('https://fcm.googleapis.com/v1/projects/' . $credentials['project_id'] . '/messages:send', [
         'timeout' => 20, 'headers' => ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
-        'body' => wp_json_encode(['message' => wpam_notification_message($post, $edition)]),
+        'body' => wp_json_encode(['message' => $message]),
     ]);
     if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
         return new WP_Error('send_failed', 'Firebase did not accept the notification. Check the project, messaging API and service-account role.');

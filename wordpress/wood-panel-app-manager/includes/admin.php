@@ -45,9 +45,9 @@ function wpam_admin_assets($hook): void {
 
     $base = plugin_dir_url(dirname(__DIR__) . '/wood-panel-app-manager.php');
 
-    wp_enqueue_style('wpam-admin', $base . 'assets/admin.css', [], '0.5.0');
+    wp_enqueue_style('wpam-admin', $base . 'assets/admin.css', [], '0.7.0');
 
-    wp_enqueue_script('wpam-admin', $base . 'assets/admin.js', ['media-editor'], '0.5.0', true);
+    wp_enqueue_script('wpam-admin', $base . 'assets/admin.js', ['media-editor'], '0.7.0', true);
 
 }
 
@@ -271,6 +271,10 @@ function wpam_admin_page(): void {
 
         <p>Submissions are stored privately on this site. Newsletter registration does not send campaigns.</p>
 
+        <h2>Contact details</h2><p>Contact page details for this edition. Both editions start with the same details; changes apply only to this website.</p>
+        <table class="form-table"><?php foreach (wpam_contact_defaults() as $key => $default): ?>
+        <tr><th><label for="contact-<?php echo esc_attr($key); ?>"><?php echo esc_html(ucwords(str_replace('_', ' ', $key))); ?></label></th><td><textarea rows="2" class="large-text" id="contact-<?php echo esc_attr($key); ?>" name="wpam_settings[contact_details][<?php echo esc_attr($key); ?>]"><?php echo esc_textarea($s['contact_details'][$key] ?? $default); ?></textarea></td></tr>
+        <?php endforeach; ?></table>
         <h2>Social media</h2><p>These links appear on Contact, Profile and the app menu for this edition. Leave a link empty to hide its icon.</p>
         <table class="form-table"><tbody>
         <?php foreach (wpam_social_defaults() as $key => $default): ?>
@@ -282,7 +286,7 @@ function wpam_admin_page(): void {
         <table class="form-table"><tr><th>iOS App Store URL</th><td><input class="large-text" type="url" name="wpam_settings[ios_store_url]" value="<?php echo esc_attr($s['ios_store_url']); ?>" placeholder="https://apps.apple.com/app/your-app/id123456789"><p class="description">Used on iPhones and iPads. Save app settings after entering the link.</p></td></tr></table>
         <h2>Shared videos</h2><p>YouTube channel: <code><?php echo esc_html(WPAM_CHANNEL); ?></code></p>
 
-        <h2>Notifications</h2>
+        <h2>Push configuration</h2>
         <p>Edition topic: <code>wood_panel_<?php echo esc_html($s['edition']); ?></code></p>
         <?php if (defined('WPAM_FIREBASE_SERVICE_ACCOUNT_FILE') && is_readable(WPAM_FIREBASE_SERVICE_ACCOUNT_FILE)): ?>
             <p>Firebase credential file is available. Delivery status is shown after sending a notification.</p>

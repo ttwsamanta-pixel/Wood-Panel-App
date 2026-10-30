@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Wood & Panel App Manager
  * Description: Edition-specific configuration and submissions for the Wood & Panel app.
- * Version: 0.6.1
+ * Version: 0.7.0
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Wood & Panel
@@ -62,3 +62,5 @@ function wpam_activate(): void {
 
 add_action('init', 'wpam_profile_upgrade', 5);
 add_action('admin_post_wpam_submission_action', 'wpam_submission_action');
+
+require_once __DIR__ . '/includes/dashboard.php';

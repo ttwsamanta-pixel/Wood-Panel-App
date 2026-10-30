@@ -1,9 +1,9 @@
+import 'notification_bell.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/edition/edition.dart';
-import '../core/edition/edition_navigation.dart';
 
 import '../core/theme/app_colors.dart';
 import 'wp_logo.dart';
@@ -161,13 +161,7 @@ class WPAppBar extends ConsumerWidget implements PreferredSizeWidget {
           icon: const Icon(Icons.search_rounded),
           onPressed: () => context.push('/search'),
         ),
-        if (showNotifications)
-          IconButton(
-            tooltip: 'Notifications',
-            icon: const Icon(Icons.notifications_none_rounded),
-            color: AppColors.ink,
-            onPressed: () => showNotificationSettings(context),
-          ),
+        if (showNotifications) const NotificationBell(),
       ],
       bottom: const PreferredSize(
         preferredSize: Size.fromHeight(1),

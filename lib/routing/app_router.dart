@@ -1,3 +1,4 @@
+import '../features/profile/notification_screen.dart';
 import '../features/profile/profile_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,8 +26,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     routes: [
-      GoRoute(path: '/welcome-profile', builder: (context,state) => const ProfileEditor(firstLaunch:true)),
-      GoRoute(path: '/edit-profile', builder: (context,state) => const ProfileEditor()),
+      GoRoute(
+          path: '/notifications',
+          builder: (context, state) => const NotificationScreen()),
+      GoRoute(
+          path: '/welcome-profile',
+          builder: (context, state) => const ProfileEditor(firstLaunch: true)),
+      GoRoute(
+          path: '/edit-profile',
+          builder: (context, state) => const ProfileEditor()),
       GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
       GoRoute(
           path: '/onboarding',

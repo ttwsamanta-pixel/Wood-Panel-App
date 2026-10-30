@@ -94,6 +94,21 @@ final activeConfigProvider = Provider<EditionConfig>((ref) {
       EditionConfig(edition: edition);
 });
 
+const defaultContactDetails = <String, String>{
+  'usa_address': '244 5th Avenue, Suite 2468,\nNew York, N.Y. 10001',
+  'usa_phone': '+1 917 677 7753',
+  'usa_whatsapp': '+49 152 22067848',
+  'india_address': 'S-303 Ideal Plaza, 11/1\nSarat Bose Road, Kolkata 700020',
+  'india_phone': '+91 33 4603 4660',
+  'india_mobile': '+91 9836877999',
+  'email': 'editor@woodandpanel.com',
+  'email_secondary': 'woodandpanel@gmail.com',
+  'team_name': 'Ms. Chitralekha Banerjee',
+  'team_role': 'Editor, Manager - Public Relations',
+  'team_email': 'pr@woodandpanel.com',
+  'team_phone': '+91 33 4603 4660'
+};
+
 class EditionConfig {
   const EditionConfig(
       {required this.edition,
@@ -127,6 +142,7 @@ class EditionConfig {
       this.aboutPageId = 0,
       this.contactPageId = 0,
       this.socialLinks = defaultSocialLinks,
+      this.contactDetails = defaultContactDetails,
       this.defaultWallpapers = true,
       this.wallpapers = const []})
       : primary = primary ??
@@ -150,6 +166,7 @@ class EditionConfig {
   final List<Map<String, String>> banners;
   final List<Map<String, String>> inlineAds, footerAds;
   final Map<String, String> socialLinks;
+  final Map<String, String> contactDetails;
   final bool defaultWallpapers;
   final List<Map<String, String>> wallpapers;
   final List<String> sections;
@@ -225,6 +242,13 @@ class EditionConfig {
         banners: ads('banners'),
         interviewCategories: ids('interview_categories'),
         featuredIds: ids('featured_ids'),
+        contactDetails: {
+          for (final key in defaultContactDetails.keys)
+            key: json['contact_details'] is Map &&
+                    (json['contact_details'] as Map)[key] is String
+                ? (json['contact_details'] as Map)[key] as String
+                : defaultContactDetails[key]!
+        },
         socialLinks: {
           for (final key in defaultSocialLinks.keys)
             key: (json['social_links'] is Map &&

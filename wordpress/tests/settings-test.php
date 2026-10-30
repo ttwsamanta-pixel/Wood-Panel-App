@@ -8,6 +8,8 @@ function post_type_exists($type) { return in_array($type, ['magazine', 'tribe_ev
 function get_option($key, $default = []) { return $default; }
 function esc_url_raw($url, $protocols = []) { return filter_var($url, FILTER_VALIDATE_URL) ? $url : ''; }
 function sanitize_text_field($value) { return trim(strip_tags((string) $value)); }
+function sanitize_textarea_field($value) { return trim(strip_tags((string) $value)); }
+function sanitize_email($value) { return filter_var($value, FILTER_SANITIZE_EMAIL); }
 function sanitize_key($value) { return preg_replace('/[^a-z0-9_-]/', '', strtolower($value)); }
 function sanitize_hex_color($value) { return preg_match('/^#[a-f0-9]{6}$/i', $value) ? $value : ''; }
 function absint($value) { return abs((int) $value); }

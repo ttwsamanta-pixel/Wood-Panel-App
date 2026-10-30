@@ -1,8 +1,8 @@
+<!-- Same adaptive icon and inset as the launcher, centered in the splash safe area. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
  <item android:width="288dp" android:height="288dp">
   <shape><solid android:color="@android:color/transparent"/></shape>
  </item>
- <item android:width="168dp" android:height="168dp" android:gravity="center">
-  <bitmap android:src="@mipmap/launch_icon" android:gravity="fill"/>
- </item>
+ <item android:width="168dp" android:height="168dp" android:gravity="center"
+       android:drawable="@mipmap/ic_launcher"/>
 </layer-list>

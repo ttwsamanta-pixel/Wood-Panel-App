@@ -181,3 +181,6 @@ Plugin 0.5.3 adds iOS App Store URL under App store links. Both fields can be co
 
 ### Image notifications and scheduling - 30 October 2026
 See [notification-deployment.md](notification-deployment.md) for plugin 0.6.0, Android verification and the explicitly deferred Mac/iPhone notification-extension checklist.
+
+### Startup branding update — 30 October 2026
+Android now uses a dedicated transparent splash logo and an adaptive launcher icon with green/brown backing, avoiding the white legacy-icon surround. The Flutter opening splash adds scalable wood-grain corner ribbons on black and retains the animated brand loader. Android's system splash remains logo-only; corners appear after Flutter starts. Cold-launch screenshots on c2a40481 confirmed the borderless native logo and corner decoration. Flutter analysis and Android build passed. No onboarding or profile data was reset.

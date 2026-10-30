@@ -1,0 +1,7 @@
+Generated with the built-in image_gen tool, 28 October 2026. Original 1024x1536 PNG files bundled without edits.
+
+grain.png prompt: Portrait 1024x1536 premium phone wallpaper, macro natural walnut wood grain flowing vertically in gentle organic curves, rich warm brown, photorealistic tactile fine grain, soft light, full bleed, no text no logo no frame.
+
+forest.png prompt: Portrait 1024x1536 premium phone wallpaper, peaceful tall forest trees with straight trunks and soft morning rays through green canopy, natural wood industry theme, photorealistic, refined serene composition full bleed no text no logo.
+
+interior.png prompt: Portrait 1024x1536 premium phone wallpaper, sculptural oak slat wall in elegant minimalist interior with warm sunlight and soft architectural shadows, detail of wooden panels and curved oak chair bottom corner, photorealistic editorial architecture full bleed no text no logo.

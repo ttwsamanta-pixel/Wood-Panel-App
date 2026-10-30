@@ -1,3 +1,4 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,8 +26,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       Future<void>.delayed(const Duration(milliseconds: 1200)),
     ]);
     final completed = results.first as bool;
+    final prefs = await SharedPreferences.getInstance();
+    final profileSeen = prefs.getBool('profile_prompt_seen_v1') ?? false;
     if (mounted) {
-      context.go(completed ? '/feed' : '/onboarding');
+      context.go(!profileSeen ? '/welcome-profile' : completed ? '/feed' : '/onboarding');
     }
   }
 

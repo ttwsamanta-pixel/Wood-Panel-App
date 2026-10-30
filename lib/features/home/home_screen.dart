@@ -7,14 +7,18 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/edition/edition.dart';
 import '../../data/models/content_models.dart';
 import '../../data/models/news_category.dart';
 import '../../data/repositories/app_api_repository.dart';
 import '../../data/repositories/cache_refresh_bus.dart';
+import '../../data/repositories/cached_content_repository.dart';
 import '../../data/repositories/content_providers.dart';
 import '../../data/repositories/youtube_video_repository.dart';
 import '../../widgets/wp_components.dart';
 import '../../widgets/wp_scaffold.dart';
+import '../../widgets/promotional_ads.dart';
+import '../../widgets/category_icon.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -26,20 +30,29 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   late Future<_HomeData> _homeFuture;
   StreamSubscription<CacheRefreshType>? _cacheRefreshSubscription;
+  Timer? _refreshDebounce;
+  bool _manualRefresh = false;
 
   @override
   void initState() {
     super.initState();
     _homeFuture = _fetchHomeData();
     _cacheRefreshSubscription = CacheRefreshBus.stream.listen((type) {
-      if (!mounted) return;
-      setState(() => _homeFuture = _fetchHomeData());
+      if (!mounted || _manualRefresh) return;
+      _refreshDebounce?.cancel();
+      _refreshDebounce = Timer(const Duration(milliseconds: 400), () {
+        if (!mounted || _manualRefresh) return;
+        setState(() {
+          _homeFuture = _fetchHomeData();
+        });
+      });
     });
   }
 
   @override
   void dispose() {
     _cacheRefreshSubscription?.cancel();
+    _refreshDebounce?.cancel();
     super.dispose();
   }
 
@@ -58,19 +71,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       videosFuture,
       magazinesFuture,
       eventsFuture,
-      Future<void>.delayed(const Duration(milliseconds: 900)),
+      Future.wait(ref.read(activeConfigProvider).featuredIds.take(12).map(
+          (id) => contentRepository
+              .articleById(id)
+              .then<Article?>((article) => article)
+              .catchError((_) => null))),
     ]);
     return _HomeData(
       articles: results[0] as List<Article>,
       videos: results[1] as List<YouTubeVideo>,
       magazines: results[2] as List<MagazineIssue>,
       events: results[3] as List<AppEvent>,
+      featured: (results[4] as List<Article?>).whereType<Article>().toList(),
     );
   }
 
   Future<void> _reloadArticles() async {
-    setState(() => _homeFuture = _fetchHomeData());
-    await _homeFuture;
+    if (_manualRefresh) return;
+    _manualRefresh = true;
+    _refreshDebounce?.cancel();
+    try {
+      final edition = ref.read(editionProvider);
+      ref.invalidate(editionConfigProvider(edition));
+      await ref.read(editionConfigProvider(edition).future);
+      if (!mounted) return;
+      final repository = ref.read(contentRepositoryProvider);
+      if (repository is CachedContentRepository) await repository.refreshHome();
+      if (!mounted) return;
+      setState(() {
+        _homeFuture = _fetchHomeData();
+      });
+      await _homeFuture;
+    } finally {
+      _manualRefresh = false;
+    }
   }
 
   @override
@@ -79,7 +113,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: FutureBuilder<_HomeData>(
         future: _homeFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
+          if (!snapshot.hasData &&
+              snapshot.connectionState != ConnectionState.done) {
             return const WPPageLoader();
           }
           if (snapshot.hasError) {
@@ -100,7 +135,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           }
 
           return RefreshIndicator(
-            onRefresh: _reloadArticles,
+            onRefresh: () => refreshWithFooter(ref, _reloadArticles),
             child: _HomeContent(
               data: homeData,
             ),
@@ -117,6 +152,7 @@ class _HomeData {
     required this.videos,
     required this.magazines,
     required this.events,
+    this.featured = const [],
   });
 
   static const empty = _HomeData(
@@ -130,23 +166,31 @@ class _HomeData {
   final List<YouTubeVideo> videos;
   final List<MagazineIssue> magazines;
   final List<AppEvent> events;
+  final List<Article> featured;
 }
 
-class _HomeContent extends StatelessWidget {
+class _HomeContent extends ConsumerWidget {
   const _HomeContent({required this.data});
 
   final _HomeData data;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final config = ref.watch(activeConfigProvider);
     final articles = data.articles;
-    final latestArticles = articles.skip(1).take(4).toList();
+    final latestArticles = articles.take(4).toList();
+    final trending = data.featured.isEmpty ? articles : data.featured;
     final newsletterCoverUrl =
         data.magazines.isNotEmpty ? data.magazines.first.coverUrl : '';
-    return ListView(
-      children: [
-        const _HomePromoBannerCarousel(),
-        const _TopCategoryCarousel(),
+    final sections = <String, List<Widget>>{
+      'banners': [
+        if (!config.managed && config.edition == Edition.europe)
+          const _HomePromoBannerCarousel()
+        else if (config.banners.isNotEmpty)
+          _HomePromoBannerCarousel(banners: config.banners),
+      ],
+      'categories': [const _TopCategoryCarousel()],
+      'latest': [
         WPSectionHeader(
           title: 'Latest News',
           actionLabel: 'See All',
@@ -160,43 +204,58 @@ class _HomeContent extends StatelessWidget {
               child: Divider(height: 1, color: AppColors.line),
             ),
         ],
+      ],
+      'trending': [
         const WPSectionHeader(title: 'Trending'),
         SizedBox(
           height: 260,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 18),
-            itemCount: articles.length,
+            itemCount: trending.length,
             itemBuilder: (context, index) =>
-                _TrendingCard(article: articles[index]),
+                _TrendingCard(article: trending[index]),
           ),
         ),
+      ],
+      'videos': [
         WPSectionHeader(
           title: 'Videos',
           actionLabel: 'See All',
           onAction: () => context.push('/videos'),
         ),
         _HomeVideoCarousel(videos: data.videos),
+      ],
+      'magazines': [
         WPSectionHeader(
           title: 'Magazine Highlight',
           actionLabel: 'All Issues',
           onAction: () => context.go('/magazine'),
         ),
         _HomeMagazineCarousel(magazines: data.magazines),
+      ],
+      'events': [
         WPSectionHeader(
           title: 'Upcoming Events',
           actionLabel: 'View All',
           onAction: () => context.push('/events'),
         ),
         _HomeEventsCarousel(events: data.events),
-        const SizedBox(height: 16),
-        _NewsletterCard(
-          coverUrl: newsletterCoverUrl,
-          onPressed: () => _showNewsletterPopup(context, newsletterCoverUrl),
-        ),
-        const SizedBox(height: 20),
       ],
-    );
+      'newsletter': [
+        if (config.newsletter) ...[
+          const SizedBox(height: 16),
+          _NewsletterCard(
+            coverUrl: newsletterCoverUrl,
+            onPressed: () => showNewsletterPopup(context, newsletterCoverUrl),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ],
+    };
+    return ListView(children: [
+      for (final section in config.sections) ...?sections[section],
+    ]);
   }
 }
 
@@ -210,7 +269,9 @@ const _homePromoBannerAssets = <String>[
 ];
 
 class _HomePromoBannerCarousel extends StatefulWidget {
-  const _HomePromoBannerCarousel();
+  const _HomePromoBannerCarousel({this.banners});
+
+  final List<Map<String, String>>? banners;
 
   @override
   State<_HomePromoBannerCarousel> createState() =>
@@ -222,11 +283,12 @@ class _HomePromoBannerCarouselState extends State<_HomePromoBannerCarousel> {
   Timer? _timer;
   late int _currentPage;
   int _activeIndex = 0;
+  int get _count => widget.banners?.length ?? _homePromoBannerAssets.length;
 
   @override
   void initState() {
     super.initState();
-    _currentPage = _homePromoBannerAssets.length * 1000;
+    _currentPage = _count * 1000;
     _controller = PageController(initialPage: _currentPage);
     _timer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (!mounted || !_controller.hasClients) return;
@@ -270,10 +332,14 @@ class _HomePromoBannerCarouselState extends State<_HomePromoBannerCarousel> {
               controller: _controller,
               onPageChanged: (index) => setState(() {
                 _currentPage = index;
-                _activeIndex = index % _homePromoBannerAssets.length;
+                _activeIndex = index % _count;
               }),
               itemBuilder: (context, index) {
-                final assetIndex = index % _homePromoBannerAssets.length;
+                final assetIndex = index % _count;
+                if (widget.banners != null) {
+                  final banner = widget.banners![assetIndex];
+                  return PromoImage(banner: banner, fit: BoxFit.fill);
+                }
                 return Image.asset(
                   _homePromoBannerAssets[assetIndex],
                   fit: BoxFit.fill,
@@ -288,14 +354,16 @@ class _HomePromoBannerCarouselState extends State<_HomePromoBannerCarousel> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            for (var i = 0; i < _homePromoBannerAssets.length; i++)
+            for (var i = 0; i < _count; i++)
               AnimatedContainer(
                 duration: const Duration(milliseconds: 220),
                 margin: const EdgeInsets.symmetric(horizontal: 3),
                 width: i == _activeIndex ? 16 : 7,
                 height: 7,
                 decoration: BoxDecoration(
-                  color: i == _activeIndex ? AppColors.copper : AppColors.line,
+                  color: i == _activeIndex
+                      ? Theme.of(context).colorScheme.primary
+                      : AppColors.line,
                   borderRadius: BorderRadius.circular(999),
                 ),
               ),
@@ -338,7 +406,8 @@ class _PromoBannerFallback extends StatelessWidget {
             child: Icon(
               Icons.layers_rounded,
               size: 170,
-              color: AppColors.copper.withValues(alpha: .14),
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: .14),
             ),
           ),
           Padding(
@@ -351,8 +420,8 @@ class _PromoBannerFallback extends StatelessWidget {
                   titles[index % titles.length],
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.green,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.secondary,
                     fontWeight: FontWeight.w900,
                     fontSize: 14,
                     height: 1.02,
@@ -372,7 +441,7 @@ class _PromoBannerFallback extends StatelessWidget {
                 const SizedBox(height: 5),
                 DecoratedBox(
                   decoration: BoxDecoration(
-                    color: AppColors.copper,
+                    color: Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Padding(
@@ -406,11 +475,11 @@ class _PromoBannerFallback extends StatelessWidget {
                 color: Colors.white.withValues(alpha: .74),
                 borderRadius: BorderRadius.circular(999),
               ),
-              child: const Padding(
+              child: Padding(
                 padding: EdgeInsets.all(9),
                 child: Icon(
                   Icons.newspaper_rounded,
-                  color: AppColors.copper,
+                  color: Theme.of(context).colorScheme.primary,
                   size: 26,
                 ),
               ),
@@ -422,19 +491,21 @@ class _PromoBannerFallback extends StatelessWidget {
   }
 }
 
-class _TopCategoryCarousel extends StatelessWidget {
+class _TopCategoryCarousel extends ConsumerWidget {
   const _TopCategoryCarousel();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final categories = ref.watch(activeConfigProvider).homeCategories;
+    if (categories.isEmpty) return const SizedBox.shrink();
     return SizedBox(
       height: 78,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.fromLTRB(18, 10, 18, 0),
-        itemCount: NewsCategory.all.length,
+        itemCount: categories.length,
         itemBuilder: (context, index) =>
-            _CategoryTile(category: NewsCategory.all[index]),
+            _CategoryTile(category: categories[index]),
       ),
     );
   }
@@ -545,8 +616,8 @@ class _TrendingCard extends StatelessWidget {
                     tooltip: 'Share',
                     onPressed: () =>
                         Share.share('${article.title}\n${article.url}'),
-                    icon: const Icon(Icons.share_rounded,
-                        color: AppColors.copper, size: 19),
+                    icon: Icon(Icons.share_rounded,
+                        color: Theme.of(context).colorScheme.primary, size: 19),
                   ),
                   IconButton(
                     constraints:
@@ -587,8 +658,8 @@ class _HomeVideoCarousel extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.play_circle_fill_rounded,
-                color: AppColors.copper, size: 34),
+            Icon(Icons.play_circle_fill_rounded,
+                color: Theme.of(context).colorScheme.primary, size: 34),
             const SizedBox(width: 12),
             const Expanded(
               child: Text(
@@ -709,8 +780,8 @@ class _HomeVideoCard extends StatelessWidget {
                     tooltip: 'Share',
                     onPressed: () =>
                         Share.share('${video.title}\n${video.url}'),
-                    icon: const Icon(Icons.share_rounded,
-                        color: AppColors.copper, size: 19),
+                    icon: Icon(Icons.share_rounded,
+                        color: Theme.of(context).colorScheme.primary, size: 19),
                   ),
                 ],
               ),
@@ -741,8 +812,8 @@ class _HomeMagazineCarousel extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.menu_book_rounded,
-                color: AppColors.copper, size: 32),
+            Icon(Icons.menu_book_rounded,
+                color: Theme.of(context).colorScheme.primary, size: 32),
             const SizedBox(width: 12),
             const Expanded(
               child: Text(
@@ -850,12 +921,14 @@ class _HomeMagazineCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              const _HomeMagazineIssueMeta(
-                  icon: Icons.menu_book_rounded, label: 'Vol. 18'),
+              _HomeMagazineIssueMeta(
+                  icon: Icons.menu_book_rounded,
+                  label: 'Vol. ${issue.volume.isEmpty ? '-' : issue.volume}'),
               const SizedBox(width: 12),
               _HomeMagazineIssueMeta(
                 icon: Icons.article_outlined,
-                label: 'Issue ${issue.date.month}',
+                label:
+                    'Issue ${issue.issueNumber.isEmpty ? '-' : issue.issueNumber}',
               ),
             ],
           ),
@@ -963,13 +1036,17 @@ class _HomeEventCard extends StatelessWidget {
                 color: Colors.white,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: WPImage(
-                    url: event.imageUrl,
-                    width: double.infinity,
-                    height: double.infinity,
-                    fit: BoxFit.contain,
-                    borderRadius: 0,
-                  ),
+                  child: event.imageUrl.isEmpty
+                      ? Icon(Icons.event_rounded,
+                          size: 44,
+                          color: Theme.of(context).colorScheme.secondary)
+                      : WPImage(
+                          url: event.imageUrl,
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.contain,
+                          borderRadius: 0,
+                        ),
                 ),
               ),
             ),
@@ -977,7 +1054,7 @@ class _HomeEventCard extends StatelessWidget {
               flex: 57,
               child: Container(
                 height: double.infinity,
-                color: AppColors.green,
+                color: Theme.of(context).colorScheme.secondary,
                 padding: const EdgeInsets.fromLTRB(14, 12, 12, 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1101,7 +1178,8 @@ class _CategoryTile extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(_categoryIcon(category.id), color: AppColors.copper, size: 21),
+            Icon(categoryIcon(category.name),
+                color: Theme.of(context).colorScheme.primary, size: 21),
             const SizedBox(height: 5),
             Text(
               _categoryLabel(category.name),
@@ -1119,26 +1197,6 @@ class _CategoryTile extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  IconData _categoryIcon(int id) {
-    return switch (id) {
-      30036 => Icons.new_releases_rounded,
-      27527 => Icons.handyman_rounded,
-      31124 => Icons.event_available_rounded,
-      33793 => Icons.business_center_rounded,
-      33794 => Icons.eco_rounded,
-      33795 => Icons.chair_rounded,
-      31111 => Icons.format_paint_rounded,
-      33796 => Icons.palette_rounded,
-      31112 => Icons.computer_rounded,
-      31118 => Icons.forest_rounded,
-      33797 => Icons.layers_rounded,
-      33798 => Icons.grid_on_rounded,
-      31115 => Icons.construction_rounded,
-      33799 => Icons.precision_manufacturing_rounded,
-      _ => Icons.article_rounded,
-    };
   }
 
   String _categoryLabel(String name) {
@@ -1175,7 +1233,7 @@ class _FeatureBand extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 18),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.green,
+        color: Theme.of(context).colorScheme.secondary,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -1208,7 +1266,7 @@ class _FeatureBand extends StatelessWidget {
                   child: FilledButton(
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.white,
-                      foregroundColor: AppColors.green,
+                      foregroundColor: Theme.of(context).colorScheme.secondary,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),
@@ -1264,16 +1322,17 @@ class _NewsletterCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.mail_outline_rounded,
-                            color: AppColors.copper, size: 18),
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 18),
                         SizedBox(width: 8),
                         Text(
                           'NEWSLETTER',
                           style: TextStyle(
-                            color: AppColors.copper,
+                            color: Theme.of(context).colorScheme.primary,
                             fontSize: 11,
                             fontWeight: FontWeight.w900,
                           ),
@@ -1284,9 +1343,9 @@ class _NewsletterCard extends StatelessWidget {
                     RichText(
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      text: const TextSpan(
+                      text: TextSpan(
                         style: TextStyle(
-                          color: AppColors.green,
+                          color: Theme.of(context).colorScheme.secondary,
                           fontSize: 17,
                           height: 1.04,
                           fontWeight: FontWeight.w900,
@@ -1295,7 +1354,8 @@ class _NewsletterCard extends StatelessWidget {
                           TextSpan(text: 'Stay Ahead\nin the Wood &\nPanel '),
                           TextSpan(
                             text: 'Industry',
-                            style: TextStyle(color: AppColors.copper),
+                            style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary),
                           ),
                         ],
                       ),
@@ -1327,7 +1387,8 @@ class _NewsletterCard extends StatelessWidget {
                           ),
                         ),
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.copper,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -1395,7 +1456,7 @@ class _NewsletterPhonePreview extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             coverUrl.isEmpty
-                ? const ColoredBox(color: AppColors.green)
+                ? ColoredBox(color: Theme.of(context).colorScheme.secondary)
                 : WPImage(
                     url: coverUrl,
                     width: double.infinity,
@@ -1528,7 +1589,10 @@ class _NewsletterArtwork extends StatelessWidget {
               width: leafSize,
               height: leafSize * 1.35,
               decoration: BoxDecoration(
-                color: AppColors.green.withValues(alpha: .82),
+                color: Theme.of(context)
+                    .colorScheme
+                    .secondary
+                    .withValues(alpha: .82),
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(leafSize),
                   topRight: Radius.circular(leafSize * .35),
@@ -1551,7 +1615,7 @@ class _NewsletterArtwork extends StatelessWidget {
   }
 }
 
-Future<void> _showNewsletterPopup(BuildContext context, String coverUrl) {
+Future<void> showNewsletterPopup(BuildContext context, String coverUrl) {
   return showDialog<void>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: .72),
@@ -1598,11 +1662,13 @@ class _NewsletterPopupState extends ConsumerState<_NewsletterPopup> {
       await ref.read(appApiRepositoryProvider).subscribeNewsletter(
             name: _name.text.trim(),
             email: _email.text.trim(),
+            country: _country.text.trim(),
           );
       if (!mounted) return;
       setState(() {
         _isSending = false;
         _status = 'Thank you. You are subscribed.';
+        FocusScope.of(context).unfocus();
       });
     } on Object catch (error) {
       if (!mounted) return;
@@ -1637,140 +1703,173 @@ class _NewsletterPopupState extends ConsumerState<_NewsletterPopup> {
                   color: const Color(0xFFFFF7EC),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        height: 166,
-                        child: Stack(
-                          clipBehavior: Clip.hardEdge,
+                child: _status != null && !_isError && !_isSending
+                    ? SizedBox(
+                        height: 300,
+                        width: double.infinity,
+                        child: Center(
+                            child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                              Icon(Icons.check_circle_outline_rounded,
+                                  size: 58,
+                                  color: Theme.of(context).colorScheme.primary),
+                              const SizedBox(height: 18),
+                              Text('Thank you!',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium),
+                              const SizedBox(height: 10),
+                              const Text(
+                                  'You are subscribed to our newsletter.',
+                                  textAlign: TextAlign.center),
+                            ])))
+                    : Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Positioned(
-                              left: 0,
-                              top: 22,
-                              child: RichText(
-                                text: const TextSpan(
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    height: 1.04,
-                                    color: AppColors.green,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                  children: [
-                                    TextSpan(text: 'Join Our\n'),
-                                    TextSpan(
-                                      text: 'Newsletter',
-                                      style: TextStyle(color: AppColors.copper),
+                            SizedBox(
+                              height: 166,
+                              child: Stack(
+                                clipBehavior: Clip.hardEdge,
+                                children: [
+                                  Positioned(
+                                    left: 0,
+                                    top: 22,
+                                    child: RichText(
+                                      text: TextSpan(
+                                        style: TextStyle(
+                                          fontSize: 28,
+                                          height: 1.04,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .secondary,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                        children: [
+                                          TextSpan(text: 'Join Our\n'),
+                                          TextSpan(
+                                            text: 'Newsletter',
+                                            style: TextStyle(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primary),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                  const Positioned(
+                                    left: 0,
+                                    right: 120,
+                                    top: 102,
+                                    child: Text(
+                                      'Get the latest news, events, magazine highlights and industry insights.',
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Color(0xFF56504A),
+                                        fontSize: 12,
+                                        height: 1.25,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    right: 0,
+                                    top: 0,
+                                    child: ClipRect(
+                                      child: SizedBox(
+                                        width: 126,
+                                        height: 132,
+                                        child: _NewsletterArtwork(
+                                          coverUrl: widget.coverUrl,
+                                          phoneWidth: 68,
+                                          phoneHeight: 116,
+                                          circleSize: 112,
+                                          mailSize: 52,
+                                          leafSize: 32,
+                                          phoneRight: 14,
+                                          phoneTop: 10,
+                                          mailLeft: 2,
+                                          mailTop: 56,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const Positioned(
-                              left: 0,
-                              right: 120,
-                              top: 102,
-                              child: Text(
-                                'Get the latest news, events, magazine highlights and industry insights.',
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: Color(0xFF56504A),
-                                  fontSize: 12,
-                                  height: 1.25,
-                                ),
-                              ),
+                            const SizedBox(height: 8),
+                            _NewsletterTextField(
+                              controller: _name,
+                              icon: Icons.person_outline_rounded,
+                              hint: 'Full Name',
+                              validator: _required,
                             ),
-                            Positioned(
-                              right: 0,
-                              top: 0,
-                              child: ClipRect(
-                                child: SizedBox(
-                                  width: 126,
-                                  height: 132,
-                                  child: _NewsletterArtwork(
-                                    coverUrl: widget.coverUrl,
-                                    phoneWidth: 68,
-                                    phoneHeight: 116,
-                                    circleSize: 112,
-                                    mailSize: 52,
-                                    leafSize: 32,
-                                    phoneRight: 14,
-                                    phoneTop: 10,
-                                    mailLeft: 2,
-                                    mailTop: 56,
+                            const SizedBox(height: 12),
+                            _NewsletterTextField(
+                              controller: _email,
+                              icon: Icons.mail_outline_rounded,
+                              hint: 'Email Address',
+                              keyboardType: TextInputType.emailAddress,
+                              validator: _emailValidator,
+                            ),
+                            const SizedBox(height: 12),
+                            _NewsletterTextField(
+                              controller: _country,
+                              icon: Icons.language_rounded,
+                              hint: 'Country',
+                              validator: _required,
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: FilledButton.icon(
+                                onPressed: _isSending ||
+                                        !ref
+                                            .watch(activeConfigProvider)
+                                            .newsletter
+                                    ? null
+                                    : _submit,
+                                iconAlignment: IconAlignment.end,
+                                icon: _isSending
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.arrow_forward_rounded),
+                                label:
+                                    Text(_isSending ? 'Submitting' : 'Submit'),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor:
+                                      Theme.of(context).colorScheme.primary,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
                               ),
                             ),
+                            if (_status != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 12),
+                                child: Text(
+                                  _status!,
+                                  style: TextStyle(
+                                    color: _isError
+                                        ? AppColors.error
+                                        : AppColors.success,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      _NewsletterTextField(
-                        controller: _name,
-                        icon: Icons.person_outline_rounded,
-                        hint: 'Full Name',
-                        validator: _required,
-                      ),
-                      const SizedBox(height: 12),
-                      _NewsletterTextField(
-                        controller: _email,
-                        icon: Icons.mail_outline_rounded,
-                        hint: 'Email Address',
-                        keyboardType: TextInputType.emailAddress,
-                        validator: _emailValidator,
-                      ),
-                      const SizedBox(height: 12),
-                      _NewsletterTextField(
-                        controller: _country,
-                        icon: Icons.language_rounded,
-                        hint: 'Country',
-                        validator: _required,
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: FilledButton.icon(
-                          onPressed: _isSending ? null : _submit,
-                          iconAlignment: IconAlignment.end,
-                          icon: _isSending
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.arrow_forward_rounded),
-                          label: Text(_isSending ? 'Submitting' : 'Submit'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.copper,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (_status != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: Text(
-                            _status!,
-                            style: TextStyle(
-                              color: _isError
-                                  ? AppColors.error
-                                  : AppColors.success,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
               ),
             ),
             Positioned(

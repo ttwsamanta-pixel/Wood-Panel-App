@@ -8,12 +8,39 @@ import 'cache_refresh_bus.dart';
 import 'content_repository.dart';
 
 class CachedContentRepository implements ContentRepository {
-  const CachedContentRepository({required this.inner});
+  CachedContentRepository(
+      {required this.inner, this.edition = 'europe', this.isActive});
 
-  static const _prefix = 'content_cache_v1';
+  final String edition;
+  final bool Function()? isActive;
+  final Set<String> _refreshing = {};
+  Future<void> _refreshOnce(String key, Future<void> Function() work) async {
+    if (!_refreshing.add(key)) return;
+    try {
+      await work();
+    } finally {
+      _refreshing.remove(key);
+    }
+  }
+
+  String get _prefix => 'content_cache_v2:$edition';
   static const _freshFor = Duration(minutes: 2);
 
   final ContentRepository inner;
+
+  Future<void> refreshHome() async {
+    await Future.wait([
+      _refreshOnce(
+          '$_prefix:latest_articles:1:12',
+          () => _refreshArticleList(
+              '$_prefix:latest_articles:1:12',
+              () => inner.latestArticles(),
+              '$_prefix:shared:latest_articles:1')),
+      _refreshOnce('$_prefix:magazines_v2',
+          () => _refreshMagazines('$_prefix:magazines_v2')),
+      _refreshOnce('$_prefix:events', () => _refreshEvents('$_prefix:events')),
+    ]);
+  }
 
   @override
   Future<List<Article>> latestArticles({int page = 1, int perPage = 12}) {
@@ -73,7 +100,7 @@ class CachedContentRepository implements ContentRepository {
     final cached = prefs.getString(key);
     if (cached != null) {
       if (!_isFresh(prefs, key)) {
-        unawaited(_refreshSingleArticle(key, id));
+        unawaited(_refreshOnce(key, () => _refreshSingleArticle(key, id)));
       }
       return Article.fromJson(jsonDecode(cached) as Map<String, dynamic>);
     }
@@ -84,12 +111,12 @@ class CachedContentRepository implements ContentRepository {
 
   @override
   Future<List<MagazineIssue>> magazines() async {
-    const key = '$_prefix:magazines_v2';
+    final key = '$_prefix:magazines_v2';
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString(key);
     if (cached != null) {
       if (!_isFresh(prefs, key)) {
-        unawaited(_refreshMagazines(key));
+        unawaited(_refreshOnce(key, () => _refreshMagazines(key)));
       }
       return _decodeList(cached, MagazineIssue.fromJson);
     }
@@ -100,12 +127,12 @@ class CachedContentRepository implements ContentRepository {
 
   @override
   Future<List<AppEvent>> events() async {
-    const key = '$_prefix:events';
+    final key = '$_prefix:events';
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString(key);
     if (cached != null) {
       if (!_isFresh(prefs, key)) {
-        unawaited(_refreshEvents(key));
+        unawaited(_refreshOnce(key, () => _refreshEvents(key)));
       }
       return _decodeList(cached, AppEvent.fromJson);
     }
@@ -126,7 +153,8 @@ class CachedContentRepository implements ContentRepository {
     final cached = prefs.getString(cacheKey);
     if (cached != null) {
       if (!_isFresh(prefs, cacheKey)) {
-        unawaited(_refreshArticleList(cacheKey, fetch, sharedCacheKey));
+        unawaited(_refreshOnce(cacheKey,
+            () => _refreshArticleList(cacheKey, fetch, sharedCacheKey)));
       }
       return _decodeList(cached, Article.fromJson);
     }
@@ -134,7 +162,8 @@ class CachedContentRepository implements ContentRepository {
       final sharedCached = prefs.getString(sharedCacheKey);
       if (sharedCached != null) {
         if (!_isFresh(prefs, sharedCacheKey)) {
-          unawaited(_refreshArticleList(cacheKey, fetch, sharedCacheKey));
+          unawaited(_refreshOnce(cacheKey,
+              () => _refreshArticleList(cacheKey, fetch, sharedCacheKey)));
         }
         return _decodeList(sharedCached, Article.fromJson);
       }
@@ -151,9 +180,11 @@ class CachedContentRepository implements ContentRepository {
   ) async {
     try {
       final items = await fetch();
-      if (items.isNotEmpty) {
+      {
         await _saveArticleList(key, items, sharedKey);
-        CacheRefreshBus.emit(CacheRefreshType.content);
+        if (isActive?.call() ?? true) {
+          CacheRefreshBus.emit(CacheRefreshType.content);
+        }
       }
     } on Object {
       // Keep the previous cache if background refresh fails.
@@ -164,7 +195,9 @@ class CachedContentRepository implements ContentRepository {
     try {
       final article = await inner.articleById(id);
       await _saveString(key, jsonEncode(article.toJson()));
-      CacheRefreshBus.emit(CacheRefreshType.content);
+      if (isActive?.call() ?? true) {
+        CacheRefreshBus.emit(CacheRefreshType.content);
+      }
     } on Object {
       // Keep the previous cache if background refresh fails.
     }
@@ -173,9 +206,11 @@ class CachedContentRepository implements ContentRepository {
   Future<void> _refreshEvents(String key) async {
     try {
       final items = await inner.events();
-      if (items.isNotEmpty) {
+      {
         await _saveList(key, items.map((item) => item.toJson()).toList());
-        CacheRefreshBus.emit(CacheRefreshType.content);
+        if (isActive?.call() ?? true) {
+          CacheRefreshBus.emit(CacheRefreshType.content);
+        }
       }
     } on Object {
       // Keep the previous cache if background refresh fails.
@@ -185,9 +220,11 @@ class CachedContentRepository implements ContentRepository {
   Future<void> _refreshMagazines(String key) async {
     try {
       final items = await inner.magazines();
-      if (items.isNotEmpty) {
+      {
         await _saveList(key, items.map((item) => item.toJson()).toList());
-        CacheRefreshBus.emit(CacheRefreshType.content);
+        if (isActive?.call() ?? true) {
+          CacheRefreshBus.emit(CacheRefreshType.content);
+        }
       }
     } on Object {
       // Keep the previous cache if background refresh fails.
@@ -200,6 +237,7 @@ class CachedContentRepository implements ContentRepository {
 
   Future<void> _saveString(String key, String value) async {
     final prefs = await SharedPreferences.getInstance();
+    if (!(isActive?.call() ?? true)) return;
     await prefs.setString(key, value);
     await prefs.setInt(
         _timestampKey(key), DateTime.now().millisecondsSinceEpoch);

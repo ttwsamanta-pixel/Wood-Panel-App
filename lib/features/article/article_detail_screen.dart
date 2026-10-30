@@ -1,3 +1,5 @@
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/edition/edition.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -56,11 +58,25 @@ class _ArticleDetailScreenState extends ConsumerState<ArticleDetailScreen> {
     await _tts.setAudioAttributesForNavigation();
   }
 
-  Future<Article> _fetchArticle() =>
-      ref.read(contentRepositoryProvider).articleById(widget.id);
+  Future<Article> _fetchArticle() async {
+    final edition = ref.read(editionProvider).name;
+    final article =
+        await ref.read(contentRepositoryProvider).articleById(widget.id);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = 'articles_read_v1:$edition';
+      final ids = (prefs.getStringList(key) ?? []).toSet()..add('${widget.id}');
+      await prefs.setStringList(key, ids.toList());
+    } catch (_) {
+      /* Reading remains available if local storage is unavailable. */
+    }
+    return article;
+  }
 
   Future<void> _retryArticle() async {
-    setState(() => _articleFuture = _fetchArticle());
+    setState(() {
+      _articleFuture = _fetchArticle();
+    });
     await _articleFuture;
   }
 
@@ -316,8 +332,8 @@ class _ArticleInfoBar extends StatelessWidget {
                       : null,
                   child: Text(
                     hasAuthorAvatar ? '' : authorInitial,
-                    style: const TextStyle(
-                      color: AppColors.copper,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w900,
                       fontSize: 15,
                     ),
@@ -343,13 +359,15 @@ class _ArticleInfoBar extends StatelessWidget {
                         article.author,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: AppColors.green,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 13.5,
-                                  height: 1.05,
-                                ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(
+                              color: Theme.of(context).colorScheme.secondary,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13.5,
+                              height: 1.05,
+                            ),
                       ),
                     ],
                   ),
@@ -462,7 +480,7 @@ class _CompactIconButton extends StatelessWidget {
             padding: EdgeInsets.zero,
             constraints: BoxConstraints.tight(Size.square(size)),
             iconSize: dense ? 16 : 18,
-            color: AppColors.copper,
+            color: Theme.of(context).colorScheme.primary,
             onPressed: onPressed,
             icon: Icon(icon),
           ),

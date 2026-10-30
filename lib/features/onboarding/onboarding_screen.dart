@@ -53,7 +53,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 children: [
                   const WPLogo(height: 34),
                   const Spacer(),
-                  TextButton(onPressed: _finishOnboarding, child: const Text('Skip')),
+                  TextButton(
+                      onPressed: _finishOnboarding, child: const Text('Skip')),
                 ],
               ),
             ),
@@ -73,14 +74,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
-                              WPImage(url: slide.$3, width: double.infinity, borderRadius: 8),
+                              WPImage(
+                                  url: slide.$3,
+                                  width: double.infinity,
+                                  borderRadius: 8),
                               DecoratedBox(
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(8),
                                   gradient: const LinearGradient(
                                     begin: Alignment.topCenter,
                                     end: Alignment.bottomCenter,
-                                    colors: [Colors.transparent, Color(0x55000000)],
+                                    colors: [
+                                      Colors.transparent,
+                                      Color(0x55000000)
+                                    ],
                                   ),
                                 ),
                               ),
@@ -93,7 +100,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 7),
                                     child: WPLogo(height: 22),
                                   ),
                                 ),
@@ -102,11 +110,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           ),
                         ),
                         const SizedBox(height: 22),
-                        Text(slide.$1, style: Theme.of(context).textTheme.headlineMedium),
+                        Text(slide.$1,
+                            style: Theme.of(context).textTheme.headlineMedium),
                         const SizedBox(height: 10),
                         Text(
                           slide.$2,
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: AppColors.muted),
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyLarge
+                              ?.copyWith(color: AppColors.muted),
                         ),
                       ],
                     ),
@@ -124,19 +136,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       height: 7,
                       margin: const EdgeInsets.only(right: 6),
                       decoration: BoxDecoration(
-                        color: i == _page ? AppColors.copper : AppColors.line,
+                        color: i == _page
+                            ? Theme.of(context).colorScheme.primary
+                            : AppColors.line,
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   const Spacer(),
                   IconButton.filled(
-                    style: IconButton.styleFrom(backgroundColor: AppColors.copper),
+                    style: IconButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary),
                     icon: const Icon(Icons.arrow_forward_rounded),
                     onPressed: () {
                       if (_page == slides.length - 1) {
                         _finishOnboarding();
                       } else {
-                        _controller.nextPage(duration: const Duration(milliseconds: 260), curve: Curves.easeOut);
+                        _controller.nextPage(
+                            duration: const Duration(milliseconds: 260),
+                            curve: Curves.easeOut);
                       }
                     },
                   ),

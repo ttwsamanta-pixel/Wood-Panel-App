@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/edition/edition.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -169,7 +171,7 @@ class WPTag extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.copper,
+        color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Padding(
@@ -192,13 +194,13 @@ class WPPrimaryButton extends StatelessWidget {
       {super.key, required this.label, required this.onPressed});
 
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
     return FilledButton(
       style: FilledButton.styleFrom(
-        backgroundColor: AppColors.copper,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         minimumSize: const Size.fromHeight(48),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
@@ -228,7 +230,7 @@ class WPEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 42, color: AppColors.copper),
+            Icon(icon, size: 42, color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 14),
             Text(title,
                 textAlign: TextAlign.center,
@@ -285,7 +287,7 @@ class WPErrorState extends StatelessWidget {
   }
 }
 
-class WPBrandLoader extends StatefulWidget {
+class WPBrandLoader extends ConsumerStatefulWidget {
   const WPBrandLoader({
     super.key,
     this.size = 132,
@@ -300,10 +302,10 @@ class WPBrandLoader extends StatefulWidget {
   final double logoScale;
 
   @override
-  State<WPBrandLoader> createState() => _WPBrandLoaderState();
+  ConsumerState<WPBrandLoader> createState() => _WPBrandLoaderState();
 }
 
-class _WPBrandLoaderState extends State<WPBrandLoader>
+class _WPBrandLoaderState extends ConsumerState<WPBrandLoader>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
@@ -325,6 +327,10 @@ class _WPBrandLoaderState extends State<WPBrandLoader>
   @override
   Widget build(BuildContext context) {
     final logoSize = widget.size * widget.logoScale;
+    final config = ref.watch(activeConfigProvider);
+    final imageUrl = config.preloaderUrl;
+    Widget fallbackImage() => Image.asset('assets/app_icon_source.png',
+        width: logoSize, height: logoSize, fit: BoxFit.contain);
     final loader = SizedBox(
       width: widget.size,
       height: widget.size,
@@ -336,26 +342,30 @@ class _WPBrandLoaderState extends State<WPBrandLoader>
             children: [
               CustomPaint(
                 size: Size.square(widget.size),
-                painter: _BrandLoaderPainter(progress: _controller.value),
+                painter: _BrandLoaderPainter(
+                    progress: _controller.value,
+                    primary: config.primary,
+                    secondary: config.secondary),
               ),
               DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(logoSize * .18),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.gold.withValues(alpha: .18),
+                      color: config.primary.withValues(alpha: .18),
                       blurRadius: widget.size * .16,
                     ),
                   ],
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(logoSize * .18),
-                  child: Image.asset(
-                    'assets/app_icon_source.png',
-                    width: logoSize,
-                    height: logoSize,
-                    fit: BoxFit.cover,
-                  ),
+                  child: Uri.tryParse(imageUrl)?.scheme == 'https'
+                      ? Image.network(imageUrl,
+                          width: logoSize,
+                          height: logoSize,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => fallbackImage())
+                      : fallbackImage(),
                 ),
               ),
             ],
@@ -400,14 +410,14 @@ class WPPageLoader extends StatelessWidget {
   }
 }
 
-class _BrandedPageLoader extends StatelessWidget {
+class _BrandedPageLoader extends ConsumerWidget {
   const _BrandedPageLoader();
 
   @override
-  Widget build(BuildContext context) {
-    return const ColoredBox(
-      color: AppColors.ink,
-      child: Stack(
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ColoredBox(
+      color: ref.watch(activeConfigProvider).preloaderColor,
+      child: const Stack(
         fit: StackFit.expand,
         children: [
           CustomPaint(painter: _PageLoaderBackgroundPainter()),
@@ -454,7 +464,10 @@ class _PageLoaderBackgroundPainter extends CustomPainter {
 }
 
 class _BrandLoaderPainter extends CustomPainter {
-  const _BrandLoaderPainter({required this.progress});
+  const _BrandLoaderPainter(
+      {required this.progress, required this.primary, required this.secondary});
+
+  final Color primary, secondary;
 
   final double progress;
 
@@ -477,8 +490,8 @@ class _BrandLoaderPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round
-      ..shader = const LinearGradient(
-        colors: [AppColors.green, Color(0xFF0F7041)],
+      ..shader = LinearGradient(
+        colors: [secondary, Color.lerp(secondary, Colors.white, .15)!],
       ).createShader(rect);
     canvas.drawArc(rect, rotation, math.pi * .86, false, greenPaint);
 
@@ -486,8 +499,8 @@ class _BrandLoaderPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round
-      ..shader = const LinearGradient(
-        colors: [AppColors.brown, AppColors.copper],
+      ..shader = LinearGradient(
+        colors: [primary, Color.lerp(primary, Colors.white, .15)!],
       ).createShader(rect);
     canvas.drawArc(
         rect, rotation + math.pi * 1.34, math.pi * .64, false, brownPaint);
@@ -498,19 +511,21 @@ class _BrandLoaderPainter extends CustomPainter {
       center.dy + math.sin(dotAngle) * radius,
     );
     final glowPaint = Paint()
-      ..color = AppColors.gold.withValues(alpha: .24)
+      ..color = primary.withValues(alpha: .24)
       ..maskFilter = MaskFilter.blur(BlurStyle.normal, stroke * 1.9);
     canvas.drawCircle(dotCenter, stroke * 1.35, glowPaint);
     canvas.drawCircle(
       dotCenter,
       stroke * .72,
-      Paint()..color = AppColors.gold,
+      Paint()..color = primary,
     );
   }
 
   @override
   bool shouldRepaint(covariant _BrandLoaderPainter oldDelegate) =>
-      oldDelegate.progress != progress;
+      oldDelegate.progress != progress ||
+      oldDelegate.primary != primary ||
+      oldDelegate.secondary != secondary;
 }
 
 class WPSkeletonList extends StatelessWidget {

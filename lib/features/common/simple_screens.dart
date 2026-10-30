@@ -1,4 +1,12 @@
+import 'about_page.dart';
+import '../profile/profile_page.dart';
+import '../../widgets/issue_highlights.dart';
 import 'dart:async';
+import 'brand_pages.dart';
+import '../../data/repositories/magazine_pdf_resolver.dart';
+import 'package:html/parser.dart' as html_parser;
+import '../../widgets/promotional_ads.dart';
+import '../../widgets/category_icon.dart';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/gestures.dart';
@@ -14,6 +22,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/edition/edition.dart';
+import '../../core/edition/edition_navigation.dart';
 import '../../data/models/news_category.dart';
 import '../../data/repositories/app_api_repository.dart';
 import '../../data/repositories/app_preferences_repository.dart';
@@ -24,7 +34,9 @@ import '../../data/repositories/content_providers.dart';
 import '../../data/repositories/download_repository.dart';
 import '../../data/repositories/youtube_video_repository.dart';
 import '../../widgets/wp_components.dart';
+import '../../widgets/regional_page_content.dart';
 import '../../widgets/wp_scaffold.dart';
+import '../wallpapers/wallpaper_screen.dart';
 
 enum _ExploreTab { news, category, interviews, video }
 
@@ -288,6 +300,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   @override
   Widget build(BuildContext context) {
     return WPScaffold(
+      adPageKey: _selectedTab.name,
       child: Column(
         children: [
           DecoratedBox(
@@ -310,7 +323,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           ),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: _reload,
+              onRefresh: () => refreshWithFooter(ref, _reload),
               child: ListView(
                 controller: _contentScrollController,
                 padding: const EdgeInsets.fromLTRB(14, 12, 14, 24),
@@ -366,7 +379,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             }
             return Column(
               children: [
-                for (final video in videos) _YouTubeVideoCard(video: video),
+                for (final (index, video) in videos.indexed) ...[
+                  _YouTubeVideoCard(video: video),
+                  InlineAdAfter(completedItems: index + 1),
+                ],
               ],
             );
           },
@@ -430,7 +446,7 @@ class _ExploreTabs extends StatelessWidget {
                                 maxLines: 1,
                                 style: TextStyle(
                                   color: selected == item.$1
-                                      ? AppColors.copper
+                                      ? Theme.of(context).colorScheme.primary
                                       : AppColors.muted,
                                   fontSize: 13.5,
                                   fontWeight: selected == item.$1
@@ -446,7 +462,7 @@ class _ExploreTabs extends StatelessWidget {
                           height: 3,
                           width: selected == item.$1 ? 44 : 0,
                           decoration: BoxDecoration(
-                            color: AppColors.copper,
+                            color: Theme.of(context).colorScheme.primary,
                             borderRadius: BorderRadius.circular(999),
                           ),
                         ),
@@ -554,8 +570,10 @@ class _ExploreNewsList extends StatelessWidget {
     }
     return Column(
       children: [
-        for (final article in filteredArticles)
+        for (final (index, article) in filteredArticles.indexed) ...[
           _ExploreArticleCard(article: article),
+          InlineAdAfter(completedItems: index + 1),
+        ],
         if (isLoadingMore)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
@@ -630,7 +648,7 @@ class _ExploreInterviewsList extends ConsumerWidget {
               ),
         ),
         const SizedBox(height: 10),
-        for (final article in rest)
+        for (final (index, article) in rest.indexed) ...[
           _ExploreArticleCard(
             article: article,
             imageHeight: article.id > 0 ? 178 : 230,
@@ -640,6 +658,8 @@ class _ExploreInterviewsList extends ConsumerWidget {
                 : 'Interview',
             onTap: () => _openInterview(context, article),
           ),
+          InlineAdAfter(completedItems: index + 2),
+        ],
         if (isLoadingMore)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
@@ -745,7 +765,7 @@ class _FeaturedInterviewCard extends StatelessWidget {
                       const Spacer(),
                       IconButton(
                         tooltip: 'Share',
-                        color: AppColors.copper,
+                        color: Theme.of(context).colorScheme.primary,
                         icon: const Icon(Icons.share_rounded),
                         onPressed: () =>
                             Share.share('${article.title}\n${article.url}'),
@@ -762,14 +782,14 @@ class _FeaturedInterviewCard extends StatelessWidget {
   }
 }
 
-class _ExploreCategoryGrid extends StatelessWidget {
+class _ExploreCategoryGrid extends ConsumerWidget {
   const _ExploreCategoryGrid({required this.query});
 
   final String query;
 
   @override
-  Widget build(BuildContext context) {
-    final categories = _filterCategories();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final categories = _filterCategories(ref);
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -795,7 +815,8 @@ class _ExploreCategoryGrid extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(_categoryIcon(category.id), color: AppColors.copper),
+                Icon(categoryIcon(category.name),
+                    color: Theme.of(context).colorScheme.primary),
                 const Spacer(),
                 Text(
                   category.name,
@@ -811,34 +832,16 @@ class _ExploreCategoryGrid extends StatelessWidget {
     );
   }
 
-  List<NewsCategory> _filterCategories() {
+  List<NewsCategory> _filterCategories(WidgetRef ref) {
     final normalized = query.trim().toLowerCase();
     if (normalized.isEmpty) {
-      return NewsCategory.all;
+      return ref.watch(activeConfigProvider).categories;
     }
-    return NewsCategory.all
+    return ref
+        .watch(activeConfigProvider)
+        .categories
         .where((category) => category.name.toLowerCase().contains(normalized))
         .toList();
-  }
-
-  IconData _categoryIcon(int id) {
-    return switch (id) {
-      30036 => Icons.new_releases_rounded,
-      27527 => Icons.handyman_rounded,
-      31124 => Icons.event_available_rounded,
-      33793 => Icons.business_center_rounded,
-      33794 => Icons.eco_rounded,
-      33795 => Icons.chair_rounded,
-      31111 => Icons.format_paint_rounded,
-      33796 => Icons.palette_rounded,
-      31112 => Icons.computer_rounded,
-      31118 => Icons.forest_rounded,
-      33797 => Icons.layers_rounded,
-      33798 => Icons.grid_on_rounded,
-      31115 => Icons.construction_rounded,
-      33799 => Icons.precision_manufacturing_rounded,
-      _ => Icons.article_rounded,
-    };
   }
 }
 
@@ -1167,7 +1170,10 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
   @override
   Widget build(BuildContext context) {
     return WPScaffold(
-      child: _buildBody(),
+      child: RefreshIndicator(
+        onRefresh: () => refreshWithFooter(ref, _loadFirstPage),
+        child: _buildBody(),
+      ),
     );
   }
 
@@ -1195,10 +1201,22 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
         PageView.builder(
           controller: _pageController,
           scrollDirection: Axis.vertical,
-          onPageChanged: _onPageChanged,
-          itemCount: _articles.length + 1,
+          physics: const AlwaysScrollableScrollPhysics(),
+          onPageChanged: (index) => _onPageChanged(
+              ref.read(activeConfigProvider).inlineAds.isEmpty
+                  ? index
+                  : contentIndexForSlot(index)),
+          itemCount: _articles.length +
+              (ref.watch(activeConfigProvider).inlineAds.isEmpty
+                  ? 0
+                  : adCountForItems(_articles.length)) +
+              1,
           itemBuilder: (context, index) {
-            if (index == _articles.length) {
+            final withAds =
+                ref.watch(activeConfigProvider).inlineAds.isNotEmpty;
+            final slotCount = _articles.length +
+                (withAds ? adCountForItems(_articles.length) : 0);
+            if (index == slotCount) {
               if (_isLoadingMore || _hasMore) {
                 return const WPBrandLoader(size: 82, compact: true);
               }
@@ -1209,7 +1227,16 @@ class _FeedScreenState extends ConsumerState<FeedScreen>
                     'New published stories will appear here automatically.',
               );
             }
-            final card = _FeedNewsCard(article: _articles[index]);
+            if (withAds && isAdSlot(index)) {
+              return Center(
+                  child: SingleChildScrollView(
+                      child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: InlineAdAfter(completedItems: ((index + 1) ~/ 4) * 3),
+              )));
+            }
+            final articleIndex = withAds ? contentIndexForSlot(index) : index;
+            final card = _FeedNewsCard(article: _articles[articleIndex]);
             if (index != 0 || !_showSwipeHint) {
               return card;
             }
@@ -1341,7 +1368,7 @@ class _FeedNewsCardState extends ConsumerState<_FeedNewsCard> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final imageHeight =
-                  (constraints.maxHeight * .35).clamp(190.0, 265.0);
+                  (constraints.maxHeight - 360).clamp(90.0, 265.0);
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1380,188 +1407,231 @@ class _FeedNewsCardState extends ConsumerState<_FeedNewsCard> {
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(22, 18, 22, 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            article.title,
-                            maxLines: 4,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineMedium
-                                ?.copyWith(
-                                  fontSize: 23,
-                                  height: 1.04,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            article.excerpt,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style:
-                                Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      color: AppColors.muted,
-                                      fontSize: 14.5,
-                                      height: 1.28,
-                                    ),
-                          ),
-                          const SizedBox(height: 18),
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 22,
-                                backgroundColor: const Color(0xFFF8EBDD),
-                                backgroundImage: hasAuthorAvatar
-                                    ? NetworkImage(article.authorAvatarUrl)
-                                    : null,
-                                child: Text(
-                                  hasAuthorAvatar ? '' : authorInitial,
-                                  style: const TextStyle(
-                                    color: AppColors.copper,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 18,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'Written by',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyLarge
-                                          ?.copyWith(
-                                            color: AppColors.muted,
-                                            fontSize: 12,
-                                            height: 1,
+                      child: LayoutBuilder(
+                          builder: (context, bodyConstraints) => FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.topLeft,
+                              child: SizedBox(
+                                  width: bodyConstraints.maxWidth,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        article.title,
+                                        maxLines: 4,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineMedium
+                                            ?.copyWith(
+                                              fontSize: 23,
+                                              height: 1.04,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        article.excerpt,
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyLarge
+                                            ?.copyWith(
+                                              color: AppColors.muted,
+                                              fontSize: 14.5,
+                                              height: 1.28,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 18),
+                                      Row(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 22,
+                                            backgroundColor:
+                                                const Color(0xFFF8EBDD),
+                                            backgroundImage: hasAuthorAvatar
+                                                ? NetworkImage(
+                                                    article.authorAvatarUrl)
+                                                : null,
+                                            child: Text(
+                                              hasAuthorAvatar
+                                                  ? ''
+                                                  : authorInitial,
+                                              style: TextStyle(
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .primary,
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 18,
+                                              ),
+                                            ),
                                           ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      article.author,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleLarge
-                                          ?.copyWith(
-                                            color: AppColors.green,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w900,
-                                            height: 1.05,
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  'Written by',
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .bodyLarge
+                                                      ?.copyWith(
+                                                        color: AppColors.muted,
+                                                        fontSize: 12,
+                                                        height: 1,
+                                                      ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  article.author,
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .titleLarge
+                                                      ?.copyWith(
+                                                        color: Theme.of(context)
+                                                            .colorScheme
+                                                            .secondary,
+                                                        fontSize: 14,
+                                                        fontWeight:
+                                                            FontWeight.w900,
+                                                        height: 1.05,
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                  width: 1, height: 38, color: AppColors.line),
-                              const SizedBox(width: 8),
-                              DecoratedBox(
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFDF2E8),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: IconButton(
-                                  tooltip: _isBookmarked ? 'Saved' : 'Bookmark',
-                                  onPressed: _toggleBookmark,
-                                  color: AppColors.copper,
-                                  iconSize: 24,
-                                  icon: Icon(
-                                    _isBookmarked
-                                        ? Icons.bookmark_rounded
-                                        : Icons.bookmark_border_rounded,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          const Divider(height: 1),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              const Icon(Icons.calendar_month_outlined,
-                                  size: 18, color: AppColors.muted),
-                              const SizedBox(width: 6),
-                              Text(
-                                DateFormat('d MMM yyyy').format(article.date),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyLarge
-                                    ?.copyWith(
-                                      color: AppColors.muted,
-                                      fontSize: 13,
-                                    ),
-                              ),
-                              Container(
-                                width: 1,
-                                height: 20,
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 10),
-                                color: AppColors.line,
-                              ),
-                              const Icon(Icons.schedule_rounded,
-                                  size: 18, color: AppColors.muted),
-                              const SizedBox(width: 6),
-                              Text(
-                                '${article.readingMinutes} min read',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyLarge
-                                    ?.copyWith(
-                                      color: AppColors.muted,
-                                      fontSize: 13,
-                                    ),
-                              ),
-                              const Spacer(),
-                              DecoratedBox(
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFFDF2E8),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: IconButton(
-                                  tooltip: 'Share',
-                                  color: AppColors.copper,
-                                  iconSize: 22,
-                                  onPressed: () => Share.share(
-                                      '${article.title}\n${article.url}'),
-                                  icon: const Icon(Icons.share_rounded),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          SizedBox(
-                            height: 44,
-                            width: double.infinity,
-                            child: FilledButton.icon(
-                              style: FilledButton.styleFrom(
-                                backgroundColor: AppColors.copper,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(999)),
-                              ),
-                              onPressed: () =>
-                                  context.push('/article/${article.id}'),
-                              label: const Text(
-                                'Read Full Article',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.w900, fontSize: 15),
-                              ),
-                              icon: const Icon(Icons.arrow_forward_rounded),
-                              iconAlignment: IconAlignment.end,
-                            ),
-                          ),
-                        ],
-                      ),
+                                          Container(
+                                              width: 1,
+                                              height: 38,
+                                              color: AppColors.line),
+                                          const SizedBox(width: 8),
+                                          DecoratedBox(
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFFDF2E8),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: IconButton(
+                                              tooltip: _isBookmarked
+                                                  ? 'Saved'
+                                                  : 'Bookmark',
+                                              onPressed: _toggleBookmark,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                              iconSize: 24,
+                                              icon: Icon(
+                                                _isBookmarked
+                                                    ? Icons.bookmark_rounded
+                                                    : Icons
+                                                        .bookmark_border_rounded,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      const Divider(height: 1),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                              Icons.calendar_month_outlined,
+                                              size: 18,
+                                              color: AppColors.muted),
+                                          const SizedBox(width: 6),
+                                          Flexible(
+                                              child: Text(
+                                            DateFormat('d MMM yyyy')
+                                                .format(article.date),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyLarge
+                                                ?.copyWith(
+                                                  color: AppColors.muted,
+                                                  fontSize: 13,
+                                                ),
+                                          )),
+                                          Container(
+                                            width: 1,
+                                            height: 20,
+                                            margin: const EdgeInsets.symmetric(
+                                                horizontal: 10),
+                                            color: AppColors.line,
+                                          ),
+                                          const Icon(Icons.schedule_rounded,
+                                              size: 18, color: AppColors.muted),
+                                          const SizedBox(width: 6),
+                                          Flexible(
+                                              child: Text(
+                                            '${article.readingMinutes} min read',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyLarge
+                                                ?.copyWith(
+                                                  color: AppColors.muted,
+                                                  fontSize: 13,
+                                                ),
+                                          )),
+                                          const Spacer(),
+                                          DecoratedBox(
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFFFDF2E8),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: IconButton(
+                                              tooltip: 'Share',
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                              iconSize: 22,
+                                              onPressed: () => Share.share(
+                                                  '${article.title}\n${article.url}'),
+                                              icon: const Icon(
+                                                  Icons.share_rounded),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      SizedBox(
+                                        height: 44,
+                                        width: double.infinity,
+                                        child: FilledButton.icon(
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                            shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(999)),
+                                          ),
+                                          onPressed: () => context
+                                              .push('/article/${article.id}'),
+                                          label: const Text(
+                                            'Read Full Article',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 15),
+                                          ),
+                                          icon: const Icon(
+                                              Icons.arrow_forward_rounded),
+                                          iconAlignment: IconAlignment.end,
+                                        ),
+                                      ),
+                                    ],
+                                  )))),
                     ),
                   ),
                 ],
@@ -1738,7 +1808,10 @@ class _LatestMagazinePanel extends StatelessWidget {
                 child: Icon(
                   Icons.grain_rounded,
                   size: 170,
-                  color: AppColors.copper.withValues(alpha: .08),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: .08),
                 ),
               ),
               Column(
@@ -1800,7 +1873,7 @@ class _LatestMagazineDetails extends StatelessWidget {
             vertical: compact ? 6 : 8,
           ),
           decoration: BoxDecoration(
-            color: AppColors.copper,
+            color: Theme.of(context).colorScheme.primary,
             borderRadius: BorderRadius.circular(6),
           ),
           child: const Text(
@@ -1814,7 +1887,7 @@ class _LatestMagazineDetails extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: AppColors.copper,
+            color: Theme.of(context).colorScheme.primary,
             fontWeight: FontWeight.w800,
             fontSize: compact ? 12 : 15,
           ),
@@ -1834,11 +1907,14 @@ class _LatestMagazineDetails extends StatelessWidget {
         SizedBox(height: compact ? 6 : 12),
         Row(
           children: [
-            _MagazineMeta(icon: Icons.menu_book_rounded, label: 'Vol. 18'),
+            _MagazineMeta(
+                icon: Icons.menu_book_rounded,
+                label: 'Vol. ${issue.volume.isEmpty ? '-' : issue.volume}'),
             const SizedBox(width: 18),
             _MagazineMeta(
                 icon: Icons.article_outlined,
-                label: 'Issue ${issue.date.month}'),
+                label:
+                    'Issue ${issue.issueNumber.isEmpty ? '-' : issue.issueNumber}'),
           ],
         ),
         SizedBox(height: compact ? 8 : 16),
@@ -1848,7 +1924,7 @@ class _LatestMagazineDetails extends StatelessWidget {
               child: FilledButton.icon(
                 style: FilledButton.styleFrom(
                   minimumSize: Size.fromHeight(compact ? 44 : 52),
-                  backgroundColor: AppColors.copper,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(7),
                   ),
@@ -1981,11 +2057,23 @@ class _MagazinePdfActionButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (issue.pdfUrl.isEmpty) {
-      return _MagazineDownloadButton(
-        label: compact ? 'PDF' : 'Download PDF',
-        icon: Icons.download_rounded,
-        height: compact ? 42 : 48,
-        onPressed: null,
+      return FutureBuilder<String>(
+        future: MagazinePdfResolver.resolve(issue.readUrl),
+        builder: (context, snapshot) {
+          if ((snapshot.data ?? '').isNotEmpty) {
+            return _MagazinePdfActionButton(
+                issue: MagazineIssue.fromJson(
+                    {...issue.toJson(), 'pdfUrl': snapshot.data}),
+                compact: compact);
+          }
+          return _MagazineDownloadButton(
+              label: snapshot.connectionState == ConnectionState.waiting
+                  ? 'Checking PDF'
+                  : 'PDF unavailable',
+              icon: Icons.download_rounded,
+              height: compact ? 42 : 48,
+              onPressed: null);
+        },
       );
     }
     final repository = ref.watch(downloadRepositoryProvider);
@@ -2126,12 +2214,15 @@ class _MagazineIssueCard extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const _MagazineIssueMeta(
-                      icon: Icons.menu_book_rounded, label: 'Vol. 18'),
+                  _MagazineIssueMeta(
+                      icon: Icons.menu_book_rounded,
+                      label:
+                          'Vol. ${issue.volume.isEmpty ? '-' : issue.volume}'),
                   const SizedBox(width: 12),
                   _MagazineIssueMeta(
                     icon: Icons.article_outlined,
-                    label: 'Issue ${issue.date.month}',
+                    label:
+                        'Issue ${issue.issueNumber.isEmpty ? '-' : issue.issueNumber}',
                   ),
                 ],
               ),
@@ -2143,7 +2234,8 @@ class _MagazineIssueCard extends StatelessWidget {
                       height: 42,
                       child: FilledButton.icon(
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.copper,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(7),
@@ -2222,7 +2314,9 @@ class _ArchiveYearTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final issue = issues.isEmpty ? null : issues.first;
     final isEven = year.isEven;
-    final accent = isEven ? AppColors.green : AppColors.copper;
+    final accent = isEven
+        ? Theme.of(context).colorScheme.secondary
+        : Theme.of(context).colorScheme.primary;
     final background =
         isEven ? const Color(0xFFF1FAF4) : const Color(0xFFFFF5EB);
     return InkWell(
@@ -2482,120 +2576,8 @@ class MagazineArchiveScreen extends ConsumerWidget {
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
-
   @override
-  Widget build(BuildContext context) {
-    final items = [
-      ('My Bookmarks', Icons.bookmark_border_rounded, '/bookmarks'),
-      ('Downloads', Icons.download_rounded, '/downloads'),
-      ('Wallpapers', Icons.wallpaper_rounded, '/wallpapers'),
-      ('My Magazine', Icons.menu_book_rounded, '/magazine'),
-      ('Preferences', Icons.settings_outlined, '/preferences'),
-      ('Contact Us', Icons.mail_outline_rounded, '/contact'),
-      ('Grow With Us', Icons.handshake_rounded, '/grow-with-us'),
-      ('About Us', Icons.info_outline_rounded, '/about'),
-    ];
-    return WPScaffold(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 20, 18, 26),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7F1EC),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.line),
-            ),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 36,
-                  backgroundColor: Color(0xFFF3DCCB),
-                  child: Icon(Icons.person, size: 34, color: AppColors.copper),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('John Doe',
-                          style: Theme.of(context).textTheme.titleLarge),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'john.doe@gmail.com',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: AppColors.muted),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.green,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.workspace_premium_rounded,
-                    color: AppColors.gold, size: 30),
-                const SizedBox(height: 8),
-                const Text(
-                  'Wood & Panel Premium',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 17),
-                ),
-                const SizedBox(height: 5),
-                const Text(
-                  'Read all magazine issues, premium articles, interviews and reports.',
-                  style: TextStyle(color: Colors.white70, height: 1.3),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 38,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: AppColors.green,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    onPressed: () => context.push('/subscribe'),
-                    child: const Text('Subscribe'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          for (final item in items)
-            Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.line),
-              ),
-              child: ListTile(
-                leading: Icon(item.$2, color: AppColors.copper),
-                title: Text(item.$1,
-                    style: const TextStyle(fontWeight: FontWeight.w800)),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push(item.$3),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const ProfilePage();
 }
 
 class VideosScreen extends ConsumerStatefulWidget {
@@ -2615,7 +2597,9 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
     _videosFuture = _fetchVideos();
     _cacheRefreshSubscription = CacheRefreshBus.stream.listen((type) {
       if (type == CacheRefreshType.videos && mounted) {
-        setState(() => _videosFuture = _fetchVideos());
+        setState(() {
+          _videosFuture = _fetchVideos();
+        });
       }
     });
   }
@@ -2631,7 +2615,9 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
   }
 
   Future<void> _reloadVideos() async {
-    setState(() => _videosFuture = _fetchVideos());
+    setState(() {
+      _videosFuture = _fetchVideos();
+    });
     await _videosFuture;
   }
 
@@ -2662,7 +2648,7 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
             );
           }
           return RefreshIndicator(
-            onRefresh: _reloadVideos,
+            onRefresh: () => refreshWithFooter(ref, _reloadVideos),
             child: ListView(
               padding: const EdgeInsets.fromLTRB(18, 14, 18, 24),
               children: [
@@ -2677,14 +2663,17 @@ class _VideosScreenState extends ConsumerState<VideosScreen> {
                     IconButton(
                       tooltip: 'Open channel',
                       icon: const Icon(Icons.open_in_new_rounded),
-                      color: AppColors.copper,
+                      color: Theme.of(context).colorScheme.primary,
                       onPressed: () =>
                           _openUrl(YouTubeVideoRepository.channelUrl),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                for (final video in videos) _YouTubeVideoCard(video: video),
+                for (final (index, video) in videos.indexed) ...[
+                  _YouTubeVideoCard(video: video),
+                  InlineAdAfter(completedItems: index + 1),
+                ],
               ],
             ),
           );
@@ -2715,7 +2704,11 @@ class _CategoryNewsScreenState extends ConsumerState<CategoryNewsScreen> {
   String? _error;
   StreamSubscription<CacheRefreshType>? _cacheRefreshSubscription;
 
-  NewsCategory get category => NewsCategory.byId(widget.categoryId);
+  NewsCategory get category =>
+      ref.read(activeConfigProvider).categories.firstWhere(
+            (item) => item.id == widget.categoryId,
+            orElse: () => NewsCategory(id: widget.categoryId, name: 'News'),
+          );
 
   @override
   void initState() {
@@ -2848,7 +2841,7 @@ class _CategoryNewsScreenState extends ConsumerState<CategoryNewsScreen> {
     }
     return WPScaffold(
       child: RefreshIndicator(
-        onRefresh: _loadFirstPage,
+        onRefresh: () => refreshWithFooter(ref, _loadFirstPage),
         child: ListView(
           controller: _scrollController,
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 24),
@@ -2858,8 +2851,10 @@ class _CategoryNewsScreenState extends ConsumerState<CategoryNewsScreen> {
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 12),
-            for (final article in _articles)
+            for (final (index, article) in _articles.indexed) ...[
               _CategoryArticleCard(article: article),
+              InlineAdAfter(completedItems: index + 1),
+            ],
             if (_isLoadingMore)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
@@ -2986,14 +2981,14 @@ class _CategoryArticleCardState extends ConsumerState<_CategoryArticleCard> {
                         icon: Icon(_isBookmarked
                             ? Icons.bookmark_rounded
                             : Icons.bookmark_border_rounded),
-                        color: AppColors.copper,
+                        color: Theme.of(context).colorScheme.primary,
                         onPressed: _toggleBookmark,
                       ),
                       IconButton(
                         tooltip: 'Share',
                         visualDensity: VisualDensity.compact,
                         icon: const Icon(Icons.share_rounded),
-                        color: AppColors.copper,
+                        color: Theme.of(context).colorScheme.primary,
                         onPressed: () =>
                             Share.share('${article.title}\n${article.url}'),
                       ),
@@ -3253,6 +3248,7 @@ class MagazineDetailScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               _MagazinePdfActionButton(issue: issue),
+              IssueHighlights(points: issue.highlights),
             ],
           );
         },
@@ -3310,6 +3306,7 @@ class _MagazineWebView extends StatefulWidget {
 class _MagazineWebViewState extends State<_MagazineWebView> {
   late final WebViewController _controller;
   var _progress = 0;
+  bool _failed = false;
 
   @override
   void initState() {
@@ -3319,8 +3316,45 @@ class _MagazineWebViewState extends State<_MagazineWebView> {
       ..setBackgroundColor(const Color(0xFF1A1A1A))
       ..setNavigationDelegate(
         NavigationDelegate(
-          onProgress: (progress) => setState(() => _progress = progress),
-          onPageFinished: (_) => setState(() => _progress = 100),
+          onWebResourceError: (error) {
+            if (mounted && error.isForMainFrame == true) {
+              setState(() {
+                _failed = true;
+                _progress = 100;
+              });
+            }
+          },
+          onProgress: (progress) {
+            if (mounted) setState(() => _progress = progress);
+          },
+          onNavigationRequest: (request) {
+            final uri = Uri.tryParse(request.url);
+            if (uri == null ||
+                !['http', 'https'].contains(uri.scheme) ||
+                uri.host.endsWith('app.goo.gl') ||
+                uri.host == 'play.google.com' ||
+                uri.host == 'apps.apple.com') {
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+          onPageFinished: (_) async {
+            if (!mounted) return;
+            setState(() => _progress = 100);
+            await _controller.runJavaScript(r'''
+              (function(){
+                function hideAppPrompt(){
+                  document.querySelectorAll('a[href*="app.goo.gl"],a[href*="play.google.com"]').forEach(function(a){a.style.display='none';});
+                  document.querySelectorAll('div,p').forEach(function(el){
+                    var text=(el.innerText||'').trim();
+                    if(text.length<160 && /Would you like to view this/i.test(text) && /Android App|iOS App/i.test(text)) el.style.display='none';
+                  });
+                }
+                hideAppPrompt();
+                if(!window.wpAppPromptObserver){window.wpAppPromptObserver=new MutationObserver(hideAppPrompt);window.wpAppPromptObserver.observe(document.body,{childList:true,subtree:true});}
+              })();
+            ''');
+          },
         ),
       )
       ..loadRequest(Uri.parse(widget.issue.readUrl));
@@ -3331,6 +3365,33 @@ class _MagazineWebViewState extends State<_MagazineWebView> {
     return Stack(
       children: [
         WebViewWidget(controller: _controller),
+        if (_failed)
+          Positioned.fill(
+              child: ColoredBox(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: Center(
+                child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.menu_book_rounded, size: 48),
+                      const SizedBox(height: 16),
+                      const Text('The online reader could not load.',
+                          textAlign: TextAlign.center),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                          onPressed: () {
+                            setState(() {
+                              _failed = false;
+                              _progress = 0;
+                            });
+                            _controller
+                                .loadRequest(Uri.parse(widget.issue.readUrl));
+                          },
+                          child: const Text('Retry reader')),
+                      const SizedBox(height: 12),
+                      _MagazinePdfActionButton(issue: widget.issue),
+                    ]))),
+          )),
         if (_progress < 100)
           Positioned.fill(
             child: ColoredBox(
@@ -3352,7 +3413,7 @@ MagazineIssue? _issueById(List<MagazineIssue> issues, int id) {
       return issue;
     }
   }
-  return issues.isEmpty ? null : issues.first;
+  return null;
 }
 
 class LegacyInterviewDetailScreen extends StatefulWidget {
@@ -3390,7 +3451,9 @@ class _LegacyInterviewDetailScreenState
   }
 
   Future<void> _retry() async {
-    setState(() => _detailFuture = _fetchDetail());
+    setState(() {
+      _detailFuture = _fetchDetail();
+    });
     await _detailFuture;
   }
 
@@ -3413,7 +3476,14 @@ class _LegacyInterviewDetailScreenState
           }
           final detail = snapshot.data!;
           return RefreshIndicator(
-            onRefresh: _retry,
+            onRefresh: () {
+              final container =
+                  ProviderScope.containerOf(context, listen: false);
+              container
+                  .read(footerRotationProvider(container.read(editionProvider)))
+                  .refresh();
+              return _retry();
+            },
             child: ListView(
               padding: const EdgeInsets.fromLTRB(18, 14, 18, 28),
               children: [
@@ -3486,6 +3556,28 @@ class _LegacyInterviewDetail {
   final String contentHtml;
 
   static _LegacyInterviewDetail fromHtml(String html, String url) {
+    final document = html_parser.parse(html);
+    final usaContent = document.querySelector('.wpusa-interview-details__qa');
+    if (usaContent != null) {
+      final image =
+          document.querySelector('.wpusa-interview-details__portrait-wrap img');
+      return _LegacyInterviewDetail(
+        title: document
+                .querySelector('.wpusa-interview-details__title-bar')
+                ?.text
+                .trim() ??
+            'Interview',
+        imageUrl: image?.attributes['data-src'] ??
+            image?.attributes['data-breeze'] ??
+            image?.attributes['src'] ??
+            '',
+        introHtml: document
+                .querySelector('.wpusa-interview-details__summary')
+                ?.innerHtml ??
+            '',
+        contentHtml: usaContent.innerHtml,
+      );
+    }
     final title = _decodeLegacyHtml(
       _stripLegacyHtml(
         _firstLegacyMatch(
@@ -3661,7 +3753,7 @@ class WallpapersScreen extends StatelessWidget {
   const WallpapersScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => const _WallpaperScreen();
+  Widget build(BuildContext context) => const WallpaperGalleryScreen();
 }
 
 class SubscribeScreen extends StatelessWidget {
@@ -3695,8 +3787,10 @@ class PreferencesScreen extends ConsumerWidget {
           ),
           SwitchListTile(
               title: const Text('Notifications'),
-              value: true,
-              onChanged: (_) {}),
+              subtitle: Text(ref.watch(notificationStatusProvider)),
+              value: ref.watch(notificationsEnabledProvider),
+              onChanged: (value) =>
+                  ref.read(editionNavigationProvider).setEnabled(value)),
           const ListTile(
               title: Text('Language'),
               subtitle: Text('English'),
@@ -3715,11 +3809,7 @@ class ContactScreen extends StatelessWidget {
   const ContactScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => const _FormScreen(
-        title: 'Contact Us',
-        button: 'Send Message',
-        mode: _FormMode.contact,
-      );
+  Widget build(BuildContext context) => const ContactPage();
 }
 
 class NewsletterScreen extends StatelessWidget {
@@ -3737,25 +3827,13 @@ class GrowWithUsScreen extends StatelessWidget {
   const GrowWithUsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => _ActionScreen(
-        title: 'Partner with Wood & Panel',
-        icon: Icons.handshake_rounded,
-        button: 'Get In Touch',
-        route: '/contact',
-        points: const [
-          'Advertising opportunities',
-          'Event partnerships',
-          'Brand collaborations',
-          'Digital solutions'
-        ],
-      );
+  Widget build(BuildContext context) => const PartnerPage();
 }
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
-
   @override
-  Widget build(BuildContext context) => const _AboutScreenContent();
+  Widget build(BuildContext context) => const AboutPage();
 }
 
 class GroupMediaScreen extends StatelessWidget {
@@ -3831,7 +3909,18 @@ class EventsScreen extends ConsumerWidget {
                 ListTile(
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                  leading: WPImage(url: event.imageUrl, width: 82, height: 68),
+                  leading: event.imageUrl.isEmpty
+                      ? SizedBox(
+                          width: 82,
+                          height: 68,
+                          child: Icon(Icons.event_rounded,
+                              color: Theme.of(context).colorScheme.secondary))
+                      : WPImage(
+                          url: event.imageUrl,
+                          width: 82,
+                          height: 68,
+                          fit: BoxFit.contain,
+                        ),
                   title: Text(event.title,
                       style: const TextStyle(fontWeight: FontWeight.w900)),
                   subtitle: Text('${event.date}\n${event.location}'),
@@ -3862,19 +3951,18 @@ class _ActionScreen extends StatelessWidget {
     required this.icon,
     required this.button,
     required this.route,
-    this.points = const [
-      'Read all magazine issues',
-      'Access premium articles',
-      'Exclusive interviews',
-      'Industry reports and data'
-    ],
   });
 
   final String title;
   final IconData icon;
   final String button;
   final String route;
-  final List<String> points;
+  final List<String> points = const [
+    'Read all magazine issues',
+    'Access premium articles',
+    'Exclusive interviews',
+    'Industry reports and data'
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -3886,7 +3974,7 @@ class _ActionScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 54, color: AppColors.copper),
+            Icon(icon, size: 54, color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 18),
             Text(title, style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 12),
@@ -3895,8 +3983,8 @@ class _ActionScreen extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Row(
                   children: [
-                    const Icon(Icons.check_circle_rounded,
-                        color: AppColors.copper, size: 20),
+                    Icon(Icons.check_circle_rounded,
+                        color: Theme.of(context).colorScheme.primary, size: 20),
                     const SizedBox(width: 10),
                     Expanded(
                         child: Text(point,
@@ -3998,7 +4086,7 @@ class _YouTubeVideoCard extends StatelessWidget {
                       IconButton(
                         tooltip: 'Share',
                         icon: const Icon(Icons.share_rounded),
-                        color: AppColors.copper,
+                        color: Theme.of(context).colorScheme.primary,
                         onPressed: () =>
                             Share.share('${video.title}\n${video.url}'),
                       ),
@@ -4111,7 +4199,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                       tooltip: 'Share',
                       visualDensity: VisualDensity.compact,
                       icon: const Icon(Icons.share_rounded),
-                      color: AppColors.copper,
+                      color: Theme.of(context).colorScheme.primary,
                       onPressed: () => Share.share(
                         '${video.title}\n${video.url}',
                       ),
@@ -4128,7 +4216,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                     alignment: Alignment.centerLeft,
                     child: TextButton(
                       style: TextButton.styleFrom(
-                        foregroundColor: AppColors.copper,
+                        foregroundColor: Theme.of(context).colorScheme.primary,
                         padding: EdgeInsets.zero,
                         minimumSize: const Size(0, 34),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -4200,8 +4288,8 @@ class _LinkifiedDescriptionState extends State<_LinkifiedDescription> {
           color: AppColors.muted,
           height: 1.3,
         );
-    const linkStyle = TextStyle(
-      color: AppColors.copper,
+    final linkStyle = TextStyle(
+      color: Theme.of(context).colorScheme.primary,
       fontWeight: FontWeight.w800,
       decoration: TextDecoration.underline,
     );
@@ -4334,8 +4422,8 @@ class _DownloadedFileTile extends StatelessWidget {
                         width: 54,
                         height: 64,
                         color: const Color(0xFFF7F1EC),
-                        child: const Icon(Icons.picture_as_pdf_rounded,
-                            color: AppColors.copper),
+                        child: Icon(Icons.picture_as_pdf_rounded,
+                            color: Theme.of(context).colorScheme.primary),
                       )
                     : WPImage(
                         url: coverUrl,
@@ -4357,7 +4445,7 @@ class _DownloadedFileTile extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.w900),
                     ),
                     Text(
-                      '${_formatFileSize(item.size)} - ${DateFormat('d MMM yyyy').format(item.downloadedAt)}',
+                      '${item.edition == 'usa' ? 'USA' : 'Europe'} - ${_formatFileSize(item.size)} - ${DateFormat('d MMM yyyy').format(item.downloadedAt)}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(color: AppColors.muted),
@@ -4372,8 +4460,8 @@ class _DownloadedFileTile extends StatelessWidget {
                   height: 38,
                 ),
                 padding: EdgeInsets.zero,
-                icon: const Icon(Icons.visibility_outlined,
-                    color: AppColors.copper),
+                icon: Icon(Icons.visibility_outlined,
+                    color: Theme.of(context).colorScheme.primary),
                 onPressed: () => _openDownloadedPdf(context, item),
               ),
               IconButton(
@@ -4383,7 +4471,8 @@ class _DownloadedFileTile extends StatelessWidget {
                   height: 38,
                 ),
                 padding: EdgeInsets.zero,
-                icon: const Icon(Icons.share_rounded, color: AppColors.copper),
+                icon: Icon(Icons.share_rounded,
+                    color: Theme.of(context).colorScheme.primary),
                 onPressed: () => Share.shareXFiles([XFile(item.path)]),
               ),
             ],
@@ -4402,7 +4491,7 @@ String _coverForDownloadedFile(
     return item.coverUrl;
   }
   for (final issue in issues) {
-    if (issue.pdfUrl == item.url || item.title.contains(issue.title)) {
+    if (issue.pdfUrl == item.url && item.url.isNotEmpty) {
       return issue.coverUrl;
     }
   }
@@ -4418,7 +4507,7 @@ class DownloadedPdfScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return WPScaffold(
       showBack: true,
-      showBottomNav: false,
+      showBottomNav: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -4439,8 +4528,8 @@ class DownloadedPdfScreen extends StatelessWidget {
                 ),
                 IconButton(
                   tooltip: 'Share',
-                  icon:
-                      const Icon(Icons.share_rounded, color: AppColors.copper),
+                  icon: Icon(Icons.share_rounded,
+                      color: Theme.of(context).colorScheme.primary),
                   onPressed: () => Share.shareXFiles([XFile(file.path)]),
                 ),
               ],
@@ -4474,126 +4563,6 @@ String _formatFileSize(int bytes) {
   }
   final kb = bytes / 1024;
   return '${kb.toStringAsFixed(0)} KB';
-}
-
-class _WallpaperScreen extends StatelessWidget {
-  const _WallpaperScreen();
-
-  static const _images = [
-    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80',
-    'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=900&q=80',
-    'https://images.unsplash.com/photo-1600210492493-0946911123ea?auto=format&fit=crop&w=900&q=80',
-    'https://images.unsplash.com/photo-1516972810927-80185027ca84?auto=format&fit=crop&w=900&q=80',
-    'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=80',
-    'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=900&q=80',
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return WPScaffold(
-      showBack: true,
-      title: 'Wallpapers',
-      child: GridView.builder(
-        padding: const EdgeInsets.all(18),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          childAspectRatio: .72,
-        ),
-        itemCount: _images.length,
-        itemBuilder: (context, index) => Stack(
-          fit: StackFit.expand,
-          children: [
-            WPImage(url: _images[index]),
-            Positioned(
-              right: 8,
-              bottom: 8,
-              child: DecoratedBox(
-                decoration: const BoxDecoration(
-                    color: Colors.white, shape: BoxShape.circle),
-                child: IconButton(
-                  tooltip: 'Download wallpaper',
-                  icon: const Icon(Icons.download_rounded,
-                      color: AppColors.copper),
-                  onPressed: () {},
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AboutScreenContent extends StatelessWidget {
-  const _AboutScreenContent();
-
-  @override
-  Widget build(BuildContext context) {
-    return WPScaffold(
-      showBack: true,
-      title: 'About Us',
-      child: ListView(
-        padding: const EdgeInsets.all(18),
-        children: [
-          const WPImage(
-            url:
-                'https://images.unsplash.com/photo-1600607688969-a5bfcd646154?auto=format&fit=crop&w=1200&q=80',
-            height: 180,
-            width: double.infinity,
-          ),
-          const SizedBox(height: 16),
-          Text('Wood & Panel',
-              style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 10),
-          const Text(
-            'A leading media platform for the global wood, panel, furniture and surface industry, bringing news, insights and opportunities to professionals.',
-          ),
-          const SizedBox(height: 18),
-          Row(
-            children: const [
-              Expanded(child: _StatTile(value: '15+', label: 'Years')),
-              SizedBox(width: 10),
-              Expanded(child: _StatTile(value: '50K+', label: 'Readers')),
-              SizedBox(width: 10),
-              Expanded(child: _StatTile(value: '10K+', label: 'Articles')),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatTile extends StatelessWidget {
-  const _StatTile({required this.value, required this.label});
-
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F1EC),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Column(
-          children: [
-            Text(value,
-                style:
-                    const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
-            Text(label, style: const TextStyle(color: AppColors.muted)),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _BrandListScreen extends StatelessWidget {
@@ -4630,7 +4599,8 @@ class _BrandListScreen extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.verified_rounded, color: AppColors.green),
+                  Icon(Icons.verified_rounded,
+                      color: Theme.of(context).colorScheme.secondary),
                   const SizedBox(width: 12),
                   Expanded(
                       child: Text(item,
@@ -4644,7 +4614,7 @@ class _BrandListScreen extends StatelessWidget {
   }
 }
 
-enum _FormMode { contact, newsletter }
+enum _FormMode { newsletter }
 
 class _FormScreen extends ConsumerStatefulWidget {
   const _FormScreen({
@@ -4729,59 +4699,79 @@ class _FormScreenState extends ConsumerState<_FormScreen> {
   @override
   Widget build(BuildContext context) {
     final isNewsletter = widget.mode == _FormMode.newsletter;
+    final config = ref.watch(activeConfigProvider);
+    final enabled = isNewsletter ? config.newsletter : config.contact;
     return WPScaffold(
       showBack: true,
       title: widget.title,
-      child: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(18),
-          children: [
-            Text(widget.title,
-                style: Theme.of(context).textTheme.headlineMedium),
-            const SizedBox(height: 18),
-            TextFormField(
-                controller: _name,
-                decoration: const InputDecoration(labelText: 'Name'),
-                validator: isNewsletter ? null : _required),
-            const SizedBox(height: 10),
-            TextFormField(
-              controller: _email,
-              decoration: const InputDecoration(labelText: 'Email'),
-              keyboardType: TextInputType.emailAddress,
-              validator: _emailValidator,
-            ),
-            if (!isNewsletter) ...[
-              const SizedBox(height: 10),
-              TextFormField(
-                  controller: _subject,
-                  decoration: const InputDecoration(labelText: 'Subject'),
-                  validator: _required),
-              const SizedBox(height: 10),
-              TextFormField(
-                  controller: _message,
-                  decoration: const InputDecoration(labelText: 'Message'),
-                  minLines: 4,
-                  maxLines: 5,
-                  validator: _required),
-            ],
-            const SizedBox(height: 18),
-            if (_isSending)
-              const WPBrandLoader(size: 70, compact: true)
-            else
-              WPPrimaryButton(label: widget.button, onPressed: _submit),
-            if (_status != null)
-              Padding(
-                padding: EdgeInsets.only(top: 12),
-                child: Text(
-                  _status!,
-                  style: TextStyle(
-                      color: _isError ? AppColors.error : AppColors.success),
-                ),
+      child: _status != null && !_isError && !_isSending
+          ? Center(
+              child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.check_circle_outline,
+                        size: 56, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(height: 16),
+                    Text('Thank you!',
+                        style: Theme.of(context).textTheme.headlineMedium),
+                    const SizedBox(height: 12),
+                    Text(_status!, textAlign: TextAlign.center),
+                  ])))
+          : Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(18),
+                children: [
+                  Text(widget.title,
+                      style: Theme.of(context).textTheme.headlineMedium),
+                  const SizedBox(height: 18),
+                  if (!isNewsletter && config.contactPageId > 0)
+                    RegionalPageContent(pageId: config.contactPageId),
+                  TextFormField(
+                      controller: _name,
+                      decoration: const InputDecoration(labelText: 'Name'),
+                      validator: isNewsletter ? null : _required),
+                  const SizedBox(height: 10),
+                  TextFormField(
+                    controller: _email,
+                    decoration: const InputDecoration(labelText: 'Email'),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: _emailValidator,
+                  ),
+                  if (!isNewsletter) ...[
+                    const SizedBox(height: 10),
+                    TextFormField(
+                        controller: _subject,
+                        decoration: const InputDecoration(labelText: 'Subject'),
+                        validator: _required),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                        controller: _message,
+                        decoration: const InputDecoration(labelText: 'Message'),
+                        minLines: 4,
+                        maxLines: 5,
+                        validator: _required),
+                  ],
+                  const SizedBox(height: 18),
+                  if (_isSending)
+                    const WPBrandLoader(size: 70, compact: true)
+                  else
+                    WPPrimaryButton(
+                        label: widget.button,
+                        onPressed: enabled ? _submit : null),
+                  if (_status != null)
+                    Padding(
+                      padding: EdgeInsets.only(top: 12),
+                      child: Text(
+                        _status!,
+                        style: TextStyle(
+                            color:
+                                _isError ? AppColors.error : AppColors.success),
+                      ),
+                    ),
+                ],
               ),
-          ],
-        ),
-      ),
+            ),
     );
   }
 

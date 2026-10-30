@@ -24,7 +24,7 @@ class WPBottomNav extends StatelessWidget {
       type: BottomNavigationBarType.fixed,
       currentIndex: index < 0 ? 0 : index,
       backgroundColor: Colors.white,
-      selectedItemColor: AppColors.copper,
+      selectedItemColor: Theme.of(context).colorScheme.primary,
       unselectedItemColor: AppColors.muted,
       selectedFontSize: 11,
       unselectedFontSize: 11,

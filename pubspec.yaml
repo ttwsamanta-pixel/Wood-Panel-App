@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   cached_network_image: ^3.4.1
+  visibility_detector: ^0.4.0+2
   connectivity_plus: ^6.1.1
   dio: ^5.7.0
   flutter_riverpod: ^2.6.1
@@ -17,6 +18,7 @@ dependencies:
   flutter_svg: ^2.0.16
   flutter_tts: ^4.2.0
   flutter_widget_from_html: ^0.15.3
+  html: ^0.15.6
   go_router: ^14.6.2
   google_fonts: ^6.2.1
   intl: ^0.20.1
@@ -29,6 +31,12 @@ dependencies:
   youtube_player_iframe: ^6.0.2
   webview_flutter: ^4.14.1
   flutter_pdfview: ^1.4.5
+  gal: ^2.3.3
+  firebase_core: ^5.1.0
+  firebase_messaging: ^17.0.1
+  app_links: ^7.2.2
+  image_picker: ^1.2.4
+  font_awesome_flutter: ^11.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -39,5 +47,8 @@ flutter:
   assets:
     - logo.svg
     - logo.png
+    - assets/logo_usa.svg
     - assets/app_icon_source.png
     - assets/home_banners/
+    - assets/pages/
+    - assets/wallpapers/

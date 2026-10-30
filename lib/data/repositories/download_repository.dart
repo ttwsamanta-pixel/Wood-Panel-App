@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/edition/edition.dart';
 
 class DownloadedFile {
   const DownloadedFile({
@@ -13,6 +14,7 @@ class DownloadedFile {
     required this.size,
     required this.downloadedAt,
     this.coverUrl = '',
+    this.edition = 'europe',
   });
 
   final String title;
@@ -21,6 +23,7 @@ class DownloadedFile {
   final int size;
   final DateTime downloadedAt;
   final String coverUrl;
+  final String edition;
 
   factory DownloadedFile.fromJson(Map<String, dynamic> json) {
     return DownloadedFile(
@@ -31,6 +34,11 @@ class DownloadedFile {
       downloadedAt: DateTime.tryParse(json['downloadedAt'] as String? ?? '') ??
           DateTime.now(),
       coverUrl: json['coverUrl'] as String? ?? '',
+      edition: json['edition'] as String? ??
+          (Edition.forHost(
+                      Uri.tryParse(json['url'] as String? ?? '')?.host ?? '') ??
+                  Edition.europe)
+              .name,
     );
   }
 
@@ -41,11 +49,13 @@ class DownloadedFile {
         'size': size,
         'downloadedAt': downloadedAt.toIso8601String(),
         'coverUrl': coverUrl,
+        'edition': edition,
       };
 }
 
 class DownloadRepository {
-  DownloadRepository(this._dio);
+  DownloadRepository(this._dio, {this.edition = 'europe'});
+  final String edition;
 
   static const _key = 'app_downloads_v1';
 
@@ -67,7 +77,7 @@ class DownloadRepository {
 
   Future<DownloadedFile?> fileForUrl(String url) async {
     for (final file in await files()) {
-      if (file.url == url) {
+      if (file.url == url && file.edition == edition) {
         return file;
       }
     }
@@ -80,10 +90,19 @@ class DownloadRepository {
     String coverUrl = '',
   }) async {
     final directory = await _downloadDirectory();
-    final fileName = '${_safeFileName(title)}.pdf';
+    final fileName =
+        '${edition}_${_safeFileName(title)}_${DateTime.now().microsecondsSinceEpoch}.pdf';
     final path = '${directory.path}${Platform.pathSeparator}$fileName';
     await _dio.download(url, path);
     final file = File(path);
+    final handle = await file.open();
+    final signature = await handle.read(5);
+    await handle.close();
+    if (String.fromCharCodes(signature) != '%PDF-') {
+      await file.delete();
+      throw const FormatException(
+          'The server did not return a PDF. Please try again.');
+    }
     final item = DownloadedFile(
       title: title,
       url: url,
@@ -91,12 +110,13 @@ class DownloadRepository {
       size: await file.length(),
       downloadedAt: DateTime.now(),
       coverUrl: coverUrl,
+      edition: edition,
     );
     final existing = await files();
     final next = [
       item,
       for (final file in existing)
-        if (file.url != url) file,
+        if (file.url != url || file.edition != edition) file,
     ];
     await _save(next);
     return item;

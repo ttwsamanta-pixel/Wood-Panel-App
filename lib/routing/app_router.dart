@@ -1,3 +1,5 @@
+import '../features/profile/profile_editor.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -7,22 +9,42 @@ import '../features/home/home_screen.dart';
 import '../features/onboarding/onboarding_screen.dart';
 import '../features/splash/splash_screen.dart';
 import '../data/repositories/download_repository.dart';
+import '../core/edition/edition.dart';
+
+// Keep the navigator stable, but discard page-local futures and lists when
+// regional configuration changes. Navigator keys otherwise preserve old state.
+class EditionPage extends ConsumerWidget {
+  const EditionPage({super.key, required this.child});
+  final Widget child;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => KeyedSubtree(
+      key: ObjectKey(ref.watch(activeConfigProvider)), child: child);
+}
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     routes: [
+      GoRoute(path: '/welcome-profile', builder: (context,state) => const ProfileEditor(firstLaunch:true)),
+      GoRoute(path: '/edit-profile', builder: (context,state) => const ProfileEditor()),
       GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
       GoRoute(
           path: '/onboarding',
           builder: (context, state) => const OnboardingScreen()),
-      GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
       GoRoute(
-          path: '/explore', builder: (context, state) => const ExploreScreen()),
-      GoRoute(path: '/feed', builder: (context, state) => const FeedScreen()),
+          path: '/home',
+          builder: (context, state) => const EditionPage(child: HomeScreen())),
+      GoRoute(
+          path: '/explore',
+          builder: (context, state) =>
+              const EditionPage(child: ExploreScreen())),
+      GoRoute(
+          path: '/feed',
+          builder: (context, state) => const EditionPage(child: FeedScreen())),
       GoRoute(
           path: '/magazine',
-          builder: (context, state) => const MagazineScreen()),
+          builder: (context, state) =>
+              const EditionPage(child: MagazineScreen())),
       GoRoute(
           path: '/magazine/archive/:year',
           builder: (context, state) => MagazineArchiveScreen(

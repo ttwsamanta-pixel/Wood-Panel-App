@@ -1,13 +1,14 @@
-import '../../core/config/app_config.dart';
+import '../../core/edition/edition.dart';
+import 'package:html/parser.dart' as html_parser;
 import '../../core/network/api_client.dart';
 import '../models/content_models.dart';
-import '../models/news_category.dart';
+
 import 'content_repository.dart';
 
 class WordPressContentRepository implements ContentRepository {
-  WordPressContentRepository(this._client);
+  WordPressContentRepository(this._client, {required this.config});
+  final EditionConfig config;
 
-  static const _interviewCategoryId = 34718;
   static const _listFields =
       'id,date,link,title,excerpt,author,featured_media,categories';
 
@@ -48,10 +49,10 @@ class WordPressContentRepository implements ContentRepository {
   @override
   Future<List<Article>> latestInterviews(
       {int page = 1, int perPage = 12}) async {
-    final normalPosts = page == 1
-        ? await _latestWordPressInterviews(perPage: perPage)
-        : const <Article>[];
-    final legacyPosts = await _legacyInterviewPosts(page: page);
+    final normalPosts =
+        await _latestWordPressInterviews(perPage: perPage, page: page);
+    final legacyPosts =
+        await _legacyInterviewPosts(page: page).catchError((_) => <Article>[]);
     final merged = <Article>[];
     final seenUrls = <String>{};
     final seenTitles = <String>{};
@@ -69,14 +70,24 @@ class WordPressContentRepository implements ContentRepository {
   }
 
   Future<List<Article>> _latestWordPressInterviews(
-      {required int perPage}) async {
+      {required int perPage, required int page}) async {
     try {
-      return await articlesByCategory(
-        categoryId: _interviewCategoryId,
-        categoryName: 'Interview',
-        page: 1,
-        perPage: perPage,
-      );
+      final terms = await _client
+          .get<List<dynamic>>('/wp-json/wp/v2/categories', queryParameters: {
+        'slug': 'interview,interviews',
+        '_fields': 'id',
+        'per_page': 100
+      });
+      final ids = terms.map((term) => term['id']).whereType<num>().join(',');
+      if (ids.isEmpty) return const [];
+      final posts = await _client.get<List<dynamic>>('/wp-json/wp/v2/posts',
+          queryParameters: {
+            'categories': ids,
+            '_fields': _listFields,
+            'page': page,
+            'per_page': perPage
+          });
+      return await _listPostsFromJson(posts, fallbackCategoryName: 'Interview');
     } on Object {
       return const <Article>[];
     }
@@ -111,6 +122,11 @@ class WordPressContentRepository implements ContentRepository {
 
   @override
   Future<List<MagazineIssue>> magazines() async {
+    if (config.managed) {
+      return (await _managedItems('magazines'))
+          .map(MagazineIssue.fromJson)
+          .toList();
+    }
     final issuesByUrl = <String, MagazineIssue>{};
     for (var year = DateTime.now().year; year >= 2022; year--) {
       try {
@@ -129,6 +145,9 @@ class WordPressContentRepository implements ContentRepository {
 
   @override
   Future<List<AppEvent>> events() async {
+    if (config.managed) {
+      return (await _managedItems('events')).map(AppEvent.fromJson).toList();
+    }
     final eventsByKey = <String, AppEvent>{};
     final requests = [
       (path: '/events/', query: null),
@@ -153,17 +172,32 @@ class WordPressContentRepository implements ContentRepository {
     return eventsByKey.values.toList();
   }
 
+  Future<List<Map<String, dynamic>>> _managedItems(String kind) async {
+    final items = <Map<String, dynamic>>[];
+    for (var page = 1; page <= 100; page++) {
+      final data = await _client.get<Map<String, dynamic>>(
+          '/wp-json/wood-panel-app/v1/$kind',
+          queryParameters: {'page': page, 'per_page': 50});
+      if (data['edition'] != config.edition.name) {
+        throw const FormatException('Wrong content edition');
+      }
+      items.addAll((data['items'] as List).cast<Map<String, dynamic>>());
+      if (page >= ((data['total_pages'] as num?)?.toInt() ?? 1)) break;
+    }
+    return items;
+  }
+
   Future<List<Article>> _legacyInterviewPosts({required int page}) async {
     final path = page <= 1 ? '/interviews/' : '/interviews/page/$page/';
     final html = await _client.get<String>(path);
-    final cards = RegExp(
-      r'<div class="cat-post interview-post">([\s\S]*?)<a href="[^"]+" class="btn-read">',
-    ).allMatches(html);
+    final cards = html_parser
+        .parse(html)
+        .querySelectorAll('.cat-post.interview-post, .wpusa-interview-item');
     final articles = <Article>[];
     var index = 0;
     for (final card in cards) {
       final article = _legacyInterviewFromHtml(
-        card.group(1) ?? '',
+        card.outerHtml,
         page,
         index++,
       );
@@ -260,7 +294,7 @@ class WordPressContentRepository implements ContentRepository {
   }) {
     final title = _rendered(json['title']);
     final excerpt = _stripHtml(_rendered(json['excerpt']));
-    final link = (json['link'] as String?) ?? AppConfig.wordpressBaseUrl;
+    final link = (json['link'] as String?) ?? _client.baseUrl;
     final mediaId = (json['featured_media'] as num?)?.toInt() ?? 0;
     final authorId = (json['author'] as num?)?.toInt() ?? 0;
     final author = authorsById[authorId];
@@ -284,12 +318,9 @@ class WordPressContentRepository implements ContentRepository {
   }
 
   Article? _legacyInterviewFromHtml(String html, int page, int index) {
-    final url = _decodeHtml(_firstMatch(html, r'<a href="([^"]+)">') ?? '');
-    final title = _decodeHtml(_stripHtml(_firstMatch(
-          html,
-          r'<h3>([\s\S]*?)</h3>',
-        ) ??
-        ''));
+    final card = html_parser.parseFragment(html);
+    final url = card.querySelector('a[href]')?.attributes['href'] ?? '';
+    final title = card.querySelector('h3')?.text.trim() ?? '';
     if (url.isEmpty || title.isEmpty || url.endsWith('/feed/')) {
       return null;
     }
@@ -298,20 +329,18 @@ class WordPressContentRepository implements ContentRepository {
           r'<p>([\s\S]*?)</p>',
         ) ??
         ''));
-    final imageUrl = _decodeHtml(
-      _firstMatch(html, r'data-breeze="([^"]+)"') ??
-          _firstMatch(html, r'<img[^>]+src="([^"]+)"') ??
-          '',
-    );
+    final image = card.querySelector('img');
+    final imageUrl = image?.attributes['data-src'] ??
+        image?.attributes['data-breeze'] ??
+        image?.attributes['src'] ??
+        '';
     final fallbackId = -url.hashCode.abs();
     return Article(
       id: fallbackId,
       category: 'Interview',
       title: title,
       excerpt: excerpt,
-      imageUrl: imageUrl.isEmpty
-          ? 'https://www.woodandpanel.com/wp-content/uploads/2021/08/app-logo-big.jpg'
-          : imageUrl,
+      imageUrl: imageUrl.isEmpty ? config.logoUrl : imageUrl,
       date: DateTime.now().subtract(Duration(days: ((page - 1) * 12) + index)),
       readingMinutes: 5,
       author: 'Wood & Panel',
@@ -322,7 +351,7 @@ class WordPressContentRepository implements ContentRepository {
 
   List<MagazineIssue> _magazinesFromArchiveHtml(String html, int year) {
     final cards = RegExp(
-      r'<div class="archive-card">([\s\S]*?)<a href="(https://www\.woodandpanel\.com/flipbooks/[^"]+)"[^>]*class="read-btn">Read Online</a>',
+      r'<div class="archive-card">([\s\S]*?)<a href="(https://[^/]+/flipbooks/[^"]+)"[^>]*class="read-btn">Read Online</a>',
       caseSensitive: false,
     ).allMatches(html);
     return [
@@ -504,7 +533,7 @@ class WordPressContentRepository implements ContentRepository {
     final title = _rendered(json['title']);
     final excerpt = _stripHtml(_rendered(json['excerpt']));
     final content = _rendered(json['content']);
-    final link = (json['link'] as String?) ?? AppConfig.wordpressBaseUrl;
+    final link = (json['link'] as String?) ?? _client.baseUrl;
     final embedded = json['_embedded'] as Map<String, dynamic>?;
     final media =
         (embedded?['wp:featuredmedia'] as List?)?.cast<Map<String, dynamic>>();
@@ -552,7 +581,7 @@ class WordPressContentRepository implements ContentRepository {
     }
     for (final id in value.whereType<num>()) {
       final categoryId = id.toInt();
-      final knownCategory = NewsCategory.all.where(
+      final knownCategory = config.categories.where(
         (category) => category.id == categoryId,
       );
       if (knownCategory.isNotEmpty) {

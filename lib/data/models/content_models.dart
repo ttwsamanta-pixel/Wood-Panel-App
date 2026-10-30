@@ -66,6 +66,9 @@ class MagazineIssue {
     required this.fileSize,
     this.readUrl = '',
     this.pdfUrl = '',
+    this.volume = '',
+    this.issueNumber = '',
+    this.highlights = const [],
   });
 
   final int id;
@@ -76,18 +79,29 @@ class MagazineIssue {
   final String fileSize;
   final String readUrl;
   final String pdfUrl;
+  final List<String> highlights;
+  final String volume;
+  final String issueNumber;
 
   factory MagazineIssue.fromJson(Map<String, dynamic> json) {
     final readUrl = json['readUrl'] as String? ?? '';
+    final date =
+        DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now();
     return MagazineIssue(
       id: (json['id'] as num?)?.toInt() ?? 0,
       title: json['title'] as String? ?? '',
       coverUrl: json['coverUrl'] as String? ?? '',
-      date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
+      date: date,
       description: json['description'] as String? ?? '',
       fileSize: json['fileSize'] as String? ?? '',
       readUrl: readUrl,
       pdfUrl: json['pdfUrl'] as String? ?? _pdfUrlForReadUrl(readUrl),
+      volume: (date.year - 2008).clamp(1, 9999).toString(),
+      issueNumber: ((date.month + 1) ~/ 2).toString(),
+      highlights: (json['highlights'] as List? ?? [])
+          .whereType<String>()
+          .where((s) => s.trim().isNotEmpty)
+          .toList(),
     );
   }
 
@@ -100,6 +114,9 @@ class MagazineIssue {
         'fileSize': fileSize,
         'readUrl': readUrl,
         'pdfUrl': pdfUrl,
+        'volume': volume,
+        'issueNumber': issueNumber,
+        'highlights': highlights,
       };
 
   static String _pdfUrlForReadUrl(String readUrl) {

@@ -1,0 +1,26 @@
+const {chromium}=require('../../artifacts/ui-tools/node_modules/playwright');
+(async()=>{
+ const browser=await chromium.launch({headless:true});
+ const page=await browser.newPage();
+ await page.goto('http://127.0.0.1:8097/wp-login.php');
+ await page.locator('#user_login').fill('banneradmin');
+ await page.locator('#user_pass').fill('LocalBannerTest-927!');
+ await Promise.all([page.waitForURL('**/wp-admin/**'),page.locator('#wp-submit').click()]);
+ const link=page.locator('#toplevel_page_wood-panel-app-settings > a');
+ console.log('Parent link:',await link.getAttribute('href'));
+ await link.click();
+ await page.waitForLoadState();
+ console.log('Destination:',page.url());
+ console.log('Settings forms:',await page.locator('.wpam-settings form').count());
+ if(!await page.locator('.wpam-settings form').count()) throw Error((await page.locator('body').innerText()).slice(0,1000));
+ await page.screenshot({path:'artifacts/dual-edition/settings-parent-check.png',fullPage:true});
+ await page.goto('http://127.0.0.1:8097/wp-admin/options-general.php?page=wpam-configuration');
+ await page.locator('.wpam-settings form').waitFor();
+ if (!await page.locator('script[src*="assets/admin.js"]').count()) throw Error('Settings assets missing on fallback');
+ await page.locator('.wpam-settings input[type="submit"]').click();
+ await page.waitForURL('**/options-general.php?page=wpam-configuration&settings-updated=true');
+ await page.locator('.wpam-settings form').waitFor();
+ console.log('Alternative Settings route opens and saves successfully.');
+ await browser.close();
+ console.log('Parent menu opens Settings successfully.');
+})().catch(e=>{console.error(e);process.exit(1)});

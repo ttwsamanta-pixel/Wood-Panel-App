@@ -2,6 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose a photo for your Wood &amp; Panel profile.</string>
+	<key>FlutterDeepLinkingEnabled</key>
+	<false/>
+	<key>UIBackgroundModes</key>
+	<array><string>remote-notification</string></array>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Save wallpapers you download to your photo library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Save wallpapers you choose to your photo library.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

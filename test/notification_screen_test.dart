@@ -8,6 +8,22 @@ import 'package:wood_panel_app/core/edition/notification_inbox.dart';
 import 'package:wood_panel_app/features/profile/notification_screen.dart';
 import 'notification_inbox_test.dart' show InboxApi;
 
+class LayoutInboxApi extends InboxApi {
+  @override
+  Future<T> get<T>(String path, {Map<String, dynamic>? queryParameters}) async {
+    final result = await super
+        .get<Map<String, dynamic>>(path, queryParameters: queryParameters);
+    for (final item in result['items']) {
+      item['category'] = 'Industry news';
+      item['body'] =
+          'A long article preview describing the latest news from the woodworking industry and its manufacturers.';
+      item['sent_at'] =
+          DateTime.now().subtract(const Duration(hours: 2)).toIso8601String();
+    }
+    return result as T;
+  }
+}
+
 void main() {
   for (final width in [320.0, 390.0]) {
     testWidgets('Inbox tabs and reading a notification at width $width',
@@ -27,12 +43,20 @@ void main() {
         activeConfigProvider
             .overrideWithValue(EditionConfig(edition: Edition.europe)),
         notificationInboxProvider.overrideWith((ref, edition) =>
-            NotificationInbox(edition, clientFactory: InboxApi.new)),
+            NotificationInbox(edition, clientFactory: LayoutInboxApi.new)),
       ], child: MaterialApp.router(routerConfig: router)));
       await tester.pumpAndSettle();
       expect(find.text('All (2)'), findsOneWidget);
       expect(find.text('Unread (2)'), findsOneWidget);
       expect(tester.takeException(), isNull);
+      final category = tester.getTopLeft(find.text('INDUSTRY NEWS').first);
+      final time = tester.getTopLeft(find.text('2h ago').first);
+      expect((category.dy - time.dy).abs(), lessThan(5));
+      expect(time.dx, greaterThan(category.dx));
+      expect(
+          tester.getTopLeft(find.text('News 2')).dy -
+              tester.getTopLeft(find.text('News 1')).dy,
+          lessThan(125));
       await tester.tap(find.text('News 1'));
       await tester.pumpAndSettle();
       expect(find.text('Article opened'), findsOneWidget);

@@ -15,6 +15,23 @@
       const target = new URL(item.url); const current = new URL(location.href);
       if (target.pathname === current.pathname && target.search === current.search) link.setAttribute('aria-current', 'page');
       nav.append(link);
+      if (item.children) {
+        const group = document.createElement('div');
+        group.className = 'wpam-submission-links';
+        group.setAttribute('aria-label', 'Submission types');
+        const page = current.searchParams.get('page');
+        const isSubmission = page === 'wpam-submissions' || page === 'wpam-profiles';
+        const kind = page === 'wpam-profiles' ? 'profile' : (current.searchParams.get('kind') || 'newsletter');
+        if (isSubmission) link.classList.add('wpam-group-active');
+        link.removeAttribute('aria-current');
+        item.children.forEach(child => {
+          const entry = document.createElement('a');
+          entry.href = child.url; entry.textContent = child.label;
+          if (isSubmission && child.kind === kind) entry.setAttribute('aria-current', 'page');
+          group.append(entry);
+        });
+        nav.append(group);
+      }
       if (item.label === 'Application settings') {
         const tabs = content.querySelector('.wpam-tabs');
         if (tabs) nav.append(tabs);

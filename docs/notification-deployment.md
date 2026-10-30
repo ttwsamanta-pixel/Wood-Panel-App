@@ -42,3 +42,12 @@ User requested Android testing now and iOS testing later when building on a Mac.
 - iOS project/embedding/plist structure checked; Mac build, signing and iPhone testing remain pending.
 
 References: [Firebase image payloads](https://firebase.google.com/docs/cloud-messaging/customize-messages/cross-platform), [Apple notification service extensions](https://developer.apple.com/documentation/usernotifications/modifying-content-in-newly-delivered-notifications), [WordPress scheduling](https://developer.wordpress.org/reference/functions/wp_schedule_single_event/).
+
+
+## Compact inbox and submission navigation ? 30 October 2026
+
+Plugin 0.7.1 groups Newsletter, Contact and Profile beneath Submissions in the application sidebar, preserving existing routes and CSV/bulk-delete controls. Duplicate content-area tabs are hidden after the dashboard loads.
+
+Notification cards use a shared category/time row, two-line headline and preview, thumbnail, unread dot and chevron. All/Unread buttons use edition colours. Flutter widget checks at 320 and 390 logical pixels and local WordPress browser checks passed; Flutter analysis reported no issues. Install the updated plugin ZIP on both websites.
+
+Installed the updated Android APK on device c2a40481 and visually checked populated Europe (1 notification) and USA (8 notifications, 7 unread) inboxes. Category/time alignment, compact cards, thumbnails, chevrons and unread dots displayed without overflow. Screenshots saved in artifacts/dual-edition/inbox-compact-europe.png and inbox-compact-usa.png.

@@ -18,3 +18,10 @@
 .wpam-dashboard .form-table th{width:210px}.wpam-dashboard .notice{border-radius:8px}.wpam-dashboard .widefat th{background:#f3f7f5;padding:14px 10px}.wpam-dashboard .widefat td{padding:14px 10px}
 @media(max-width:1100px){.wpam-dashboard{grid-template-columns:195px minmax(0,1fr);gap:16px}.wpam-dashboard .form-table th{width:150px}.wpam-dashboard .wpam-panel{padding:18px}}
 @media(max-width:782px){.wpam-dashboard{display:block;margin-right:10px}.wpam-dashboard-sidebar{position:static;max-height:280px;margin-bottom:18px}.wpam-dashboard .widefat{display:block;overflow:auto}}
+
+.wpam-submission-links{margin:0 10px 12px 22px;padding-left:10px;border-left:1px solid #ffffff35}
+.wpam-submission-links a{display:block;padding:9px 12px;margin:3px 0;border-radius:8px;color:#bfd6d0;text-decoration:none;font-size:13px}
+.wpam-submission-links a:hover{background:#ffffff16;color:white}
+.wpam-submission-links a[aria-current]{background:#fff0df;color:#593314;font-weight:600}
+.wpam-dashboard-sidebar nav>a.wpam-group-active{color:white;font-weight:600}
+.wpam-dashboard-page .wpam-submission-tabs{display:none}

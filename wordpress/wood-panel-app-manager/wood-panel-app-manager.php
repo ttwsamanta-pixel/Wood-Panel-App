@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Wood & Panel App Manager
  * Description: Edition-specific configuration and submissions for the Wood & Panel app.
- * Version: 0.7.0
+ * Version: 0.7.1
  * Requires at least: 6.0
  * Requires PHP: 8.0
  * Author: Wood & Panel

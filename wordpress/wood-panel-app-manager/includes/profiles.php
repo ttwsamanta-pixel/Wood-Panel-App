@@ -85,7 +85,7 @@ function wpam_submissions_page($fixed_kind = ''): void {
     $table=$wpdb->prefix . 'wpam_submissions';
     $count=(int)$wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table WHERE kind=%s",$kind));
     $rows=$wpdb->get_results($wpdb->prepare("SELECT * FROM $table WHERE kind=%s ORDER BY id DESC LIMIT 25 OFFSET %d",$kind,($page-1)*25));
-    echo '<div class="wrap"><h1>App ' . ($kind === 'profile' ? 'Profiles':'Submissions') . '</h1><p>';
+    echo '<div class="wrap"><h1>App ' . ($kind === 'profile' ? 'Profiles':'Submissions') . '</h1><p class="wpam-submission-tabs">';
     foreach (['newsletter','contact','profile'] as $tab) echo '<a style="margin-right:16px" href="' . esc_url(admin_url('admin.php?page=wpam-submissions&kind='.$tab)) . '">' . esc_html(ucfirst($tab)) . '</a>';
     echo '</p><p>CSV exports selected rows, or all records when nothing is selected. Photos remain private in this admin page; CSV records whether a photo was supplied.</p><form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
     wp_nonce_field('wpam_submission_action');

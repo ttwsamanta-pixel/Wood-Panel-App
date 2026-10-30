@@ -23,6 +23,36 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
     return '${duration.inDays}d ago';
   }
 
+  Color _categoryColor(String category) {
+    const palette = [
+      Color(0xff146b35),
+      Color(0xff2257b5),
+      Color(0xffb44b0c),
+      Color(0xff7135b0),
+      Color(0xffa42035)
+    ];
+    final hash = category.toLowerCase().codeUnits.fold<int>(0, (a, b) => a + b);
+    return palette[hash % palette.length];
+  }
+
+  Widget _filter(
+      String label, IconData icon, bool selected, VoidCallback onTap) {
+    final colors = Theme.of(context).colorScheme;
+    return Semantics(
+        selected: selected,
+        child: TextButton.icon(
+            onPressed: onTap,
+            icon: Icon(icon, size: 18),
+            label: Text(label),
+            style: TextButton.styleFrom(
+                foregroundColor: selected ? colors.onPrimary : colors.secondary,
+                backgroundColor:
+                    selected ? colors.primary : colors.surfaceContainerLow,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)))));
+  }
+
   @override
   Widget build(BuildContext context) {
     final edition = ref.watch(editionProvider);
@@ -48,19 +78,15 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
             const SizedBox(height: 16),
             Row(children: [
               Expanded(
-                  child: ChoiceChip(
-                      label: Text('All (${inbox.items.length})'),
-                      avatar: const Icon(Icons.notifications_none, size: 18),
-                      selected: !unreadOnly,
-                      onSelected: (_) => setState(() => unreadOnly = false))),
+                  child: _filter(
+                      'All (${inbox.items.length})',
+                      Icons.notifications_none,
+                      !unreadOnly,
+                      () => setState(() => unreadOnly = false))),
               const SizedBox(width: 10),
               Expanded(
-                  child: ChoiceChip(
-                      label: Text('Unread (${inbox.unread})'),
-                      avatar: const Icon(Icons.mark_email_unread_outlined,
-                          size: 18),
-                      selected: unreadOnly,
-                      onSelected: (_) => setState(() => unreadOnly = true))),
+                  child: _filter('Unread (${inbox.unread})', Icons.mail_outline,
+                      unreadOnly, () => setState(() => unreadOnly = true))),
             ]),
             const SizedBox(height: 12),
             if (inbox.loading && inbox.items.isEmpty)
@@ -82,7 +108,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
               Builder(builder: (context) {
                 final unread = !inbox.read.contains('${item['id']}');
                 return Container(
-                    margin: const EdgeInsets.only(bottom: 10),
+                    margin: const EdgeInsets.only(bottom: 8),
                     decoration: BoxDecoration(
                         color: unread
                             ? colors.primary.withValues(alpha: .055)
@@ -98,27 +124,32 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                         context.push('/article/${item['article_id']}');
                       },
                       child: Padding(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(10),
                           child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                if ((item['image'] as String? ?? '')
-                                    .isNotEmpty) ...[
-                                  ClipRRect(
-                                      borderRadius: BorderRadius.circular(9),
-                                      child: Image.network(item['image'],
-                                          width: 74,
-                                          height: 86,
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: (item['image'] as String? ?? '')
+                                          .isNotEmpty
+                                      ? Image.network(item['image'],
+                                          width: 68,
+                                          height: 82,
                                           fit: BoxFit.cover,
-                                          errorBuilder: (context, error,
-                                                  stackTrace) =>
+                                          errorBuilder: (_, __, ___) =>
                                               const SizedBox(
-                                                  width: 74,
-                                                  height: 86,
-                                                  child:
-                                                      Icon(Icons.newspaper)))),
-                                  const SizedBox(width: 10),
-                                ],
+                                                  width: 68,
+                                                  height: 82,
+                                                  child: Icon(Icons
+                                                      .newspaper_outlined)))
+                                      : Container(
+                                          width: 68,
+                                          height: 82,
+                                          color: colors.surfaceContainerLow,
+                                          child: const Icon(
+                                              Icons.newspaper_outlined)),
+                                ),
+                                const SizedBox(width: 10),
                                 Expanded(
                                     child: Column(
                                         crossAxisAlignment:
@@ -126,47 +157,72 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                                         children: [
                                       Row(children: [
                                         Expanded(
-                                            child: Text(
-                                                elapsed('${item['sent_at']}'),
-                                                style: TextStyle(
-                                                    fontSize: 10,
-                                                    color: colors
-                                                        .onSurfaceVariant))),
-                                        if (unread)
-                                          Icon(Icons.circle,
-                                              size: 8, color: colors.primary)
+                                            child: Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: (item['category'] as String? ?? '').isEmpty
+                                                    ? const SizedBox.shrink()
+                                                    : Container(
+                                                        padding:
+                                                            const EdgeInsets.symmetric(
+                                                                horizontal: 4,
+                                                                vertical: 2),
+                                                        decoration: BoxDecoration(
+                                                            color: _categoryColor('${item['category']}')
+                                                                .withValues(
+                                                                    alpha: .12),
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                    4)),
+                                                        child: Text('${item['category']}'.toUpperCase(),
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow
+                                                                .ellipsis,
+                                                            style: TextStyle(
+                                                                fontSize: 9,
+                                                                height: 1.15,
+                                                                fontWeight:
+                                                                    FontWeight.w700,
+                                                                color: _categoryColor('${item['category']}')))))),
+                                        const SizedBox(width: 5),
+                                        Text(elapsed('${item['sent_at']}'),
+                                            style: TextStyle(
+                                                fontSize: 9,
+                                                color:
+                                                    colors.onSurfaceVariant)),
                                       ]),
-                                      if ((item['category'] as String? ?? '')
-                                          .isNotEmpty)
-                                        Container(
-                                            decoration: BoxDecoration(
-                                                color: colors.primary
-                                                    .withValues(alpha: .1),
-                                                borderRadius:
-                                                    BorderRadius.circular(5)),
-                                            margin: const EdgeInsets.symmetric(
-                                                vertical: 4),
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 3, horizontal: 5),
-                                            child: Text(
-                                                '${item['category']}'
-                                                    .toUpperCase(),
-                                                style: TextStyle(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: colors.primary))),
-                                      Text('${item['title']}',
-                                          style: const TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w700)),
                                       const SizedBox(height: 4),
-                                      Text('${item['body']}',
+                                      Text('${item['title'] ?? ''}',
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: colors.onSurfaceVariant)),
+                                          style: const TextStyle(
+                                              fontSize: 13,
+                                              height: 1.2,
+                                              fontWeight: FontWeight.w700)),
+                                      if ((item['body'] as String? ?? '')
+                                          .isNotEmpty) ...[
+                                        const SizedBox(height: 3),
+                                        Text('${item['body']}',
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                                fontSize: 11.5,
+                                                height: 1.2,
+                                                color:
+                                                    colors.onSurfaceVariant)),
+                                      ],
                                     ])),
+                                const SizedBox(width: 5),
+                                Column(children: [
+                                  SizedBox(
+                                      height: 14,
+                                      width: 10,
+                                      child: unread
+                                          ? const Icon(Icons.circle,
+                                              size: 6, color: Colors.red)
+                                          : null),
+                                  const SizedBox(height: 20),
+                                  const Icon(Icons.chevron_right, size: 16),
+                                ]),
                               ])),
                     ));
               }),

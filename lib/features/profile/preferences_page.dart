@@ -8,6 +8,7 @@ import '../../core/edition/edition_navigation.dart';
 import '../../data/repositories/app_preferences_repository.dart';
 import '../../data/repositories/reading_preferences.dart';
 import '../../widgets/wp_scaffold.dart';
+import '../../widgets/wp_logo.dart';
 import 'settings_design.dart';
 
 final appVersionProvider =
@@ -247,7 +248,7 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
                   const SizedBox(width: 10),
                   ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.asset('assets/wallpapers/grain.png',
+                      child: Image.asset('assets/pages/settings-wood.png',
                           width: 65, height: 76, fit: BoxFit.cover)),
                 ]),
               ]),
@@ -265,11 +266,12 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
                           subtitle: Text(
                               'News and updates for ${edition.label}',
                               style: const TextStyle(fontSize: 11)),
-                          secondary: Text(
-                              edition == Edition.europe
-                                  ? '\u{1F1EA}\u{1F1FA}'
-                                  : '\u{1F1FA}\u{1F1F8}',
-                              style: const TextStyle(fontSize: 22)),
+                          secondary: SizedBox(
+                              width: 52,
+                              child: WPLogo(
+                                  edition: edition, width: 52, height: 28)),
+                          dense: true,
+                          visualDensity: VisualDensity.compact,
                           value: push[edition] ?? false,
                           onChanged: _busy
                               ? null
@@ -286,9 +288,6 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
                                     if (mounted) setState(() => _busy = false);
                                   }
                                 }),
-                    Text(ref.watch(notificationStatusProvider),
-                        style: TextStyle(
-                            color: colors.onSurfaceVariant, fontSize: 12)),
                   ]),
               _section(
                   Icons.headphones_outlined,
@@ -301,12 +300,18 @@ class _PreferencesPageState extends ConsumerState<PreferencesPage> {
                         value: reading.speed,
                         min: .25,
                         max: .75,
-                        divisions: 10,
                         label: '${(reading.speed / .45).toStringAsFixed(1)}x',
                         onChanged: (v) => ref
                             .read(readingPreferencesProvider.notifier)
                             .setSpeed(v)),
+                    const Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('0.6x', style: TextStyle(fontSize: 10)),
+                          Text('1.7x', style: TextStyle(fontSize: 10))
+                        ]),
                     ListTile(
+                        dense: true,
                         contentPadding: EdgeInsets.zero,
                         title: const Text('Voice'),
                         subtitle: Text(reading.voice == null

@@ -13,7 +13,7 @@ class SettingsHero extends StatelessWidget {
       child: Stack(children: [
         Positioned.fill(
             child:
-                Image.asset('assets/wallpapers/grain.png', fit: BoxFit.cover)),
+                Image.asset('assets/pages/settings-wood.png', fit: BoxFit.cover)),
         Positioned.fill(
             child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -90,20 +90,9 @@ class SettingsCard extends StatelessWidget {
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(children: [
-                          Expanded(
-                              child: Text(title,
-                                  style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700))),
-                          if (title == 'Appearance') const _PhonePreview(),
-                          if (title == 'Text Size')
-                            Text('Aa',
-                                style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w600,
-                                    color: c.primary)),
-                        ]),
+                        Text(title,
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w700)),
                         if (description.isNotEmpty) ...[
                           const SizedBox(height: 3),
                           Text(description,
@@ -115,6 +104,25 @@ class SettingsCard extends StatelessWidget {
                         const SizedBox(height: 10),
                         child,
                       ]))),
+          if (title == 'Appearance' || title == 'Text Size') ...[
+            const SizedBox(width: 8),
+            Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: title == 'Appearance'
+                    ? const SizedBox(
+                        width: 60,
+                        height: 90,
+                        child: FittedBox(child: _PhonePreview()))
+                    : Container(
+                        width: 52,
+                        height: 75,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                            color: c.primary.withValues(alpha: .06),
+                            borderRadius: BorderRadius.circular(12)),
+                        child: Text('Aa',
+                            style: TextStyle(fontSize: 30, color: c.primary)))),
+          ],
         ]));
   }
 }
@@ -195,15 +203,6 @@ class _LegalSectionCardState extends State<LegalSectionCard> {
                     child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          CircleAvatar(
-                              radius: 9,
-                              backgroundColor: c.primary.withValues(alpha: .10),
-                              child: Text('${widget.index}',
-                                  style: TextStyle(
-                                      fontSize: 10,
-                                      color: c.primary,
-                                      fontWeight: FontWeight.bold))),
-                          const SizedBox(width: 7),
                           CircleAvatar(
                               radius: 18,
                               backgroundColor: c.primary.withValues(alpha: .10),

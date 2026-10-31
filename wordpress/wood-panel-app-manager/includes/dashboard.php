@@ -15,11 +15,11 @@ add_action('admin_enqueue_scripts', static function (): void {
     $page = sanitize_key($_GET['page'] ?? '');
     if (!$screen || ($screen->post_type !== 'wpam_banner' && !in_array($page, ['wood-panel-app-settings', 'wpam-configuration', 'wpam-notifications', 'wpam-profiles', 'wpam-submissions', 'wpam-banner-reports'], true))) return;
     $base = plugin_dir_url(dirname(__DIR__) . '/wood-panel-app-manager.php');
-    wp_enqueue_style('wpam-dashboard', $base . 'assets/dashboard.css', [], '0.7.1');
-    wp_enqueue_script('wpam-dashboard', $base . 'assets/dashboard.js', [], '0.7.1', true);
+    wp_enqueue_style('wpam-dashboard', $base . 'assets/dashboard.css', [], '0.8.0');
+    wp_enqueue_script('wpam-dashboard', $base . 'assets/dashboard.js', [], '0.8.0', true);
     wp_localize_script('wpam-dashboard', 'wpamDashboard', [
         'edition' => wpam_edition() === 'usa' ? 'USA' : 'Europe',
-        'sections' => ['Edition and branding', 'Categories', 'Home sections', 'Promotional banners', 'Inline advertisements', 'Footer advertisements', 'Website content sources', 'In This Issue', 'Wallpapers', 'Forms and regional pages', 'Contact details', 'Social media', 'App store links', 'Shared videos', 'Push configuration'],
+        'sections' => ['Edition and branding', 'Categories', 'Home sections', 'Promotional banners', 'Inline advertisements', 'Footer advertisements', 'Website content sources', 'In This Issue', 'Wallpapers', 'Forms and regional pages', 'Contact details', 'Privacy Policy', 'Terms & Conditions', 'Social media', 'App store links', 'Shared videos', 'Push configuration'],
         'links' => [
             ['label' => 'Application settings', 'url' => admin_url('admin.php?page=wood-panel-app-settings')],
             ['label' => 'All banners', 'url' => admin_url('edit.php?post_type=wpam_banner')],

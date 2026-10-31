@@ -14,12 +14,14 @@ import '../network/api_client.dart';
 import 'edition.dart';
 
 final notificationsEnabledProvider = StateProvider<bool>((ref) => false);
+final editionPushProvider = StateProvider<Map<Edition, bool>>(
+    (ref) => {for (final e in Edition.values) e: false});
 final notificationStatusProvider =
     StateProvider<String>((ref) => 'Notifications are not configured yet.');
 final editionNavigationProvider = Provider<EditionNavigation>((ref) {
   final service = EditionNavigation(ref);
   ref.onDispose(service.dispose);
-  ref.listen(notificationsEnabledProvider, (_, __) => service.syncTopics());
+  ref.listen(editionPushProvider, (_, __) => service.syncTopics());
   unawaited(service.start());
   return service;
 });
@@ -40,6 +42,14 @@ class EditionNavigation {
     if (_disposed) return;
     ref.read(notificationsEnabledProvider.notifier).state =
         prefs.getBool('push_enabled') ?? false;
+    ref.read(editionPushProvider.notifier).state = {
+      for (final e in Edition.values)
+        e: prefs.getBool('push_enabled_${e.name}') ??
+            prefs.getBool('push_enabled') ??
+            false
+    };
+    ref.read(notificationsEnabledProvider.notifier).state =
+        ref.read(editionPushProvider).values.any((v) => v);
     // Firebase public app identifiers are supplied by the deployment, never guessed.
     const appId = String.fromEnvironment('FIREBASE_APP_ID');
     const apiKey = String.fromEnvironment('FIREBASE_API_KEY');
@@ -81,7 +91,9 @@ class EditionNavigation {
           'usa' => Edition.usa,
           _ => null,
         };
-        if (source == null) return;
+        if (source == null || ref.read(editionPushProvider)[source] != true) {
+          return;
+        }
         ref.read(notificationInboxProvider(source).notifier).refresh();
         final context = ref
             .read(appRouterProvider)
@@ -164,17 +176,34 @@ class EditionNavigation {
   }
 
   Future<void> setEnabled(bool enabled) async {
-    if (!_firebaseReady) return;
+    for (final e in Edition.values) {
+      await setEditionEnabled(e, enabled);
+    }
+  }
+
+  Future<void> setEditionEnabled(Edition edition, bool enabled) async {
+    if (!_firebaseReady) {
+      ref.read(notificationStatusProvider.notifier).state =
+          'Notifications are unavailable. Please restart and try again.';
+      return;
+    }
     if (enabled) {
       final permission = await FirebaseMessaging.instance.requestPermission();
-      enabled =
-          permission.authorizationStatus == AuthorizationStatus.authorized ||
-              permission.authorizationStatus == AuthorizationStatus.provisional;
+      if (permission.authorizationStatus != AuthorizationStatus.authorized &&
+          permission.authorizationStatus != AuthorizationStatus.provisional) {
+        ref.read(notificationStatusProvider.notifier).state =
+            'Allow notifications in your phone settings to enable alerts.';
+        return;
+      }
     }
     if (_disposed) return;
-    ref.read(notificationsEnabledProvider.notifier).state = enabled;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('push_enabled', enabled);
+    await prefs.setBool('push_enabled_${edition.name}', enabled);
+    if (_disposed) return;
+    final values = {...ref.read(editionPushProvider), edition: enabled};
+    ref.read(editionPushProvider.notifier).state = values;
+    ref.read(notificationsEnabledProvider.notifier).state =
+        values.values.any((v) => v);
   }
 
   void syncTopics() {
@@ -182,16 +211,18 @@ class EditionNavigation {
     // Serialize preference/token updates; browsing an edition never changes subscriptions.
     _topicQueue = _topicQueue.then((_) async {
       if (_disposed) return;
-      final enabled = ref.read(notificationsEnabledProvider);
+      final selections = ref.read(editionPushProvider);
+      final enabled = selections.values.any((v) => v);
       await FirebaseMessaging.instance.setAutoInitEnabled(enabled);
       await syncEditionPushSubscriptions(
         enabled: enabled,
+        editions: selections,
         subscribe: FirebaseMessaging.instance.subscribeToTopic,
         unsubscribe: FirebaseMessaging.instance.unsubscribeFromTopic,
       );
       if (!_disposed) {
         ref.read(notificationStatusProvider.notifier).state = enabled
-            ? 'Europe and USA notifications enabled.'
+            ? 'Alerts enabled for ${Edition.values.where((e) => selections[e] == true).map((e) => e.label).join(' and ')}.'
             : 'Notifications are off.';
       }
     }).catchError((Object _) {
@@ -213,11 +244,12 @@ class EditionNavigation {
 /// The notification preference covers both editions, independent of browsing mode.
 Future<void> syncEditionPushSubscriptions({
   required bool enabled,
+  Map<Edition, bool>? editions,
   required Future<void> Function(String) subscribe,
   required Future<void> Function(String) unsubscribe,
 }) async {
   for (final edition in Edition.values) {
-    if (enabled) {
+    if (editions?[edition] ?? enabled) {
       await subscribe(edition.topic);
     } else {
       await unsubscribe(edition.topic);

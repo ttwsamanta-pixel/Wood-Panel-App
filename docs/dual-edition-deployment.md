@@ -184,3 +184,13 @@ See [notification-deployment.md](notification-deployment.md) for plugin 0.6.0, A
 
 ### Startup branding update — 30 October 2026
 Android now uses a dedicated transparent splash logo and an adaptive launcher icon with green/brown backing, avoiding the white legacy-icon surround. The Flutter opening splash adds scalable wood-grain corner ribbons on black and retains the animated brand loader. Android's system splash remains logo-only; corners appear after Flutter starts. Cold-launch screenshots on c2a40481 confirmed the borderless native logo and corner decoration. Flutter analysis and Android build passed. No onboarding or profile data was reset.
+
+
+### Preferences and legal pages - 31 October 2026
+Plugin 0.8.0 adds Privacy Policy and Terms & Conditions in the application dashboard sidebar. Each edition has its own editable plain-text document in the public configuration. Defaults support older plugin installations. Review the default wording before publication; install the ZIP on both sites and restart the app after saving content.
+
+Preferences contains Light/Dark/Follow Phone Settings, four global text sizes with a live preview, independent Europe/USA notification switches, device TTS speed/voice and preview, legal pages, and installed app version/contact links. Language remains deferred. Text size multiplies phone accessibility scaling. Choices persist across restarts and edition changes. Existing push_enabled opt-ins migrate to both editions unless an explicit per-edition choice exists; browsing never changes subscriptions.
+
+Audio uses the existing device TTS engine without a paid API. A removed saved voice falls back to the device English voice. Device voices may require installation/network access depending on the engine. iOS build and physical-device verification remain deferred to the Mac/iPhone phase.
+
+Android verification: installed on connected device c2a40481; visually checked light/dark Preferences, text choices, independent edition switches, version/support and Privacy Policy navigation. Restored Light and Default text size. Full Flutter suite: 69 passed; final chip-contrast changes: six Preferences tests passed. PHP settings tests and plugin lint passed. iOS device checks remain deferred.

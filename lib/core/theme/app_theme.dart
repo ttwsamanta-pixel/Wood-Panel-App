@@ -56,6 +56,8 @@ class AppTheme {
     final base = light();
     return base.copyWith(
       brightness: Brightness.dark,
+      textTheme: base.textTheme
+          .apply(bodyColor: Colors.white, displayColor: Colors.white),
       scaffoldBackgroundColor: const Color(0xFF12100E),
       colorScheme: const ColorScheme.dark(
         primary: AppColors.gold,

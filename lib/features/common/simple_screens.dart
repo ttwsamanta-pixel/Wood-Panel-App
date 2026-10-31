@@ -1,3 +1,4 @@
+import '../profile/preferences_page.dart';
 import 'about_page.dart';
 import '../profile/profile_page.dart';
 import '../../widgets/issue_highlights.dart';
@@ -23,10 +24,8 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/edition/edition.dart';
-import '../../core/edition/edition_navigation.dart';
 import '../../data/models/news_category.dart';
 import '../../data/repositories/app_api_repository.dart';
-import '../../data/repositories/app_preferences_repository.dart';
 import '../../data/repositories/bookmark_repository.dart';
 import '../../data/models/content_models.dart';
 import '../../data/repositories/cache_refresh_bus.dart';
@@ -304,7 +303,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       child: Column(
         children: [
           DecoratedBox(
-            decoration: const BoxDecoration(color: Colors.white),
+            decoration:
+                BoxDecoration(color: Theme.of(context).colorScheme.surface),
             child: Column(
               children: [
                 _ExploreTabs(
@@ -418,8 +418,8 @@ class _ExploreTabs extends StatelessWidget {
       (_ExploreTab.video, 'Videos'),
     ];
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         border: Border(bottom: BorderSide(color: AppColors.line)),
       ),
       child: Padding(
@@ -692,7 +692,7 @@ class _FeaturedInterviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.line),
         boxShadow: const [
@@ -808,7 +808,8 @@ class _ExploreCategoryGrid extends ConsumerWidget {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFFF7F1EC),
+              color:
+                  AppColors.adaptiveSurface(context, const Color(0xFFF7F1EC)),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AppColors.line),
             ),
@@ -905,7 +906,7 @@ class _ExploreArticleCardState extends ConsumerState<_ExploreArticleCard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.line),
         boxShadow: const [
@@ -1515,7 +1516,9 @@ class _FeedNewsCardState extends ConsumerState<_FeedNewsCard> {
                                           const SizedBox(width: 8),
                                           DecoratedBox(
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFFDF2E8),
+                                              color: AppColors.adaptiveSurface(
+                                                  context,
+                                                  const Color(0xFFFDF2E8)),
                                               shape: BoxShape.circle,
                                             ),
                                             child: IconButton(
@@ -1776,7 +1779,7 @@ class _LatestMagazinePanel extends StatelessWidget {
         return Container(
           padding: EdgeInsets.all(wide ? 20 : 10),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFFBF6),
+            color: AppColors.adaptiveSurface(context, const Color(0xFFFFFBF6)),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppColors.line),
             boxShadow: const [
@@ -1987,7 +1990,7 @@ class _MagazineCoverImage extends StatelessWidget {
       width: width,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.line),
       ),
@@ -2159,7 +2162,7 @@ class _MagazineIssueCard extends StatelessWidget {
           width: cardWidth,
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppColors.line),
             boxShadow: const [
@@ -2917,7 +2920,7 @@ class _CategoryArticleCardState extends ConsumerState<_CategoryArticleCard> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.line),
         boxShadow: const [
@@ -3507,7 +3510,8 @@ class _LegacyInterviewDetailScreenState
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF7F1EC),
+                      color: AppColors.adaptiveSurface(
+                          context, const Color(0xFFF7F1EC)),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.line),
                     ),
@@ -3767,42 +3771,10 @@ class SubscribeScreen extends StatelessWidget {
       route: '/profile');
 }
 
-class PreferencesScreen extends ConsumerWidget {
+class PreferencesScreen extends StatelessWidget {
   const PreferencesScreen({super.key});
-
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = ref.watch(themeModeControllerProvider) == ThemeMode.dark;
-    return WPScaffold(
-      showBack: true,
-      title: 'Preferences',
-      child: ListView(
-        children: [
-          SwitchListTile(
-            title: const Text('Dark Mode'),
-            value: isDark,
-            onChanged: (value) => ref
-                .read(themeModeControllerProvider.notifier)
-                .setDarkMode(value),
-          ),
-          SwitchListTile(
-              title: const Text('Notifications'),
-              subtitle: Text(ref.watch(notificationStatusProvider)),
-              value: ref.watch(notificationsEnabledProvider),
-              onChanged: (value) =>
-                  ref.read(editionNavigationProvider).setEnabled(value)),
-          const ListTile(
-              title: Text('Language'),
-              subtitle: Text('English'),
-              trailing: Icon(Icons.chevron_right_rounded)),
-          const ListTile(
-              title: Text('Font Size'),
-              subtitle: Text('Medium'),
-              trailing: Icon(Icons.chevron_right_rounded)),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const PreferencesPage();
 }
 
 class ContactScreen extends StatelessWidget {
@@ -4013,7 +3985,7 @@ class _YouTubeVideoCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.line),
       ),
@@ -4404,7 +4376,7 @@ class _DownloadedFileTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.line),
       ),
@@ -4421,7 +4393,8 @@ class _DownloadedFileTile extends StatelessWidget {
                     ? Container(
                         width: 54,
                         height: 64,
-                        color: const Color(0xFFF7F1EC),
+                        color: AppColors.adaptiveSurface(
+                            context, const Color(0xFFF7F1EC)),
                         child: Icon(Icons.picture_as_pdf_rounded,
                             color: Theme.of(context).colorScheme.primary),
                       )
@@ -4593,7 +4566,7 @@ class _BrandListScreen extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: AppColors.line),
               ),

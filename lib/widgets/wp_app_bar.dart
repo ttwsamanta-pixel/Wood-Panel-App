@@ -58,7 +58,7 @@ class WPAppBar extends ConsumerWidget implements PreferredSizeWidget {
                           context: context,
                           position:
                               RelativeRect.fromLTRB(left, bottom, left, 0),
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.surface,
                           surfaceTintColor: Colors.transparent,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),

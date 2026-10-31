@@ -118,7 +118,9 @@ class ProfilePage extends ConsumerWidget {
     final stats = ref.watch(profileStatsProvider).valueOrNull;
     return WPScaffold(
         child: ColoredBox(
-            color: const Color(0xFFFAF9F7),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? colors.surfaceContainerLowest
+                : const Color(0xFFFAF9F7),
             child: ListView(
                 padding: const EdgeInsets.fromLTRB(10, 8, 10, 20),
                 children: [
@@ -219,8 +221,9 @@ class ProfilePage extends ConsumerWidget {
                               left: box.maxWidth * .56,
                               child: Container(
                                   padding: const EdgeInsets.all(3),
-                                  decoration: const BoxDecoration(
-                                      color: Colors.white,
+                                  decoration: BoxDecoration(
+                                      color:
+                                          Theme.of(context).colorScheme.surface,
                                       shape: BoxShape.circle),
                                   child: ProfileAvatar(
                                       profile: profile,
@@ -234,7 +237,8 @@ class ProfilePage extends ConsumerWidget {
                                   padding: const EdgeInsets.symmetric(
                                       vertical: 8, horizontal: 4),
                                   decoration: BoxDecoration(
-                                      color: Colors.white,
+                                      color:
+                                          Theme.of(context).colorScheme.surface,
                                       borderRadius: BorderRadius.circular(13),
                                       boxShadow: const [
                                         BoxShadow(
@@ -303,7 +307,9 @@ class ProfilePage extends ConsumerWidget {
                                 Expanded(
                                     child: Container(
                                         decoration: BoxDecoration(
-                                            color: Colors.white,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .surface,
                                             borderRadius:
                                                 BorderRadius.circular(13),
                                             boxShadow: const [

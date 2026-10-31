@@ -208,7 +208,10 @@ class _HomeContent extends ConsumerWidget {
       'trending': [
         const WPSectionHeader(title: 'Trending'),
         SizedBox(
-          height: 260,
+          height: 260 +
+              140 *
+                  (MediaQuery.textScalerOf(context).scale(14) / 14 - 1)
+                      .clamp(0, 3),
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -554,7 +557,7 @@ class _TrendingCard extends StatelessWidget {
         width: 238,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.line),
           boxShadow: const [
@@ -652,7 +655,7 @@ class _HomeVideoCarousel extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 18),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF7F1EC),
+          color: AppColors.adaptiveSurface(context, const Color(0xFFF7F1EC)),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.line),
         ),
@@ -676,7 +679,9 @@ class _HomeVideoCarousel extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: 236,
+      height: 236 +
+          130 *
+              (MediaQuery.textScalerOf(context).scale(14) / 14 - 1).clamp(0, 3),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -702,7 +707,7 @@ class _HomeVideoCard extends StatelessWidget {
         width: 224,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.line),
           boxShadow: const [
@@ -806,7 +811,7 @@ class _HomeMagazineCarousel extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 18),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF7F1EC),
+          color: AppColors.adaptiveSurface(context, const Color(0xFFF7F1EC)),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.line),
         ),
@@ -830,7 +835,9 @@ class _HomeMagazineCarousel extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: 398,
+      height: 398 +
+          140 *
+              (MediaQuery.textScalerOf(context).scale(14) / 14 - 1).clamp(0, 3),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -869,7 +876,7 @@ class _HomeMagazineCard extends StatelessWidget {
       width: 252,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.line),
         boxShadow: const [
@@ -987,7 +994,9 @@ class _HomeEventsCarousel extends StatelessWidget {
       );
     }
     return SizedBox(
-      height: 142,
+      height: 142 +
+          100 *
+              (MediaQuery.textScalerOf(context).scale(14) / 14 - 1).clamp(0, 3),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 18),
@@ -1016,7 +1025,7 @@ class _HomeEventCard extends StatelessWidget {
       child: Container(
         width: MediaQuery.sizeOf(context).width * .78,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.line),
           boxShadow: const [
@@ -1164,7 +1173,7 @@ class _CategoryTile extends StatelessWidget {
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.fromLTRB(5, 7, 5, 6),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F0E6),
+          color: AppColors.adaptiveSurface(context, const Color(0xFFF8F0E6)),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.line),
           boxShadow: const [
@@ -1301,7 +1310,7 @@ class _NewsletterCard extends StatelessWidget {
         height: 184,
         margin: const EdgeInsets.symmetric(horizontal: 18),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF7EC),
+          color: AppColors.adaptiveSurface(context, const Color(0xFFFFF7EC)),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: const Color(0xFFE7D6C7)),
           boxShadow: const [
@@ -1700,7 +1709,8 @@ class _NewsletterPopupState extends ConsumerState<_NewsletterPopup> {
               child: Container(
                 padding: const EdgeInsets.fromLTRB(18, 24, 18, 18),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF7EC),
+                  color: AppColors.adaptiveSurface(
+                      context, const Color(0xFFFFF7EC)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: _status != null && !_isError && !_isSending

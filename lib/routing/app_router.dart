@@ -1,3 +1,4 @@
+import '../features/profile/preferences_page.dart';
 import '../features/profile/notification_screen.dart';
 import '../features/profile/profile_editor.dart';
 import 'package:flutter/material.dart';
@@ -122,6 +123,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/subscribe',
           builder: (context, state) => const SubscribeScreen()),
+      GoRoute(
+          path: '/privacy-policy',
+          builder: (_, __) => const LegalPage(privacy: true)),
+      GoRoute(
+          path: '/terms-conditions',
+          builder: (_, __) => const LegalPage(privacy: false)),
       GoRoute(
           path: '/preferences',
           builder: (context, state) => const PreferencesScreen()),

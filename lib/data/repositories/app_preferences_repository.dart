@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final appPreferencesRepositoryProvider = Provider<AppPreferencesRepository>((ref) {
+final appPreferencesRepositoryProvider =
+    Provider<AppPreferencesRepository>((ref) {
   return AppPreferencesRepository();
 });
 
-final themeModeControllerProvider = StateNotifierProvider<ThemeModeController, ThemeMode>((ref) {
+final themeModeControllerProvider =
+    StateNotifierProvider<ThemeModeController, ThemeMode>((ref) {
   return ThemeModeController(ref.watch(appPreferencesRepositoryProvider));
 });
 
@@ -45,13 +47,20 @@ class ThemeModeController extends StateNotifier<ThemeMode> {
   }
 
   final AppPreferencesRepository _repository;
+  bool _changed = false;
 
   Future<void> _load() async {
-    state = await _repository.themeMode();
+    final mode = await _repository.themeMode();
+    if (mounted && !_changed) state = mode;
+  }
+
+  Future<void> setMode(ThemeMode mode) async {
+    _changed = true;
+    state = mode;
+    await _repository.setThemeMode(mode);
   }
 
   Future<void> setDarkMode(bool enabled) async {
-    state = enabled ? ThemeMode.dark : ThemeMode.light;
-    await _repository.setThemeMode(state);
+    await setMode(enabled ? ThemeMode.dark : ThemeMode.light);
   }
 }

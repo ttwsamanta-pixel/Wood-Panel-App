@@ -1,3 +1,4 @@
+import 'legal_defaults.dart';
 import 'package:flutter/foundation.dart';
 import 'social_defaults.dart';
 import 'dart:convert';
@@ -143,6 +144,8 @@ class EditionConfig {
       this.contactPageId = 0,
       this.socialLinks = defaultSocialLinks,
       this.contactDetails = defaultContactDetails,
+      this.privacyPolicy = defaultPrivacyPolicy,
+      this.termsConditions = defaultTermsConditions,
       this.defaultWallpapers = true,
       this.wallpapers = const []})
       : primary = primary ??
@@ -167,6 +170,7 @@ class EditionConfig {
   final List<Map<String, String>> inlineAds, footerAds;
   final Map<String, String> socialLinks;
   final Map<String, String> contactDetails;
+  final String privacyPolicy, termsConditions;
   final bool defaultWallpapers;
   final List<Map<String, String>> wallpapers;
   final List<String> sections;
@@ -242,6 +246,14 @@ class EditionConfig {
         banners: ads('banners'),
         interviewCategories: ids('interview_categories'),
         featuredIds: ids('featured_ids'),
+        privacyPolicy: json['privacy_policy'] is String &&
+                (json['privacy_policy'] as String).trim().isNotEmpty
+            ? json['privacy_policy'] as String
+            : defaultPrivacyPolicy,
+        termsConditions: json['terms_conditions'] is String &&
+                (json['terms_conditions'] as String).trim().isNotEmpty
+            ? json['terms_conditions'] as String
+            : defaultTermsConditions,
         contactDetails: {
           for (final key in defaultContactDetails.keys)
             key: json['contact_details'] is Map &&

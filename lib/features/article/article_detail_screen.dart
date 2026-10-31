@@ -1,3 +1,4 @@
+import '../../data/repositories/reading_preferences.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/edition/edition.dart';
 import 'package:flutter/material.dart';
@@ -103,6 +104,9 @@ class _ArticleDetailScreenState extends ConsumerState<ArticleDetailScreen> {
       return;
     }
     await _ttsReady;
+    await ref.read(readingPreferencesProvider.notifier).ready;
+    await applyReadingVoice(_tts, ref.read(readingPreferencesProvider));
+    if (!mounted) return;
     _speechChunks = _speechChunksFor(article);
     _speechChunkIndex = 0;
     if (_speechChunks.isEmpty) return;
@@ -245,7 +249,7 @@ class _ArticleDetailScreenState extends ConsumerState<ArticleDetailScreen> {
                         style: TextStyle(
                             fontSize: 16 * _fontScale,
                             height: 1.7,
-                            color: AppColors.ink),
+                            color: Theme.of(context).colorScheme.onSurface),
                         child: HtmlWidget(article.html),
                       ),
                     ],
@@ -314,7 +318,7 @@ class _ArticleInfoBar extends StatelessWidget {
     final hasAuthorAvatar = article.authorAvatarUrl.trim().isNotEmpty;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: const Color(0xFFFCF5EE),
+        color: AppColors.adaptiveSurface(context, const Color(0xFFFCF5EE)),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.line),
       ),
@@ -470,7 +474,7 @@ class _CompactIconButton extends StatelessWidget {
       message: tooltip,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(color: const Color(0xFFE6C9B2)),
         ),

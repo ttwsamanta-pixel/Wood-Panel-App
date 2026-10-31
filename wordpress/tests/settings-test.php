@@ -68,3 +68,11 @@ check(wpam_sanitize_settings($storeInput)['ios_store_url'] === '', 'Reject fake 
 $storeInput['ios_store_url'] = 'https://apps.apple.com/app/missing-id';
 check(wpam_sanitize_settings($storeInput)['ios_store_url'] === '', 'Require numeric Apple app ID');
 echo "iOS store setting: passed.\n";
+
+$legal = wpam_sanitize_settings(['privacy_policy' => "Our privacy policy\n\nSecond paragraph", 'terms_conditions' => '<b>Our terms</b>']);
+check($legal['privacy_policy'] === "Our privacy policy\n\nSecond paragraph", 'Legal paragraphs survive saving');
+check($legal['terms_conditions'] === 'Our terms', 'Legal content is plain text');
+$invalidLegal = wpam_sanitize_settings(['privacy_policy' => [], 'terms_conditions' => '']);
+check($invalidLegal['privacy_policy'] === wpam_legal_defaults()['privacy_policy'], 'Invalid policy falls back to default');
+check($invalidLegal['terms_conditions'] === wpam_legal_defaults()['terms_conditions'], 'Blank terms fall back to default');
+echo "Legal settings: 4 checks passed.\n";

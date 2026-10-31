@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 class AppColors {
   const AppColors._();
 
+  static Color adaptiveSurface(BuildContext context, Color light) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? Theme.of(context).colorScheme.surface
+          : light;
+
   static const green = Color(0xFF034F29);
   static const brown = Color(0xFF663300);
   static const copper = Color(0xFFA54F17);

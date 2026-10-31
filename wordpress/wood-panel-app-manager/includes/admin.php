@@ -45,9 +45,9 @@ function wpam_admin_assets($hook): void {
 
     $base = plugin_dir_url(dirname(__DIR__) . '/wood-panel-app-manager.php');
 
-    wp_enqueue_style('wpam-admin', $base . 'assets/admin.css', [], '0.7.0');
+    wp_enqueue_style('wpam-admin', $base . 'assets/admin.css', [], '0.8.0');
 
-    wp_enqueue_script('wpam-admin', $base . 'assets/admin.js', ['media-editor'], '0.7.0', true);
+    wp_enqueue_script('wpam-admin', $base . 'assets/admin.js', ['media-editor'], '0.8.0', true);
 
 }
 
@@ -275,6 +275,14 @@ function wpam_admin_page(): void {
         <table class="form-table"><?php foreach (wpam_contact_defaults() as $key => $default): ?>
         <tr><th><label for="contact-<?php echo esc_attr($key); ?>"><?php echo esc_html(ucwords(str_replace('_', ' ', $key))); ?></label></th><td><textarea rows="2" class="large-text" id="contact-<?php echo esc_attr($key); ?>" name="wpam_settings[contact_details][<?php echo esc_attr($key); ?>]"><?php echo esc_textarea($s['contact_details'][$key] ?? $default); ?></textarea></td></tr>
         <?php endforeach; ?></table>
+        <h2>Privacy Policy</h2>
+        <p>Published in the app Preferences for this edition. Review and adapt this default policy to your actual data practices before publication. Use plain text with blank lines between sections.</p>
+        <label for="wpam-privacy-policy">Privacy Policy content</label>
+        <textarea id="wpam-privacy-policy" class="large-text" rows="22" name="wpam_settings[privacy_policy]"><?php echo esc_textarea($s['privacy_policy']); ?></textarea>
+        <h2>Terms &amp; Conditions</h2>
+        <p>Published in the app Preferences for this edition. Review and adapt the default terms before publication.</p>
+        <label for="wpam-terms">Terms &amp; Conditions content</label>
+        <textarea id="wpam-terms" class="large-text" rows="22" name="wpam_settings[terms_conditions]"><?php echo esc_textarea($s['terms_conditions']); ?></textarea>
         <h2>Social media</h2><p>These links appear on Contact, Profile and the app menu for this edition. Leave a link empty to hide its icon.</p>
         <table class="form-table"><tbody>
         <?php foreach (wpam_social_defaults() as $key => $default): ?>

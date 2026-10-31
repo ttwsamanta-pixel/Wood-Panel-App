@@ -52,6 +52,8 @@ class WPBottomNav extends StatelessWidget {
         path == '/wallpapers' ||
         path == '/subscribe' ||
         path == '/preferences' ||
+        path == '/privacy-policy' ||
+        path == '/terms-conditions' ||
         path == '/contact' ||
         path == '/grow-with-us' ||
         path == '/about' ||

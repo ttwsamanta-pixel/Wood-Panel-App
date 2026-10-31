@@ -1,3 +1,4 @@
+import '../telemetry/app_telemetry.dart';
 import 'notification_inbox.dart';
 import 'dart:async';
 
@@ -78,6 +79,7 @@ class EditionNavigation {
       }
       if (_disposed) return;
       _firebaseReady = true;
+      unawaited(AppTelemetry.start(ref));
       ref.read(notificationStatusProvider.notifier).state =
           'Receive news from Europe and USA.';
       _subscriptions

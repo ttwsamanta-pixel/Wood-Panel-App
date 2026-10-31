@@ -194,3 +194,16 @@ Preferences contains Light/Dark/Follow Phone Settings, four global text sizes wi
 Audio uses the existing device TTS engine without a paid API. A removed saved voice falls back to the device English voice. Device voices may require installation/network access depending on the engine. iOS build and physical-device verification remain deferred to the Mac/iPhone phase.
 
 Android verification: installed on connected device c2a40481; visually checked light/dark Preferences, text choices, independent edition switches, version/support and Privacy Policy navigation. Restored Light and Default text size. Full Flutter suite: 69 passed; final chip-contrast changes: six Preferences tests passed. PHP settings tests and plugin lint passed. iOS device checks remain deferred.
+
+
+## Analytics and Crashlytics (Android integration)
+
+The app uses the existing Firebase project and native google-services.json. Analytics records static screen names and the active edition, excluding URL queries, article titles, email addresses and form contents. Crashlytics captures Flutter framework errors and uncaught platform-dispatcher errors with edition/screen context. Reporting failures do not disable Messaging.
+
+Android verification: enable adb shell setprop debug.firebase.analytics.app com.example.wood_panel_app and inspect Firebase Analytics DebugView. A debug build with --dart-define=FIREBASE_TEST_CRASH=true triggers one native test crash per installation after 15 seconds, guarded by a saved flag. Relaunch to upload. Distribute only builds without that define. Disable DebugView with adb shell setprop debug.firebase.analytics.app .none. Dashboard receipt must be confirmed separately from local SDK logs.
+
+iOS remains pending on Mac: add the correct GoogleService-Info.plist, run FlutterFire configuration for the existing registered iOS application, configure Crashlytics symbol upload for the chosen CocoaPods/SPM integration, verify signing/build and test crash delivery plus Analytics on an iPhone. Do not mark iOS verified from a Windows build.
+
+Before production release, update any plugin-customized privacy policy and store data disclosures to describe Firebase usage analytics and crash diagnostics. Review collection consent requirements for your audience. No profile name/email is intentionally set as an Analytics property or Crashlytics user identifier.
+
+Validation on 2026-10-31: 69 Flutter tests passed; targeted Dart analysis passed; debug APK built and installed on connected Android. Controlled native FirebaseCrashlyticsTestCrash captured and enqueued to DataTransport. Analytics screen_view bundle for com.example.wood_panel_app received HTTP 204 upload success. Normal APK without test define reinstalled afterward. Firebase console report visibility still requires operator confirmation. Analytics DebugView remains enabled on the test phone for that confirmation.

@@ -3744,6 +3744,43 @@ class DownloadsScreen extends ConsumerWidget {
                 _DownloadedFileTile(
                   item: item,
                   coverUrl: _coverForDownloadedFile(item, issues),
+                  onDelete: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (dialogContext) => AlertDialog(
+                        title: const Text('Delete downloaded PDF?'),
+                        content: Text(
+                            'Remove "${item.title}" from this device? You can download it again later.'),
+                        actions: [
+                          TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, false),
+                              child: const Text('Cancel')),
+                          TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, true),
+                              child: const Text('Delete')),
+                        ],
+                      ),
+                    );
+                    if (confirmed != true) return;
+                    try {
+                      await repository.deletePdf(item);
+                      ref.invalidate(downloadRepositoryProvider);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Downloaded PDF deleted')));
+                      }
+                    } on Object {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text(
+                                    'Could not delete PDF. Please try again.')));
+                      }
+                    }
+                  },
                 ),
             ],
           );
@@ -4366,10 +4403,12 @@ void _openInterview(BuildContext context, Article article) {
 }
 
 class _DownloadedFileTile extends StatelessWidget {
-  const _DownloadedFileTile({required this.item, required this.coverUrl});
+  const _DownloadedFileTile(
+      {required this.item, required this.coverUrl, required this.onDelete});
 
   final DownloadedFile item;
   final String coverUrl;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -4447,6 +4486,15 @@ class _DownloadedFileTile extends StatelessWidget {
                 icon: Icon(Icons.share_rounded,
                     color: Theme.of(context).colorScheme.primary),
                 onPressed: () => Share.shareXFiles([XFile(item.path)]),
+              ),
+              IconButton(
+                tooltip: 'Delete PDF',
+                constraints:
+                    const BoxConstraints.tightFor(width: 38, height: 38),
+                padding: EdgeInsets.zero,
+                icon: Icon(Icons.delete_outline_rounded,
+                    color: Theme.of(context).colorScheme.error),
+                onPressed: onDelete,
               ),
             ],
           ),

@@ -122,6 +122,19 @@ class DownloadRepository {
     return item;
   }
 
+  Future<void> deletePdf(DownloadedFile item) async {
+    final existing = await files();
+    if (!existing.any(
+        (file) => file.path == item.path && file.edition == item.edition)) {
+      return;
+    }
+    final file = File(item.path);
+    if (await file.exists()) {
+      await file.delete();
+    }
+    await _save(await files());
+  }
+
   Future<void> _save(List<DownloadedFile> files) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(

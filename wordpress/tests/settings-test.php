@@ -76,3 +76,12 @@ $invalidLegal = wpam_sanitize_settings(['privacy_policy' => [], 'terms_condition
 check($invalidLegal['privacy_policy'] === wpam_legal_defaults()['privacy_policy'], 'Invalid policy falls back to default');
 check($invalidLegal['terms_conditions'] === wpam_legal_defaults()['terms_conditions'], 'Blank terms fall back to default');
 echo "Legal settings: 4 checks passed.\n";
+
+$controls = wpam_sanitize_settings(['app_store_url' => 'https://play.google.com/store/apps/details?id=com.example.app', 'availability' => ['maintenance' => 1, 'android_minimum' => 12, 'android_latest' => 4, 'ios_minimum' => 20, 'maintenance_message' => '<b>Back soon</b>']]);
+check($controls['availability']['maintenance'] === true, 'Maintenance saves');
+check($controls['availability']['maintenance_message'] === 'Back soon', 'Messages are plain text');
+check($controls['availability']['android_latest'] === 12, 'Latest cannot be lower than minimum');
+check($controls['availability']['ios_minimum'] === 0, 'No store link means no forced update');
+check(wpam_sanitize_settings([])['availability']['maintenance'] === false, 'Controls disabled by default');
+check(wpam_sanitize_settings(['availability' => ['android_minimum' => []]])['availability']['android_minimum'] === 0, 'Reject malformed version');
+echo "Availability settings: 6 checks passed.\n";

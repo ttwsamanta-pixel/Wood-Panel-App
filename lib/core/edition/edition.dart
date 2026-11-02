@@ -1,3 +1,4 @@
+import 'availability.dart';
 import 'legal_defaults.dart';
 import 'package:flutter/foundation.dart';
 import 'social_defaults.dart';
@@ -59,8 +60,10 @@ final editionConfigProvider =
   } catch (_) {
     if (saved != null) {
       try {
-        return EditionConfig.fromJson(
-            edition, jsonDecode(saved) as Map<String, dynamic>);
+        return EditionConfig.fromJson(edition, {
+          ...jsonDecode(saved) as Map<String, dynamic>,
+          'availability': null
+        });
       } catch (_) {/* Use only this edition's fallback. */}
     }
     // A site can serve news before its App Manager plugin is installed.
@@ -114,6 +117,7 @@ class EditionConfig {
   const EditionConfig(
       {required this.edition,
       this.managed = false,
+      this.availability = const Availability(),
       this.logoUrl = '',
       this.appStoreUrl = '',
       this.iosStoreUrl = '',
@@ -159,6 +163,7 @@ class EditionConfig {
 
   final Edition edition;
   final bool managed;
+  final Availability availability;
   final String logoUrl;
   final String appStoreUrl;
   final String iosStoreUrl;
@@ -231,6 +236,7 @@ class EditionConfig {
         iosStoreUrl: validIosStoreUrl(json['ios_store_url']),
         edition: edition,
         managed: true,
+        availability: Availability.fromJson(json['availability']),
         inlineAds: ads('inline_ads'),
         footerAds: ads('footer_ads'),
         logoUrl: branding['logo_url'] as String? ?? '',

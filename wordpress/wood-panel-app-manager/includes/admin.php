@@ -292,6 +292,20 @@ function wpam_admin_page(): void {
         <p>Used by Rate Our App and Share App in both editions. Android uses Google Play; iOS uses Apple App Store. Set either link on either website. Europe takes priority separately for each platform when both websites have links. Leave blank until your listing is available.</p>
         <table class="form-table"><tr><th>Google Play app URL</th><td><input class="large-text" type="url" name="wpam_settings[app_store_url]" value="<?php echo esc_attr($s['app_store_url']); ?>" placeholder="https://play.google.com/store/apps/details?id=your.package"><p class="description">Save app settings after entering the link.</p></td></tr></table>
         <table class="form-table"><tr><th>iOS App Store URL</th><td><input class="large-text" type="url" name="wpam_settings[ios_store_url]" value="<?php echo esc_attr($s['ios_store_url']); ?>" placeholder="https://apps.apple.com/app/your-app/id123456789"><p class="description">Used on iPhones and iPads. Save app settings after entering the link.</p></td></tr></table>
+        <h2>Maintenance and updates</h2>
+        <p>Disabled by default. Applies to this edition only. Users can switch to the other edition during maintenance. For app-wide updates, configure both websites.</p>
+        <?php $availability = array_replace(wpam_availability_defaults(), (array) $s['availability']); ?>
+        <table class="form-table">
+        <tr><th>Maintenance mode</th><td><label><input type="checkbox" name="wpam_settings[availability][maintenance]" value="1" <?php checked($availability['maintenance']); ?>> Temporarily pause this edition</label></td></tr>
+        <?php foreach (['maintenance_message' => 'Maintenance message', 'update_message' => 'Update message'] as $key => $label): ?>
+        <tr><th><?php echo esc_html($label); ?></th><td><textarea class="large-text" rows="3" name="wpam_settings[availability][<?php echo esc_attr($key); ?>]"><?php echo esc_textarea($availability[$key]); ?></textarea></td></tr>
+        <?php endforeach; ?>
+        <?php foreach (['android' => 'Android', 'ios' => 'iOS'] as $platform => $label): ?>
+        <tr><th><?php echo esc_html($label); ?> minimum build</th><td><input type="number" min="0" max="999999999" name="wpam_settings[availability][<?php echo esc_attr($platform); ?>_minimum]" value="<?php echo esc_attr($availability[$platform . '_minimum']); ?>"><p class="description">Required update for lower builds. 0 disables. Use the integer build number, not the display version (for 1.2.0+12, enter 12). Publish the store release before raising this value.</p></td></tr>
+        <tr><th><?php echo esc_html($label); ?> latest build</th><td><input type="number" min="0" max="999999999" name="wpam_settings[availability][<?php echo esc_attr($platform); ?>_latest]" value="<?php echo esc_attr($availability[$platform . '_latest']); ?>"><p class="description">Optional update for lower builds that meet the minimum. 0 disables. A valid store link on this website is required.</p></td></tr>
+        <?php endforeach; ?>
+        </table>
+        <p>Changes are checked on app launch, edition switch, return from background and Retry. If configuration cannot be fetched, cached blocking controls are ignored so readers are not locked out offline.</p>
         <h2>Shared videos</h2><p>YouTube channel: <code><?php echo esc_html(WPAM_CHANNEL); ?></code></p>
 
         <h2>Push configuration</h2>

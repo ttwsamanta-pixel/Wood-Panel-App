@@ -207,3 +207,12 @@ iOS remains pending on Mac: add the correct GoogleService-Info.plist, run Flutte
 Before production release, update any plugin-customized privacy policy and store data disclosures to describe Firebase usage analytics and crash diagnostics. Review collection consent requirements for your audience. No profile name/email is intentionally set as an Analytics property or Crashlytics user identifier.
 
 Validation on 2026-10-31: 69 Flutter tests passed; targeted Dart analysis passed; debug APK built and installed on connected Android. Controlled native FirebaseCrashlyticsTestCrash captured and enqueued to DataTransport. Analytics screen_view bundle for com.example.wood_panel_app received HTTP 204 upload success. Normal APK without test define reinstalled afterward. Firebase console report visibility still requires operator confirmation. Analytics DebugView remains enabled on the test phone for that confirmation.
+
+
+## Maintenance and updates (plugin 0.9.0)
+
+Install the new App Manager ZIP on each site, then open Maintenance and updates in its dashboard. All controls default off. Maintenance pauses that edition and allows Retry or switching to the other edition. Configuration is checked on startup, edition switching, app resume and Retry. A failed fetch ignores cached blocking controls to avoid offline lockout. This is a client experience gate, not server access control.
+
+Android and iOS each have minimum and latest integer build numbers (pubspec 1.2.0+12 means build 12). Below minimum requires Update; below latest offers Update/Later. Later dismisses that recommendation for the current session/configured build. Configure both sites for app-wide enforcement. The plugin requires a valid platform store link on the same site before enabling update controls. Publish and verify the store release before raising minimum; do not enter a display version such as 1.2.0. Retry remains available if launching the store fails. Unknown installed build or missing store link does not block the reader.
+
+Android Firebase dashboard confirmation received 2026-11-02: controlled test crash visible in Crashlytics; screen_view and notification_receive visible in DebugView. iOS remains unverified on Windows.

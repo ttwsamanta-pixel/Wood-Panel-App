@@ -95,6 +95,12 @@ TERMS,
     ];
 }
 
+function wpam_availability_defaults(): array {
+    return ['maintenance' => false, 'maintenance_message' => "We're updating our services. Please try again shortly.",
+        'update_message' => 'A newer version of Wood & Panel is available.',
+        'android_minimum' => 0, 'android_latest' => 0, 'ios_minimum' => 0, 'ios_latest' => 0];
+}
+
 function wpam_defaults(): array {
 
     $logo = wp_get_attachment_image_url((int) get_theme_mod('custom_logo'), 'full');
@@ -127,6 +133,7 @@ function wpam_defaults(): array {
 
         'privacy_policy' => wpam_legal_defaults()['privacy_policy'],
         'terms_conditions' => wpam_legal_defaults()['terms_conditions'],
+        'availability' => wpam_availability_defaults(),
         'app_store_url' => '', 'ios_store_url' => '',
         'youtube_channel_id' => WPAM_CHANNEL,
 
@@ -323,6 +330,29 @@ function wpam_sanitize_settings($input): array {
         $ios = wpam_settings()['ios_store_url'];
     }
     $out['ios_store_url'] = $ios;
+    $control = is_array($input['availability'] ?? null) ? $input['availability'] : [];
+    $out['availability'] = wpam_availability_defaults();
+    $out['availability']['maintenance'] = !empty($control['maintenance']);
+    foreach (['maintenance_message', 'update_message'] as $key) {
+        if (is_string($control[$key] ?? null) && trim($control[$key]) !== '') {
+            $out['availability'][$key] = sanitize_textarea_field($control[$key]);
+        }
+    }
+    foreach (['android', 'ios'] as $platform) {
+        foreach (['minimum', 'latest'] as $kind) {
+            $key = $platform . '_' . $kind;
+            $value = $control[$key] ?? 0;
+            $out['availability'][$key] = is_scalar($value) && preg_match('/^[0-9]{1,9}$/', (string) $value) ? (int) $value : 0;
+        }
+        $minimum = $out['availability'][$platform . '_minimum'];
+        $out['availability'][$platform . '_latest'] = max($minimum, $out['availability'][$platform . '_latest']);
+        $link = $out[$platform === 'ios' ? 'ios_store_url' : 'app_store_url'];
+        if ($out['availability'][$platform . '_latest'] > 0 && !$link) {
+            add_settings_error('wpam_settings', 'availability_' . $platform, 'Update controls for ' . $platform . ' were disabled: add its published store link first.');
+            $out['availability'][$platform . '_minimum'] = 0;
+            $out['availability'][$platform . '_latest'] = 0;
+        }
+    }
     $out['youtube_channel_id'] = WPAM_CHANNEL;
 
     foreach (wpam_contact_defaults() as $key => $default) {
@@ -386,6 +416,7 @@ function wpam_public_config(): array {
         'inline_ads' => $s['inline_ads'], 'footer_ads' => $s['footer_ads'],
 
         'app_store_url' => $s['app_store_url'], 'ios_store_url' => $s['ios_store_url'],
+        'availability' => array_replace(wpam_availability_defaults(), (array) $s['availability']),
         'privacy_policy' => $s['privacy_policy'], 'terms_conditions' => $s['terms_conditions'],
         'contact_details' => array_replace(wpam_contact_defaults(), (array) $s['contact_details']), 'social_links' => $s['social_links'], 'wallpapers' => $s['wallpapers'],
 

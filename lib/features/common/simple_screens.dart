@@ -12,7 +12,7 @@ import '../../widgets/category_icon.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_pdfview/flutter_pdfview.dart';
+export 'downloaded_pdf_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:go_router/go_router.dart';
@@ -4469,61 +4469,6 @@ String _coverForDownloadedFile(
     }
   }
   return '';
-}
-
-class DownloadedPdfScreen extends StatelessWidget {
-  const DownloadedPdfScreen({super.key, required this.file});
-
-  final DownloadedFile file;
-
-  @override
-  Widget build(BuildContext context) {
-    return WPScaffold(
-      showBack: true,
-      showBottomNav: true,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 10),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    file.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'Share',
-                  icon: Icon(Icons.share_rounded,
-                      color: Theme.of(context).colorScheme.primary),
-                  onPressed: () => Share.shareXFiles([XFile(file.path)]),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: PDFView(
-              filePath: file.path,
-              enableSwipe: true,
-              swipeHorizontal: false,
-              autoSpacing: false,
-              pageFling: false,
-              pageSnap: false,
-              fitPolicy: FitPolicy.WIDTH,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 String _formatFileSize(int bytes) {

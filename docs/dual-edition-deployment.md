@@ -216,3 +216,10 @@ Install the new App Manager ZIP on each site, then open Maintenance and updates 
 Android and iOS each have minimum and latest integer build numbers (pubspec 1.2.0+12 means build 12). Below minimum requires Update; below latest offers Update/Later. Later dismisses that recommendation for the current session/configured build. Configure both sites for app-wide enforcement. The plugin requires a valid platform store link on the same site before enabling update controls. Publish and verify the store release before raising minimum; do not enter a display version such as 1.2.0. Retry remains available if launching the store fails. Unknown installed build or missing store link does not block the reader.
 
 Android Firebase dashboard confirmation received 2026-11-02: controlled test crash visible in Crashlytics; screen_view and notification_receive visible in DebugView. iOS remains unverified on Windows.
+
+## SQLite content cache (November 2026)
+- News lists/details, interviews, magazine metadata and events now use `content_cache.db` via sqflite on Android/iOS. Responses are JSON records indexed by cache key, with an edition column and atomic freshness timestamp.
+- First access migrates existing `content_cache_v2:*` entries in a transaction; only those SharedPreferences content keys are removed after commit. Settings, bookmarks, profiles, notification preferences, downloaded PDFs and PDF reading progress are preserved.
+- Existing stale-while-revalidate behavior and the two-minute freshness window remain. Edition keys and inactive-repository guards prevent late responses from changing the selected edition.
+- Only previously fetched content is available offline. Images keep their separate image cache; YouTube retains its existing shared cache. This is not a new offline full-text search feature.
+- Automated SQLite tests cover migration/reopen, edition isolation, preservation of user data, nonblocking background refresh and offline fallback. iOS device verification remains pending for the Mac/iPhone build.

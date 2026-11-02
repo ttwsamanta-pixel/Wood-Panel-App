@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
+import 'content_cache_database.dart';
 
 import '../models/content_models.dart';
 import 'cache_refresh_bus.dart';
@@ -9,8 +9,13 @@ import 'content_repository.dart';
 
 class CachedContentRepository implements ContentRepository {
   CachedContentRepository(
-      {required this.inner, this.edition = 'europe', this.isActive});
+      {required this.inner,
+      this.edition = 'europe',
+      this.isActive,
+      ContentCacheDatabase? cache})
+      : cache = cache ?? ContentCacheDatabase.instance;
 
+  final ContentCacheDatabase cache;
   final String edition;
   final bool Function()? isActive;
   final Set<String> _refreshing = {};
@@ -96,10 +101,10 @@ class CachedContentRepository implements ContentRepository {
   @override
   Future<Article> articleById(int id) async {
     final key = '$_prefix:article:$id';
-    final prefs = await SharedPreferences.getInstance();
-    final cached = prefs.getString(key);
+    final entry = await cache.read(key);
+    final cached = entry?.payload;
     if (cached != null) {
-      if (!_isFresh(prefs, key)) {
+      if (!_isFresh(entry)) {
         unawaited(_refreshOnce(key, () => _refreshSingleArticle(key, id)));
       }
       return Article.fromJson(jsonDecode(cached) as Map<String, dynamic>);
@@ -112,10 +117,10 @@ class CachedContentRepository implements ContentRepository {
   @override
   Future<List<MagazineIssue>> magazines() async {
     final key = '$_prefix:magazines_v2';
-    final prefs = await SharedPreferences.getInstance();
-    final cached = prefs.getString(key);
+    final entry = await cache.read(key);
+    final cached = entry?.payload;
     if (cached != null) {
-      if (!_isFresh(prefs, key)) {
+      if (!_isFresh(entry)) {
         unawaited(_refreshOnce(key, () => _refreshMagazines(key)));
       }
       return _decodeList(cached, MagazineIssue.fromJson);
@@ -128,10 +133,10 @@ class CachedContentRepository implements ContentRepository {
   @override
   Future<List<AppEvent>> events() async {
     final key = '$_prefix:events';
-    final prefs = await SharedPreferences.getInstance();
-    final cached = prefs.getString(key);
+    final entry = await cache.read(key);
+    final cached = entry?.payload;
     if (cached != null) {
-      if (!_isFresh(prefs, key)) {
+      if (!_isFresh(entry)) {
         unawaited(_refreshOnce(key, () => _refreshEvents(key)));
       }
       return _decodeList(cached, AppEvent.fromJson);
@@ -149,19 +154,20 @@ class CachedContentRepository implements ContentRepository {
     final cacheKey = '$_prefix:$key';
     final sharedCacheKey =
         sharedKey == null ? null : '$_prefix:shared:$sharedKey';
-    final prefs = await SharedPreferences.getInstance();
-    final cached = prefs.getString(cacheKey);
+    final entry = await cache.read(cacheKey);
+    final cached = entry?.payload;
     if (cached != null) {
-      if (!_isFresh(prefs, cacheKey)) {
+      if (!_isFresh(entry)) {
         unawaited(_refreshOnce(cacheKey,
             () => _refreshArticleList(cacheKey, fetch, sharedCacheKey)));
       }
       return _decodeList(cached, Article.fromJson);
     }
     if (sharedCacheKey != null) {
-      final sharedCached = prefs.getString(sharedCacheKey);
+      final sharedEntry = await cache.read(sharedCacheKey);
+      final sharedCached = sharedEntry?.payload;
       if (sharedCached != null) {
-        if (!_isFresh(prefs, sharedCacheKey)) {
+        if (!_isFresh(sharedEntry)) {
           unawaited(_refreshOnce(cacheKey,
               () => _refreshArticleList(cacheKey, fetch, sharedCacheKey)));
         }
@@ -236,11 +242,8 @@ class CachedContentRepository implements ContentRepository {
   }
 
   Future<void> _saveString(String key, String value) async {
-    final prefs = await SharedPreferences.getInstance();
     if (!(isActive?.call() ?? true)) return;
-    await prefs.setString(key, value);
-    await prefs.setInt(
-        _timestampKey(key), DateTime.now().millisecondsSinceEpoch);
+    await cache.write(key, value);
   }
 
   Future<void> _saveArticleList(
@@ -266,16 +269,8 @@ class CachedContentRepository implements ContentRepository {
         .toList(growable: false);
   }
 
-  bool _isFresh(SharedPreferences prefs, String key) {
-    final savedAt = prefs.getInt(_timestampKey(key));
-    if (savedAt == null) {
-      return false;
-    }
-    final age = DateTime.now().difference(
-      DateTime.fromMillisecondsSinceEpoch(savedAt),
-    );
-    return age < _freshFor;
-  }
-
-  String _timestampKey(String key) => '$key:saved_at';
+  bool _isFresh(ContentCacheEntry? entry) =>
+      entry != null &&
+      DateTime.now().millisecondsSinceEpoch - entry.savedAt <
+          _freshFor.inMilliseconds;
 }

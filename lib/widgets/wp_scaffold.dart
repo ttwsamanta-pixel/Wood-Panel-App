@@ -36,18 +36,22 @@ class WPScaffold extends StatelessWidget {
       ),
       body: SafeArea(
           top: false,
-          child: (GoRouterState.of(context).uri.path.startsWith('/article/') ||
-                  GoRouterState.of(context)
-                      .uri
-                      .path
-                      .startsWith('/interview/') ||
-                  GoRouterState.of(context).uri.path == '/legacy-interview')
-              ? BackToTop(child: child)
-              : child),
+          child: FooterAdvertisement(
+              pageKey: adPageKey,
+              child: (GoRouterState.of(context)
+                          .uri
+                          .path
+                          .startsWith('/article/') ||
+                      GoRouterState.of(context)
+                          .uri
+                          .path
+                          .startsWith('/interview/') ||
+                      GoRouterState.of(context).uri.path == '/legacy-interview')
+                  ? BackToTop(child: child)
+                  : child)),
       bottomNavigationBar: SafeArea(
           top: false,
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            FooterAdvertisement(pageKey: adPageKey),
             if (showBottomNav)
               WPBottomNav(currentPath: GoRouterState.of(context).uri.path),
           ])),

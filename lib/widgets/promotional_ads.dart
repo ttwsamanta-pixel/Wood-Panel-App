@@ -207,7 +207,9 @@ class InlineAdAfter extends ConsumerWidget {
 }
 
 class FooterAdvertisement extends ConsumerStatefulWidget {
-  const FooterAdvertisement({super.key, this.pageKey = ''});
+  const FooterAdvertisement(
+      {super.key, required this.child, this.pageKey = ''});
+  final Widget child;
   final String pageKey;
   @override
   ConsumerState<FooterAdvertisement> createState() =>
@@ -271,50 +273,95 @@ class _FooterAdvertisementState extends ConsumerState<FooterAdvertisement> {
       _minimized = false;
     }
     final ads = config.footerAds;
-    if (_closed || ads.isEmpty) return const SizedBox.shrink();
-    return Material(
-        color: Theme.of(context).colorScheme.surface,
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-            const Text('Advertisement',
-                style: TextStyle(fontSize: 10, color: Colors.grey)),
-            IconButton(
-                tooltip: _minimized
-                    ? 'Expand advertisement'
-                    : 'Minimize advertisement',
-                visualDensity: VisualDensity.compact,
-                constraints:
-                    const BoxConstraints.tightFor(width: 36, height: 32),
-                iconSize: 18,
-                icon: Icon(_minimized ? Icons.expand_less : Icons.expand_more),
-                onPressed: () => setState(() => _minimized = !_minimized)),
-            IconButton(
-                tooltip: 'Close advertisement',
-                visualDensity: VisualDensity.compact,
-                constraints:
-                    const BoxConstraints.tightFor(width: 36, height: 32),
-                iconSize: 18,
-                icon: const Icon(Icons.close),
-                onPressed: () => setState(() => _closed = true)),
-          ]),
-          if (!_minimized)
-            LayoutBuilder(builder: (context, constraints) {
-              final banner = ads[rotation.index % ads.length];
-              final width = math.min(350.0, constraints.maxWidth);
-              final height = banner['size'] == '350x100' ? 100.0 : 50.0;
-              return Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: SizedBox(
-                    width: width,
-                    height: width * height / 350,
-                    child: PromoImage(
-                        key: ValueKey(
-                            '${config.edition.name}:${rotation.index}'),
-                        banner: banner),
-                  ));
-            }),
-        ]));
+    final visible = !_closed && ads.isNotEmpty;
+    return Column(children: [
+      Expanded(
+        child: Stack(children: [
+          Positioned.fill(
+              child: Padding(
+                  padding: EdgeInsets.only(
+                      bottom: visible && Uri.tryParse(_route)?.path == '/feed'
+                          ? 40
+                          : 0),
+                  child: widget.child)),
+          if (visible)
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: ClipPath(
+                clipper: const _FooterControlsClipper(),
+                child: Material(
+                  color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 20),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Text('Advertisement',
+                          style: TextStyle(fontSize: 10, color: Colors.grey)),
+                      IconButton(
+                        tooltip: _minimized
+                            ? 'Expand advertisement'
+                            : 'Minimize advertisement',
+                        constraints: const BoxConstraints.tightFor(
+                            width: 36, height: 32),
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        iconSize: 18,
+                        color: const Color(0xFF454545),
+                        icon: Icon(
+                            _minimized ? Icons.expand_less : Icons.expand_more),
+                        onPressed: () =>
+                            setState(() => _minimized = !_minimized),
+                      ),
+                      Container(
+                          width: 1, height: 16, color: const Color(0xFFDDDDDD)),
+                      IconButton(
+                        tooltip: 'Close advertisement',
+                        constraints: const BoxConstraints.tightFor(
+                            width: 36, height: 32),
+                        padding: EdgeInsets.zero,
+                        visualDensity: VisualDensity.compact,
+                        iconSize: 18,
+                        color: const Color(0xFF454545),
+                        icon: const Icon(Icons.close),
+                        onPressed: () => setState(() => _closed = true),
+                      ),
+                    ]),
+                  ),
+                ),
+              ),
+            ),
+        ]),
+      ),
+      if (visible && !_minimized)
+        LayoutBuilder(builder: (context, constraints) {
+          final banner = ads[rotation.index % ads.length];
+          final width = math.min(350.0, constraints.maxWidth);
+          final height = banner['size'] == '350x100' ? 100.0 : 50.0;
+          return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: SizedBox(
+                width: width,
+                height: width * height / 350,
+                child: PromoImage(
+                    key: ValueKey('${config.edition.name}:${rotation.index}'),
+                    banner: banner),
+              ));
+        }),
+    ]);
   }
+}
+
+class _FooterControlsClipper extends CustomClipper<Path> {
+  const _FooterControlsClipper();
+  @override
+  Path getClip(Size size) => Path()
+    ..moveTo(0, size.height)
+    ..lineTo(18, 0)
+    ..lineTo(size.width, 0)
+    ..lineTo(size.width, size.height)
+    ..close();
+  @override
+  bool shouldReclip(_FooterControlsClipper oldClipper) => false;
 }
 
 // Rewarm the rotation after configuration changes, reusing the same caches.

@@ -49,7 +49,8 @@ void main() {
             ])),
           ],
           child: const MaterialApp(
-              home: Scaffold(bottomNavigationBar: FooterAdvertisement()))));
+              home: Scaffold(
+                  body: FooterAdvertisement(child: SizedBox.expand())))));
       final actual = tester.getSize(find.byType(PromoImage));
       expect(actual.width, 350);
       expect(actual.height, size == '350x100' ? 100 : 50);
@@ -82,7 +83,7 @@ void main() {
     final button = find.text('Read Full Article').first;
     expect(button.hitTestable(), findsOneWidget);
     expect(tester.getBottomRight(button).dy,
-        lessThan(tester.getTopLeft(find.byType(FooterAdvertisement)).dy));
+        lessThan(tester.getTopLeft(find.byType(PromoImage).last).dy));
     final pager = tester.widget<PageView>(find.byType(PageView));
     pager.controller!.jumpToPage(3);
     await tester.pump();
@@ -121,7 +122,10 @@ void main() {
         banner,
         {'image_url': 'javascript:bad'}
       ],
-      'footer_ads': [{...banner, 'size': '350x100'}, banner]
+      'footer_ads': [
+        {...banner, 'size': '350x100'},
+        banner
+      ]
     });
     expect(config.inlineAds.length, 1);
     expect(config.footerAds.map((ad) => ad['size']), ['350x100', '350x50']);
@@ -130,7 +134,7 @@ void main() {
     await tester.pumpWidget(fixture(
         const Column(children: [
           InlineAdAfter(completedItems: 3),
-          FooterAdvertisement()
+          Expanded(child: FooterAdvertisement(child: SizedBox.expand()))
         ]),
         enabled: false));
     expect(find.byType(PromoImage), findsNothing);
@@ -152,7 +156,8 @@ void main() {
     final page = ValueNotifier('news');
     await tester.pumpWidget(fixture(ValueListenableBuilder<String>(
         valueListenable: page,
-        builder: (_, key, __) => FooterAdvertisement(pageKey: key))));
+        builder: (_, key, __) => FooterAdvertisement(
+            pageKey: key, child: const SizedBox.expand()))));
     expect(find.byType(PromoImage), findsOneWidget);
     await tester.tap(find.byTooltip('Minimize advertisement'));
     await tester.pump();

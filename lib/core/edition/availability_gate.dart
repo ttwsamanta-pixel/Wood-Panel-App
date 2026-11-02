@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../features/profile/preferences_page.dart' show appVersionProvider;
 import '../../routing/app_router.dart';
-import '../../widgets/wp_logo.dart';
+import 'availability_screen.dart';
 import 'availability.dart';
 import 'edition.dart';
 
@@ -75,63 +75,22 @@ class _AvailabilityGateState extends ConsumerState<AvailabilityGate>
     final other =
         config.edition == Edition.europe ? Edition.usa : Edition.europe;
     return PopScope(
-        canPop: false,
-        child: Scaffold(
-            body: SafeArea(
-          child: Center(
-              child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                WPLogo(edition: config.edition, width: 160, height: 56),
-                const SizedBox(height: 32),
-                Icon(
-                    maintenance
-                        ? Icons.construction_rounded
-                        : Icons.system_update_rounded,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.primary),
-                const SizedBox(height: 20),
-                Text(
-                    maintenance
-                        ? '${config.edition.label} is under maintenance'
-                        : access == AccessState.requiredUpdate
-                            ? 'Update required'
-                            : 'Update available',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 12),
-                Text(
-                    maintenance
-                        ? control.maintenanceMessage
-                        : control.updateMessage,
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 24),
-                if (!maintenance)
-                  FilledButton.icon(
-                      onPressed: () => _open(link),
-                      icon: const Icon(Icons.open_in_new),
-                      label: const Text('Update now')),
-                if (_error != null) Text(_error!, textAlign: TextAlign.center),
-                OutlinedButton(onPressed: _refresh, child: const Text('Retry')),
-                if (maintenance)
-                  TextButton(
-                      onPressed: () {
-                        ref.read(editionProvider.notifier).state = other;
-                        ref.invalidate(editionConfigProvider(other));
-                        ref.read(appRouterProvider).go('/feed');
-                      },
-                      child: Text('Open ${other.label} edition')),
-                if (access == AccessState.optionalUpdate)
-                  TextButton(
-                      onPressed: () {
-                        setState(() => _dismissed.add(optionalKey));
-                      },
-                      child: const Text('Later')),
-              ]),
-            ),
-          )),
-        )));
+      canPop: false,
+      child: AvailabilityScreen(
+        edition: config.edition,
+        access: access,
+        message:
+            maintenance ? control.maintenanceMessage : control.updateMessage,
+        error: _error,
+        onRetry: _refresh,
+        onUpdate: () => _open(link),
+        onOtherEdition: () {
+          ref.read(editionProvider.notifier).state = other;
+          ref.invalidate(editionConfigProvider(other));
+          ref.read(appRouterProvider).go('/feed');
+        },
+        onLater: () => setState(() => _dismissed.add(optionalKey)),
+      ),
+    );
   }
 }

@@ -1,0 +1,5 @@
+Generated assets for availability screens (2026-11-02)
+Tool: OpenAI image generation. Transparent backgrounds.
+maintenance-illustration.png: Polished 3D golden construction board on wood legs, black/yellow stripes, crossed tools, yellow hardhat and orange/white cone. Warm lighting. No text or logos.
+update-illustration.png: Polished 3D smartphone on oak podium, teal refresh arrows, green progress bar, orange megaphone, leaves, stacked wood boards and green download symbol. No text or logos.
+Logos, all messages and controls are native Flutter widgets. Wood trim uses the existing grain wallpaper asset.

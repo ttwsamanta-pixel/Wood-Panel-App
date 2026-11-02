@@ -70,6 +70,7 @@ void main() {
       (tester) async {
     await pumpGate(tester, const Availability(androidLatest: 2));
     expect(find.text('Update available'), findsOneWidget);
+    await tester.ensureVisible(find.text('Later'));
     await tester.tap(find.text('Later'));
     await tester.pumpAndSettle();
     expect(find.text('Reader'), findsOneWidget);
@@ -87,5 +88,23 @@ void main() {
     expect(find.text('Open USA edition'), findsOneWidget);
     expect(find.text('Reader'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+  testWidgets('Small phone keeps controls reachable for every blocked state',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    for (final policy in [
+      const Availability(maintenance: true),
+      const Availability(androidLatest: 2),
+      const Availability(androidMinimum: 2),
+    ]) {
+      await tester.pumpWidget(const SizedBox());
+      await pumpGate(tester, policy);
+      await tester.ensureVisible(find.text('Retry'));
+      expect(tester.takeException(), isNull);
+      expect(find.text('Reader'), findsNothing);
+    }
   });
 }

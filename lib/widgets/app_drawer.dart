@@ -1,3 +1,4 @@
+import '../features/profile/profile_editor.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -83,16 +84,23 @@ class AppDrawer extends ConsumerWidget {
                                   icon: const Icon(Icons.close, size: 20))
                             ]),
                             const SizedBox(height: 2),
-                            Text(
-                                profile.name.isEmpty
-                                    ? 'Welcome!'
-                                    : 'Welcome, ${profile.displayName}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 15,
-                                    height: 1.05)),
+                            Row(children: [
+                              if (profile.avatar.isNotEmpty) ...[
+                                ProfileAvatar(profile: profile, radius: 10),
+                                const SizedBox(width: 6),
+                              ],
+                              Expanded(
+                                  child: Text(
+                                      profile.name.isEmpty
+                                          ? 'Welcome!'
+                                          : 'Welcome, ${profile.displayName}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 15,
+                                          height: 1.05))),
+                            ]),
                             const SizedBox(height: 3),
                             SizedBox(
                                 width: 220,

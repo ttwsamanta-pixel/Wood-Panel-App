@@ -5,15 +5,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app_api_repository.dart';
 
 class UserProfile {
-  const UserProfile({this.name = '', this.email = '', this.photo = ''});
-  final String name, email, photo;
+  const UserProfile(
+      {this.name = '', this.email = '', this.photo = '', this.avatar = ''});
+  final String name, email, photo, avatar;
   String get displayName => name.trim().isEmpty ? 'User' : name;
   Map<String, String> toJson() =>
-      {'name': name, 'email': email, 'photo': photo};
+      {'name': name, 'email': email, 'photo': photo, 'avatar': avatar};
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
       name: json['name'] as String? ?? '',
       email: json['email'] as String? ?? '',
-      photo: json['photo'] as String? ?? '');
+      photo: json['photo'] as String? ?? '',
+      avatar: RegExp(r'^avatar_(10|[1-9])$')
+              .hasMatch(json['avatar'] is String ? json['avatar'] : '')
+          ? json['avatar'] as String
+          : '');
 }
 
 final userProfileProvider =
@@ -43,11 +48,13 @@ class UserProfileController extends AsyncNotifier<UserProfile> {
           .join();
       await prefs.setString('user_profile_token_v1', token);
     }
-    await api.saveProfile(
-        name: profile.name,
-        email: profile.email,
-        photo: profile.photo,
-        token: token);
+    final previous = state.value;
+    if (previous == null ||
+        previous.name != profile.name ||
+        previous.email != profile.email) {
+      await api.saveProfile(
+          name: profile.name, email: profile.email, photo: '', token: token);
+    }
     await prefs.setString('user_profile_v1', jsonEncode(profile.toJson()));
     await prefs.setBool('profile_prompt_seen_v1', true);
     state = AsyncData(profile);

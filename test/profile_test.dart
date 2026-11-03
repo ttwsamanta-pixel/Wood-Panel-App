@@ -14,12 +14,16 @@ class ProfileApi extends AppApiRepository {
   ProfileApi() : super(baseUrl: 'https://example.com');
   bool fail = false;
   String? savedToken;
+  String? savedPhoto;
+  int calls = 0;
   @override
   Future<void> saveProfile(
       {required String name,
       required String email,
       required String photo,
       required String token}) async {
+    calls++;
+    savedPhoto = photo;
     if (fail) throw Exception('offline');
     savedToken = token;
   }
@@ -83,6 +87,22 @@ void main() {
     addTearDown(restored.dispose);
     expect((await restored.read(userProfileProvider.future)).name, 'Updated');
   });
+  test('Avatar persists locally without uploading and changes offline', () async {
+    final api = ProfileApi();
+    final container = ProviderContainer(overrides: [appApiRepositoryProvider.overrideWithValue(api)]);
+    addTearDown(container.dispose);
+    await container.read(userProfileProvider.future);
+    await container.read(userProfileProvider.notifier).save(const UserProfile(name: 'Reader', email: 'reader@example.com', avatar: 'avatar_1'));
+    expect(api.savedPhoto, '');
+    expect(api.calls, 1);
+    api.fail = true;
+    await container.read(userProfileProvider.notifier).save(const UserProfile(name: 'Reader', email: 'reader@example.com', avatar: 'avatar_4'));
+    expect(api.calls, 1);
+    final restored = ProviderContainer();
+    addTearDown(restored.dispose);
+    expect((await restored.read(userProfileProvider.future)).avatar, 'avatar_4');
+    expect(UserProfile.fromJson({'avatar': '../bad'}).avatar, '');
+  });
   for (final width in [320.0, 390.0]) {
     for (final edition in Edition.values) {
       testWidgets('$edition Profile and menu fit $width', (tester) async {
@@ -127,9 +147,12 @@ void main() {
         child: MaterialApp(home: ProfileEditor(firstLaunch: true))));
     await tester.pumpAndSettle();
     expect(find.text('Skip'), findsOneWidget);
+    expect(find.text('Choose an Avatar'), findsOneWidget);
+    expect(find.byIcon(Icons.person), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -500));
+    await tester.pumpAndSettle();
     expect(find.byType(TextFormField), findsNWidgets(2));
     expect(find.byIcon(Icons.add_a_photo_outlined), findsNothing);
-    expect(find.byIcon(Icons.person), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

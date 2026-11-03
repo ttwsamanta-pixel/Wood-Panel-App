@@ -295,8 +295,6 @@ class _FooterAdvertisementState extends ConsumerState<FooterAdvertisement> {
                   child: Padding(
                     padding: const EdgeInsets.only(left: 20),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Text('Advertisement',
-                          style: TextStyle(fontSize: 10, color: Colors.grey)),
                       IconButton(
                         tooltip: _minimized
                             ? 'Expand advertisement'

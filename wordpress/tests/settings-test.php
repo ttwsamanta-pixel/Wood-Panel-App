@@ -85,3 +85,17 @@ check($controls['availability']['ios_minimum'] === 0, 'No store link means no fo
 check(wpam_sanitize_settings([])['availability']['maintenance'] === false, 'Controls disabled by default');
 check(wpam_sanitize_settings(['availability' => ['android_minimum' => []]])['availability']['android_minimum'] === 0, 'Reject malformed version');
 echo "Availability settings: 6 checks passed.\n";
+
+$brands = wpam_sanitize_settings(['group_media_enabled' => 1, 'clients_enabled' => 1,
+    'premium_enabled' => 1, 'group_media' => [
+      ['name' => '<b>Media</b>', 'description' => 'News', 'image_url' => 'https://example.com/logo.png', 'link_url' => 'javascript:bad'],
+      ['name' => ''], ['name' => 'Second', 'link_url' => 'https://example.com']],
+    'clients' => [['name' => 'Client', 'image_url' => 'https://example.com/client.png']]]);
+check($brands['group_media_enabled'] && $brands['clients_enabled'] && $brands['premium_enabled'], 'Activation saves');
+check(count($brands['group_media']) === 2 && $brands['group_media'][0]['name'] === 'Media', 'Skip empty rows and sanitize names');
+check($brands['group_media'][0]['link_url'] === '' && $brands['group_media'][1]['link_url'] === 'https://example.com', 'Optional safe links');
+check($brands['group_media'][0]['description'] === 'News', 'Media description saves');
+check(!wpam_sanitize_settings([])['premium_enabled'], 'Premium defaults inactive');
+$brands['group_media_enabled'] = 0;
+check(count(wpam_sanitize_settings($brands)['group_media']) === 2, 'Disabling retains content');
+echo "Managed pages settings passed.\n";

@@ -138,7 +138,7 @@
     holder.append(preview, choose, clear); input.after(holder);
     input.addEventListener('change', update); input.addEventListener('input', update); update();
   }
-  const enhance = () => root.querySelectorAll('#wpam-logo_url, #wpam-preloader_url, input[name$="[image_url]"]').forEach(enhanceImage);
+  const enhance = () => root.querySelectorAll('#wpam-premium_image_url, #wpam-logo_url, #wpam-preloader_url, input[name$="[image_url]"]').forEach(enhanceImage);
   enhance();
   root.querySelectorAll('.wpam-banner-list').forEach(list => new MutationObserver(enhance).observe(list, {childList: true, subtree: true}));
 })();

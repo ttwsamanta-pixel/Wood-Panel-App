@@ -137,6 +137,8 @@ function wpam_defaults(): array {
         'app_store_url' => '', 'ios_store_url' => '',
         'youtube_channel_id' => WPAM_CHANNEL,
 
+        'group_media_enabled' => false, 'clients_enabled' => false, 'premium_enabled' => false,
+        'group_media' => [], 'clients' => [], 'premium_image_url' => '',
         'contact_details' => wpam_contact_defaults(), 'social_links' => wpam_social_defaults(), 'wallpapers' => [], 'default_wallpapers_enabled' => true,
 
     ];
@@ -197,6 +199,20 @@ function wpam_sanitize_settings($input): array {
 
     $out['edition'] = in_array($input['edition'] ?? '', ['europe', 'usa'], true) ? $input['edition'] : $out['edition'];
 
+    foreach (['group_media', 'clients'] as $kind) {
+        $out[$kind . '_enabled'] = !empty($input[$kind . '_enabled']);
+        $out[$kind] = [];
+        foreach (array_slice(is_array($input[$kind] ?? null) ? $input[$kind] : [], 0, 100) as $row) {
+            if (!is_array($row)) continue;
+            $name = sanitize_text_field($row['name'] ?? '');
+            if ($name === '') continue;
+            $out[$kind][] = ['name' => $name, 'image_url' => wpam_https_url($row['image_url'] ?? ''),
+                'link_url' => wpam_https_url($row['link_url'] ?? ''),
+                'description' => $kind === 'group_media' ? sanitize_textarea_field($row['description'] ?? '') : ''];
+        }
+    }
+    $out['premium_enabled'] = !empty($input['premium_enabled']);
+    $out['premium_image_url'] = wpam_https_url($input['premium_image_url'] ?? '');
     $out['label'] = sanitize_text_field($input['label'] ?? ucfirst($out['edition']));
 
     $out['logo_url'] = wpam_https_url($input['logo_url'] ?? '');
@@ -401,6 +417,9 @@ function wpam_public_config(): array {
 
     return [
 
+        'group_media_enabled' => (bool) $s['group_media_enabled'], 'clients_enabled' => (bool) $s['clients_enabled'],
+        'premium_enabled' => (bool) $s['premium_enabled'], 'premium_image_url' => $s['premium_image_url'],
+        'group_media' => $s['group_media'], 'clients' => $s['clients'],
         'schema_version' => 1, 'edition' => $s['edition'], 'label' => $s['label'],
 
         'site_url' => home_url('/'), 'wordpress_api' => rest_url('wp/v2/'),

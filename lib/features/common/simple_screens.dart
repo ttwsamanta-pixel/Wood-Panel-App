@@ -1,3 +1,4 @@
+import '../profile/managed_pages.dart';
 import '../profile/preferences_page.dart';
 import 'about_page.dart';
 import '../profile/profile_page.dart';
@@ -3799,13 +3800,8 @@ class WallpapersScreen extends StatelessWidget {
 
 class SubscribeScreen extends StatelessWidget {
   const SubscribeScreen({super.key});
-
   @override
-  Widget build(BuildContext context) => _ActionScreen(
-      title: 'Subscribe to Wood & Panel Premium',
-      icon: Icons.workspace_premium_rounded,
-      button: 'Subscribe Now',
-      route: '/profile');
+  Widget build(BuildContext context) => const PremiumPage();
 }
 
 class PreferencesScreen extends StatelessWidget {
@@ -3847,40 +3843,14 @@ class AboutScreen extends StatelessWidget {
 
 class GroupMediaScreen extends StatelessWidget {
   const GroupMediaScreen({super.key});
-
   @override
-  Widget build(BuildContext context) => const _BrandListScreen(
-        title: 'Group Media',
-        subtitle:
-            'Part of a trusted media family covering wood, panels, furniture, and surfaces.',
-        items: [
-          'Wood & Panel',
-          'Ply Reporter',
-          'MDF Times',
-          'Furniture & Fittings',
-          'IndiaWood Magazine'
-        ],
-      );
+  Widget build(BuildContext context) => const BrandDirectoryPage();
 }
 
 class ClientsScreen extends StatelessWidget {
   const ClientsScreen({super.key});
-
   @override
-  Widget build(BuildContext context) => const _BrandListScreen(
-        title: 'Our Clients',
-        subtitle: 'Partnering with leading brands globally.',
-        items: [
-          'Greenpanel',
-          'CenturyPly',
-          'Action TESA',
-          'Hettich',
-          'Blum',
-          'Rehau',
-          'MAZ',
-          'SCM'
-        ],
-      );
+  Widget build(BuildContext context) => const BrandDirectoryPage(clients: true);
 }
 
 class EventsScreen extends ConsumerWidget {
@@ -4529,55 +4499,6 @@ String _formatFileSize(int bytes) {
   }
   final kb = bytes / 1024;
   return '${kb.toStringAsFixed(0)} KB';
-}
-
-class _BrandListScreen extends StatelessWidget {
-  const _BrandListScreen({
-    required this.title,
-    required this.subtitle,
-    required this.items,
-  });
-
-  final String title;
-  final String subtitle;
-  final List<String> items;
-
-  @override
-  Widget build(BuildContext context) {
-    return WPScaffold(
-      showBack: true,
-      title: title,
-      child: ListView(
-        padding: const EdgeInsets.all(18),
-        children: [
-          Text(title, style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 8),
-          Text(subtitle),
-          const SizedBox(height: 16),
-          for (final item in items)
-            Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.line),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.verified_rounded,
-                      color: Theme.of(context).colorScheme.secondary),
-                  const SizedBox(width: 12),
-                  Expanded(
-                      child: Text(item,
-                          style: const TextStyle(fontWeight: FontWeight.w900))),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
 }
 
 enum _FormMode { newsletter }

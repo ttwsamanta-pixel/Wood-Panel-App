@@ -29,7 +29,7 @@ final profileStatsProvider = FutureProvider.autoDispose<List<int>>((ref) async {
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
-  static const items = [
+  static const baseItems = [
     (
       'Bookmarks',
       'View and manage your saved articles',
@@ -112,6 +112,31 @@ class ProfilePage extends ConsumerWidget {
   ];
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final config = ref.watch(activeConfigProvider);
+    final items = [
+      ...baseItems,
+      if (config.showGroupMedia)
+        (
+          'Group Media',
+          'Explore our media family',
+          Icons.business_outlined,
+          '/group-media'
+        ),
+      if (config.showClients)
+        (
+          'Our Clients',
+          'Our industry partners',
+          Icons.groups_outlined,
+          '/clients'
+        ),
+      if (config.premiumEnabled)
+        (
+          'Premium Subscribe',
+          'Explore subscription benefits',
+          Icons.workspace_premium_outlined,
+          '/subscribe'
+        ),
+    ];
     final profile =
         ref.watch(userProfileProvider).valueOrNull ?? const UserProfile();
     final colors = Theme.of(context).colorScheme;
@@ -302,7 +327,9 @@ class ProfilePage extends ConsumerWidget {
                             child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                              for (var i = row; i < row + 2; i++) ...[
+                              for (var i = row;
+                                  i < row + 2 && i < items.length;
+                                  i++) ...[
                                 if (i > row) const SizedBox(width: 8),
                                 Expanded(
                                     child: Container(

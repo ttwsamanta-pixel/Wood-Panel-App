@@ -223,3 +223,16 @@ Android Firebase dashboard confirmation received 2026-11-02: controlled test cra
 - Existing stale-while-revalidate behavior and the two-minute freshness window remain. Edition keys and inactive-repository guards prevent late responses from changing the selected edition.
 - Only previously fetched content is available offline. Images keep their separate image cache; YouTube retains its existing shared cache. This is not a new offline full-text search feature.
 - Automated SQLite tests cover migration/reopen, edition isolation, preservation of user data, nonblocking background refresh and offline fallback. iOS device verification remains pending for the Mac/iPhone build.
+
+
+## Optional Profile pages (App Manager 0.9.1)
+
+Install the updated plugin ZIP on both sites. Each edition independently manages Group Media, Clients and Premium Subscribe from the application dashboard sidebar.
+
+- Group Media: Active checkbox, name, image upload, optional HTTPS link and short description.
+- Clients: Active checkbox, name, logo upload and optional HTTPS link.
+- Empty or inactive directories are hidden in Profile. Disabling retains entries. Direct routes show an unavailable message when disabled. Existing installations default to inactive; no hardcoded brands are published automatically.
+- Premium Subscribe: enable Active to expose its Profile entry. Upload optional magazine artwork or use recent magazine covers. Subscribe Now opens Contact Us as an enquiry. Payments, premium entitlement and paywalls remain deferred.
+- Settings load on the next app configuration refresh/relaunch. Install the updated Android app to consume these fields.
+
+Validation: settings sanitization and PHP lint; Flutter tests for both editions at 320/390 widths, conditional visibility, optional links and subscription enquiry navigation. iOS verification remains pending on Mac/iPhone.

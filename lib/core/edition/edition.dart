@@ -117,6 +117,12 @@ class EditionConfig {
   const EditionConfig(
       {required this.edition,
       this.managed = false,
+      this.groupMediaEnabled = false,
+      this.clientsEnabled = false,
+      this.premiumEnabled = false,
+      this.groupMedia = const [],
+      this.clients = const [],
+      this.premiumImageUrl = '',
       this.availability = const Availability(),
       this.logoUrl = '',
       this.appStoreUrl = '',
@@ -163,6 +169,12 @@ class EditionConfig {
 
   final Edition edition;
   final bool managed;
+  final bool groupMediaEnabled, clientsEnabled, premiumEnabled;
+  final List<Map<String, String>> groupMedia, clients;
+  final String premiumImageUrl;
+  bool get showGroupMedia => groupMediaEnabled && groupMedia.isNotEmpty;
+  bool get showClients => clientsEnabled && clients.isNotEmpty;
+
   final Availability availability;
   final String logoUrl;
   final String appStoreUrl;
@@ -231,11 +243,30 @@ class EditionConfig {
             })
         .where((v) => Uri.tryParse(v['image_url']!)?.scheme == 'https')
         .toList();
+    List<Map<String, String>> brands(String key) => (json[key] as List? ?? [])
+        .whereType<Map>()
+        .map((row) => {
+              'name': row['name']?.toString().trim() ?? '',
+              'description': row['description']?.toString() ?? '',
+              for (final field in ['image_url', 'link_url'])
+                field: Uri.tryParse(row[field]?.toString() ?? '')?.scheme ==
+                        'https'
+                    ? row[field].toString()
+                    : '',
+            })
+        .where((row) => row['name']!.isNotEmpty)
+        .toList();
     return EditionConfig(
         appStoreUrl: validAppStoreUrl(json['app_store_url']),
         iosStoreUrl: validIosStoreUrl(json['ios_store_url']),
         edition: edition,
         managed: true,
+        groupMediaEnabled: json['group_media_enabled'] == true,
+        clientsEnabled: json['clients_enabled'] == true,
+        premiumEnabled: json['premium_enabled'] == true,
+        groupMedia: brands('group_media'),
+        clients: brands('clients'),
+        premiumImageUrl: json['premium_image_url']?.toString() ?? '',
         availability: Availability.fromJson(json['availability']),
         inlineAds: ads('inline_ads'),
         footerAds: ads('footer_ads'),

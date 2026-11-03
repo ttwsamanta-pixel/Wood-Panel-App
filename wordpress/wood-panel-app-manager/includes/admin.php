@@ -45,9 +45,9 @@ function wpam_admin_assets($hook): void {
 
     $base = plugin_dir_url(dirname(__DIR__) . '/wood-panel-app-manager.php');
 
-    wp_enqueue_style('wpam-admin', $base . 'assets/admin.css', [], '0.8.0');
+    wp_enqueue_style('wpam-admin', $base . 'assets/admin.css', [], '0.9.1');
 
-    wp_enqueue_script('wpam-admin', $base . 'assets/admin.js', ['media-editor'], '0.8.0', true);
+    wp_enqueue_script('wpam-admin', $base . 'assets/admin.js', ['media-editor'], '0.9.1', true);
 
 }
 
@@ -245,6 +245,17 @@ function wpam_admin_page(): void {
 
         <?php wpam_content_rows('magazine_highlights', $s['magazine_highlights']); ?>
 
+        <h2>Group Media</h2>
+        <p>Manage media brands for this edition. The Profile link appears only when active with at least one named entry. Links are optional (HTTPS).</p>
+        <table class="form-table"><tbody><?php wpam_input('group_media_enabled', 'Active - show Group Media in Profile', 'checkbox'); ?></tbody></table>
+        <?php wpam_content_rows('group_media', $s['group_media']); ?>
+        <h2>Clients</h2>
+        <p>Upload client logos and optional HTTPS links. Disable to hide this section without deleting entries.</p>
+        <table class="form-table"><tbody><?php wpam_input('clients_enabled', 'Active - show Clients in Profile', 'checkbox'); ?></tbody></table>
+        <?php wpam_content_rows('clients', $s['clients']); ?>
+        <h2>Premium Subscribe</h2>
+        <p>Disabled by default. This is a subscription enquiry page, not a payment system. Subscribe Now opens Contact Us.</p>
+        <table class="form-table"><tbody><?php wpam_input('premium_enabled', 'Active - show Premium Subscribe in Profile', 'checkbox'); wpam_input('premium_image_url', 'Magazine artwork (optional)', 'url'); ?></tbody></table>
         <h2>Wallpapers</h2>
 
         <table class="form-table"><tbody><?php wpam_input('default_wallpapers_enabled', 'Show bundled wood wallpapers', 'checkbox'); ?></tbody></table>
@@ -416,6 +427,10 @@ function wpam_content_rows(string $kind, array $rows): void {
 
     $fields = $kind === 'wallpapers' ? ['id' => 'ID (optional)', 'title' => 'Title', 'category' => 'Category', 'image_url' => 'Image URL'] : ['readUrl' => 'Magazine Read Online URL', 'points' => 'Highlights (one per line)'];
 
+    if (in_array($kind, ['group_media', 'clients'], true)) {
+        $fields = ['name' => 'Name', 'image_url' => 'Image / logo', 'link_url' => 'Link (optional, HTTPS)'];
+        if ($kind === 'group_media') $fields['description'] = 'Short description';
+    }
     echo '<div class="wpam-content-list" data-kind="' . esc_attr($kind) . '">';
 
     foreach (array_merge($rows, [array_fill_keys(array_keys($fields), '')]) as $i => $row) {
@@ -434,7 +449,7 @@ function wpam_content_rows(string $kind, array $rows): void {
 
             if ($key === 'points') echo '<textarea class="large-text" rows="5" name="' . esc_attr($name) . '">' . esc_textarea($value) . '</textarea>';
 
-            else echo '<input class="large-text" type="' . (in_array($key, ['image_url', 'readUrl'], true) ? 'url' : 'text') . '" name="' . esc_attr($name) . '" value="' . esc_attr($value) . '">';
+            else echo '<input class="large-text" type="' . (in_array($key, ['image_url', 'readUrl', 'link_url'], true) ? 'url' : 'text') . '" name="' . esc_attr($name) . '" value="' . esc_attr($value) . '">';
 
             echo '</label>';
 

@@ -53,7 +53,7 @@ class _ProfileEditorState extends ConsumerState<ProfileEditor> {
           filled: true,
           fillColor: Colors.white,
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(color: Color(0xFFE6DDD4))),
@@ -124,151 +124,159 @@ class _ProfileEditorState extends ConsumerState<ProfileEditor> {
             child: Center(
                 child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 520),
-                    child:
-                        ListView(padding: const EdgeInsets.all(24), children: [
-                      Text(
-                          widget.firstLaunch
-                              ? 'Welcome to Wood & Panel'
-                              : 'Edit Profile',
-                          style: Theme.of(context).textTheme.headlineMedium),
-                      const SizedBox(height: 10),
-                      const Text(
-                          'Add your details to personalize your app. You can update them later from Profile.'),
-                      const SizedBox(height: 24),
-                      Center(
-                          child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                        color: Color(0x18000000),
-                                        blurRadius: 12,
-                                        offset: Offset(0, 4))
-                                  ]),
-                              child: ProfileAvatar(
-                                  profile: UserProfile(avatar: _avatar),
-                                  radius: 64))),
-                      const SizedBox(height: 20),
-                      Text('Choose an Avatar',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 12),
-                      Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withValues(alpha: .15))),
-                          child: GridView.count(
-                              crossAxisCount: 5,
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              mainAxisSpacing: 10,
-                              crossAxisSpacing: 8,
-                              children: List.generate(10, (i) {
-                                final id = 'avatar_${i + 1}';
-                                final selected = id == _avatar;
-                                return Semantics(
-                                    label: 'Avatar ${i + 1}',
-                                    selected: selected,
-                                    button: true,
-                                    child: InkWell(
-                                        onTap: _busy
-                                            ? null
-                                            : () =>
-                                                setState(() => _avatar = id),
-                                        customBorder: const CircleBorder(),
-                                        child: Container(
-                                            padding: const EdgeInsets.all(3),
-                                            decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                border: Border.all(
-                                                    width: 2,
-                                                    color: selected
-                                                        ? Theme.of(context)
-                                                            .colorScheme
-                                                            .primary
-                                                        : Colors.transparent)),
-                                            child: Stack(children: [
-                                              ClipOval(
-                                                  child: SvgPicture.asset(
-                                                      'assets/avatars/$id.svg')),
-                                              if (selected)
-                                                Align(
-                                                    alignment:
-                                                        Alignment.bottomRight,
-                                                    child: Container(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(2),
-                                                        decoration:
-                                                            BoxDecoration(
+                    child: ListView(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 14),
+                        children: [
+                          Text(
+                              widget.firstLaunch
+                                  ? 'Welcome to Wood & Panel'
+                                  : 'Edit Profile',
+                              style:
+                                  Theme.of(context).textTheme.headlineMedium),
+                          const SizedBox(height: 6),
+                          const Text(
+                              'Add your details to personalize your app. You can update them later from Profile.'),
+                          const SizedBox(height: 8),
+                          Center(
+                              child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                            color: Color(0x18000000),
+                                            blurRadius: 12,
+                                            offset: Offset(0, 4))
+                                      ]),
+                                  child: ProfileAvatar(
+                                      profile: UserProfile(avatar: _avatar),
+                                      radius: 42))),
+                          const SizedBox(height: 10),
+                          Text('Choose an Avatar',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary
+                                          .withValues(alpha: .15))),
+                              child: GridView.count(
+                                  crossAxisCount: 5,
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  mainAxisSpacing: 6,
+                                  crossAxisSpacing: 8,
+                                  children: List.generate(10, (i) {
+                                    final id = 'avatar_${i + 1}';
+                                    final selected = id == _avatar;
+                                    return Semantics(
+                                        label: 'Avatar ${i + 1}',
+                                        selected: selected,
+                                        button: true,
+                                        child: InkWell(
+                                            onTap: _busy
+                                                ? null
+                                                : () => setState(
+                                                    () => _avatar = id),
+                                            customBorder: const CircleBorder(),
+                                            child: Container(
+                                                padding:
+                                                    const EdgeInsets.all(3),
+                                                decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(
+                                                        width: 2,
+                                                        color: selected
+                                                            ? Theme.of(context)
+                                                                .colorScheme
+                                                                .primary
+                                                            : Colors
+                                                                .transparent)),
+                                                child: Stack(children: [
+                                                  ClipOval(
+                                                      child: SvgPicture.asset(
+                                                          'assets/avatars/$id.svg')),
+                                                  if (selected)
+                                                    Align(
+                                                        alignment: Alignment
+                                                            .bottomRight,
+                                                        child: Container(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(2),
+                                                            decoration: BoxDecoration(
                                                                 shape: BoxShape
                                                                     .circle,
                                                                 color: Theme.of(
                                                                         context)
                                                                     .colorScheme
                                                                     .primary),
-                                                        child: const Icon(
-                                                            Icons.check,
-                                                            color: Colors.white,
-                                                            size: 13))),
-                                            ]))));
-                              }))),
-                      const SizedBox(height: 24),
-                      Form(
-                          key: _form,
-                          child: Column(children: [
-                            TextFormField(
-                                controller: _name,
-                                maxLength: 100,
-                                decoration: _fieldDecoration(
-                                        'Name', Icons.person_outline)
-                                    .copyWith(
-                                        labelText: 'Name',
-                                        prefixIcon: Icon(Icons.person_outline)),
-                                validator: (v) => (v ?? '').trim().isEmpty
-                                    ? 'Enter your name'
-                                    : null),
-                            const SizedBox(height: 12),
-                            TextFormField(
-                                controller: _email,
-                                maxLength: 254,
-                                keyboardType: TextInputType.emailAddress,
-                                decoration: _fieldDecoration(
-                                        'Email', Icons.mail_outline)
-                                    .copyWith(
-                                        labelText: 'Email',
-                                        prefixIcon: Icon(Icons.mail_outline)),
-                                validator: (v) =>
-                                    RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
-                                            .hasMatch((v ?? '').trim())
-                                        ? null
-                                        : 'Enter a valid email'),
-                          ])),
-                      const SizedBox(height: 12),
-                      const Text(
-                          'Submitting saves your name and email to this edition’s website. Your avatar stays on this device only. This is an app profile, not a sign-in account.',
-                          style: TextStyle(fontSize: 12)),
-                      if (_error != null)
-                        Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: Text(_error!,
-                                style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.error))),
-                      const SizedBox(height: 20),
-                      FilledButton.icon(
-                          onPressed: _busy || !_loaded ? null : _save,
-                          icon: const Icon(Icons.check),
-                          label: Text(_busy ? 'Saving…' : 'Save Profile')),
-                    ])))));
+                                                            child: const Icon(
+                                                                Icons.check,
+                                                                color: Colors
+                                                                    .white,
+                                                                size: 13))),
+                                                ]))));
+                                  }))),
+                          const SizedBox(height: 8),
+                          Form(
+                              key: _form,
+                              child: Column(children: [
+                                TextFormField(
+                                    controller: _name,
+                                    maxLength: 100,
+                                    decoration: _fieldDecoration(
+                                            'Name', Icons.person_outline)
+                                        .copyWith(
+                                            labelText: 'Name',
+                                            prefixIcon:
+                                                Icon(Icons.person_outline)),
+                                    validator: (v) => (v ?? '').trim().isEmpty
+                                        ? 'Enter your name'
+                                        : null),
+                                const SizedBox(height: 8),
+                                TextFormField(
+                                    controller: _email,
+                                    maxLength: 254,
+                                    keyboardType: TextInputType.emailAddress,
+                                    decoration: _fieldDecoration(
+                                            'Email', Icons.mail_outline)
+                                        .copyWith(
+                                            labelText: 'Email',
+                                            prefixIcon:
+                                                Icon(Icons.mail_outline)),
+                                    validator: (v) =>
+                                        RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+                                                .hasMatch((v ?? '').trim())
+                                            ? null
+                                            : 'Enter a valid email'),
+                              ])),
+                          const SizedBox(height: 8),
+                          const Text(
+                              'Submitting saves your name and email to this edition’s website. Your avatar stays on this device only. This is an app profile, not a sign-in account.',
+                              style: TextStyle(fontSize: 12)),
+                          if (_error != null)
+                            Padding(
+                                padding: const EdgeInsets.only(top: 12),
+                                child: Text(_error!,
+                                    style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .error))),
+                          const SizedBox(height: 10),
+                          FilledButton.icon(
+                              onPressed: _busy || !_loaded ? null : _save,
+                              icon: const Icon(Icons.check),
+                              label: Text(_busy ? 'Saving…' : 'Save Profile')),
+                        ])))));
   }
 }

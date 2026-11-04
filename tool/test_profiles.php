@@ -12,6 +12,8 @@ class WP_REST_Response {
     public function header($key,$value) {}
 }
 function sanitize_text_field($v) {return trim(strip_tags($v));}
+function sanitize_textarea_field($v) {return trim(strip_tags($v));}
+function wpam_settings() {return $GLOBALS['form_settings'] ?? ['newsletter_enabled'=>true,'contact_enabled'=>true];}
 function sanitize_email($v) {return filter_var($v,FILTER_SANITIZE_EMAIL);}
 function is_email($v) {return filter_var($v,FILTER_VALIDATE_EMAIL);}
 function wp_salt($v) {return 'test-salt';}
@@ -21,7 +23,9 @@ function current_time(...$v) {return '2026-10-28 12:00:00';}
 class FakeDb {
     public $prefix='test_'; public $queries=[];
     public function prepare($query,...$params) {$this->queries[]=[$query,$params];return $query;}
-    public function query($query) {return 1;}
+    public $fail = false; public $inserted = [];
+    public function query($query) {return $this->fail ? false : 1;}
+    public function insert($table,$data,$format) {$this->inserted = [$table,$data];return $this->fail ? false : 1;}
 }
 $wpdb=new FakeDb();
 require __DIR__.'/../wordpress/wood-panel-app-manager/includes/profiles.php';
@@ -37,3 +41,22 @@ check(wpam_csv_cell('=SUM(A1)')==="'=SUM(A1)",'Neutralize CSV formulas');
 check(wpam_csv_cell("\t+cmd")==="'\t+cmd",'Neutralize leading whitespace formulas');
 check(wpam_csv_cell('Reader')==='Reader','Preserve ordinary CSV text');
 check(wpam_submission_kind('profile')==='profile' && wpam_submission_kind('bad')==='newsletter','Allow only known submission kinds');
+
+require __DIR__.'/../wordpress/wood-panel-app-manager/includes/rest.php';
+$form=['name'=>'Reader','email'=>'reader@example.com','country'=>'India','subject'=>'Magazine enquiry','message'=>'Please contact me.'];
+foreach (['newsletter','contact'] as $kind) {
+    check(wpam_submit(new WP_REST_Request($form),$kind) instanceof WP_REST_Response, "Valid $kind stored");
+    foreach (['email'=>'bad','website'=>'spam','name'=>['invalid'],'message'=>str_repeat('x',10001)] as $key=>$value) {
+        $before=count($wpdb->queries);
+        check(wpam_submit(new WP_REST_Request(array_replace($form,[$key=>$value])),$kind) instanceof WP_Error,"Reject invalid $kind $key");
+        check(count($wpdb->queries)===$before,'Invalid input does not run SQL');
+    }
+    $GLOBALS['form_settings']=[$kind.'_enabled'=>false];
+    check(wpam_submit(new WP_REST_Request($form),$kind)->code==='form_disabled',"Respect disabled $kind form");
+    unset($GLOBALS['form_settings']);
+}
+check($wpdb->inserted[1]['subject']===$form['subject'] && $wpdb->inserted[1]['message']===$form['message'],'Contact stores subject and message');
+check(wpam_submit(new WP_REST_Request(array_replace($form,['message'=>''])),'contact')->code==='required_fields','Contact requires message');
+$wpdb->fail=true;
+foreach (['newsletter','contact'] as $kind) check(wpam_submit(new WP_REST_Request($form),$kind)->code==='storage_error',"Surface $kind database failure");
+check(wpam_profile_submit(new WP_REST_Request($valid))->code==='storage_error','Surface profile database failure');

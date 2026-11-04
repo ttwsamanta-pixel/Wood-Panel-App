@@ -1,86 +1,77 @@
 # Wood & Panel App
 
-Premium Flutter news and magazine app for Wood & Panel, with a separate Core PHP + MySQL app API/admin dashboard.
+Flutter news and magazine app with Europe and USA editions. Each website runs its own **Wood & Panel App Manager** WordPress plugin and stores its own configuration and submissions. The original `backend/` PHP scaffold is retained for reference; it is not the current app administration service.
 
-## Current Status
+## Current implementation
 
-Phase 1 foundation has been created:
+- Europe is the default edition on a fresh process. Switching editions refreshes regional data and opens Feed; explicit article links and notification taps select the source edition.
+- Live news, post-based and legacy interviews, magazines, PDFs and events; one shared YouTube channel.
+- SQLite content cache on Android/iOS, separate image caching, local bookmarks and downloaded PDFs with saved page position/page bookmarks, sharing and deletion.
+- Home, inline and footer advertisements with rotation, scheduling and per-site impression/click reports.
+- Independent Europe/USA push preferences, persistent notification inboxes, image notifications and scheduled sending from WordPress.
+- Name/email profile submissions with locally selected bundled avatars; first-launch welcome form and onboarding.
+- Appearance, text size, device narration controls, plugin-managed legal/contact/social content, optional Group Media/Clients/Premium pages and maintenance/update controls.
+- Firebase Analytics and Crashlytics integrated. Android dashboard receipt was confirmed; iOS build and device verification remain pending on Mac/iPhone.
 
-- Flutter project configuration
-- Riverpod app bootstrap
-- Central app config, theme tokens, routing
-- Reusable header, bottom navigation, cards, buttons, chips, empty states
-- Splash, onboarding, home, explore, feed, magazine, profile, article, search, bookmarks, videos, downloads, wallpapers, subscribe, preferences, contact, grow-with-us, about, group media, clients, events, newsletter screens
-- Mock repository isolated from future production WordPress/API repositories
-- Starter Core PHP API/admin scaffold with PDO, JSON responses, secure session headers, CSRF helpers, and example endpoints
+Premium Subscribe currently opens a contact enquiry. Payments and premium access enforcement are not implemented. Language translation remains deferred.
 
-Phase 2 has started:
+## Local setup
 
-- Dio API client for the Wood & Panel WordPress REST API
-- WordPress post mapping into app `Article` models
-- Hybrid content repository with live WordPress data and isolated mock fallback
-- Home, Feed, Article, Magazine, Events, and Search screens wired through repositories
-- Debounced Search requests
-- Local article bookmarks persisted with SharedPreferences
+Use a Flutter SDK compatible with `pubspec.lock`, Android SDK and JDK 17. Check `flutter doctor` before building. PHP 8.0+ is required for isolated plugin checks. The plugin declares WordPress 6.0+; its archive adapters require PHP DOM and its notification sender requires OpenSSL.
 
-## Flutter Setup
-
-Install Flutter stable, then run:
-
-```bash
+```sh
 flutter pub get
-flutter run
+flutter analyze
+flutter test
+flutter run --target lib/main.dart
 ```
 
-The app uses `logo.svg` from the project root as the official Wood & Panel logo asset.
+For Android Firebase features, place the matching `google-services.json` in `android/app/`. The Google Services and Crashlytics Gradle plugins activate when that file exists. Mobile Firebase initialization reads native configuration; Dart defines are optional overrides, not required for an ordinary configured Android build. Never put a Firebase service-account private key in the app, repository or plugin ZIP.
 
-## Architecture
+On this Windows workstation, `C:\wood_panel_app` is a junction to the project and avoids spaces in build-tool paths. It is a local convenience, not a required install location.
 
-```text
-lib/
-  app/
-  core/
-    config/
-    theme/
-  data/
-    models/
-    repositories/
-  features/
-  routing/
-  widgets/
-backend/
-  api/
-  admin/
-  config/
-  database/
+## Build and package
+
+```sh
+flutter build apk --debug --target lib/main.dart
 ```
 
-WordPress content is intended to come through the WordPress REST API. App-specific settings, contact/newsletter submissions, banners, events, wallpapers, and admin controls belong in the Core PHP API.
+Then, in PowerShell:
 
-## Environment
-
-Copy `.env.example` for your backend host and configure real values outside source control. Do not commit secrets, Firebase private keys, database passwords, or WordPress database credentials.
-
-## Backend Setup
-
-Requirements:
-
-- PHP 8.2+
-- MySQL 8+
-- HTTPS in production
-
-Create a database and import:
-
-```bash
-mysql -u root -p wood_panel_app < backend/database/schema.sql
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tool/package_dual_edition.ps1
 ```
 
-Point your web server document root to `backend/public` or route `/api/*` requests to `backend/api/index.php`.
+The packaging script copies the existing debug APK, creates the WordPress plugin ZIP, copies the deployment guide and writes checksums under `artifacts/dual-edition/`. It does not build the app. Always build the normal `lib/main.dart` target first; never package a temporary preview or forced-crash build.
 
-## Next Phases
+The current Android release configuration still uses debug signing, and application identifiers are examples. A debug APK or an unreviewed release build is not a store-ready release.
 
-1. Replace mock repositories with WordPress REST repositories.
-2. Add Drift/SQLite cache and bookmark persistence.
-3. Integrate Firebase messaging, analytics, crash reporting, and remote config.
-4. Expand PHP admin modules for posts, banners, ads, settings, push notifications, clients, events, wallpapers, and newsletters.
-5. Add unit/widget/API tests once Flutter is installed locally.
+## Project map
+
+- `lib/app`, `lib/routing`, `lib/core`: app bootstrap, navigation, edition/configuration, notifications and telemetry.
+- `lib/data`: models, repositories and local persistence.
+- `lib/features`, `lib/widgets`: screens and shared UI.
+- `wordpress/wood-panel-app-manager`: production WordPress plugin source (currently 0.9.1).
+- `wordpress/tests`, `tool/test_profiles.php`: plugin regression checks.
+- `test/`: Flutter unit/widget tests.
+- `docs/dual-edition-deployment.md`: current installation, configuration and release checklist.
+- `docs/notification-deployment.md`: push delivery, scheduling, inbox and iOS handoff.
+- `backend/`: legacy scaffold; no setup required for the current WordPress-backed app.
+
+## Submission checks
+
+These checks use local stubs and do not create/delete live submissions:
+
+```sh
+php wordpress/tests/submissions-test.php
+php tool/test_profiles.php
+php wordpress/tests/settings-test.php
+php wordpress/tests/notifications-test.php
+php wordpress/tests/admin-menu-test.php
+```
+
+The submissions renderer lives in `includes/profiles.php`; form REST handlers live in `includes/rest.php`. Integration files such as `banner-integration-test.php` and `inbox-integration-test.php` require the isolated WordPress fixture under `artifacts/wp-test/wordpress` and database `wpam_banner_test` on `127.0.0.1:3317`. Do not run those against a production database.
+
+## Remaining release verification
+
+Finalize store identifiers/signing and Android/iOS association files; configure store URLs; review published legal text and store data declarations; archive and test iOS on a Mac and physical iPhone, including notification extension and Crashlytics symbols. Live configuration, scheduled pushes, submissions/exports and advertisements should be verified per edition before release. See the deployment guides for exact boundaries.

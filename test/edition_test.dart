@@ -1,13 +1,18 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:wood_panel_app/core/edition/edition.dart';
 import 'package:wood_panel_app/core/network/api_client.dart';
 import 'package:wood_panel_app/data/models/content_models.dart';
 import 'package:wood_panel_app/data/repositories/bookmark_repository.dart';
 import 'package:wood_panel_app/data/repositories/cached_content_repository.dart';
+import 'package:wood_panel_app/data/repositories/content_cache_database.dart';
+import 'package:wood_panel_app/data/repositories/cache_refresh_bus.dart';
 import 'package:wood_panel_app/data/repositories/download_repository.dart';
 import 'package:wood_panel_app/data/repositories/mock_content_repository.dart';
 
@@ -15,9 +20,11 @@ class _EditionSource extends MockContentRepository {
   _EditionSource(this.title);
   final String title;
   int calls = 0;
+  Completer<List<Article>>? pending;
   @override
   Future<List<Article>> latestArticles({int page = 1, int perPage = 12}) async {
     calls++;
+    if (pending != null) return pending!.future;
     return [
       Article.fromJson({'id': 1, 'title': title})
     ];
@@ -26,7 +33,14 @@ class _EditionSource extends MockContentRepository {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  sqfliteFfiInit();
+  late ContentCacheDatabase cache;
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    cache = ContentCacheDatabase(
+        factory: databaseFactoryFfi, path: inMemoryDatabasePath);
+  });
+  tearDown(() => cache.close());
 
   test('new process starts Europe, existing runtime retains USA', () {
     final runtime = ProviderContainer();
@@ -98,9 +112,11 @@ void main() {
   test('same IDs in separate edition caches never collide', () async {
     final europeSource = _EditionSource('Europe article');
     final usaSource = _EditionSource('USA article');
-    final europe = CachedContentRepository(inner: europeSource);
-    final usa = CachedContentRepository(inner: usaSource, edition: 'usa');
+    final europe = CachedContentRepository(inner: europeSource, cache: cache);
+    final usa =
+        CachedContentRepository(inner: usaSource, edition: 'usa', cache: cache);
     expect((await europe.latestArticles()).single.title, 'Europe article');
+    expect((await usa.latestArticles()).single.title, 'USA article');
     expect((await usa.latestArticles()).single.title, 'USA article');
     expect((await europe.latestArticles()).single.title, 'Europe article');
     expect(europeSource.calls, 1);
@@ -151,13 +167,23 @@ void main() {
 
   test('simultaneous stale cache reads start one background refresh', () async {
     final source = _EditionSource('Updated');
-    final repository = CachedContentRepository(inner: source);
+    final repository = CachedContentRepository(inner: source, cache: cache);
     await repository.latestArticles();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(
-        'content_cache_v2:europe:latest_articles:1:12:saved_at', 0);
-    await Future.wait(List.generate(5, (_) => repository.latestArticles()));
-    await Future<void>.delayed(const Duration(milliseconds: 50));
+    const key = 'content_cache_v2:europe:latest_articles:1:12';
+    await (await cache.database).update('content_cache', {'saved_at': 0},
+        where: 'cache_key = ?', whereArgs: [key]);
+    source.pending = Completer<List<Article>>();
+    final reads =
+        await Future.wait(List.generate(5, (_) => repository.latestArticles()))
+            .timeout(const Duration(seconds: 5));
+    expect(reads.every((items) => items.single.title == 'Updated'), isTrue);
+    expect(source.calls, 2);
+    final refreshed = CacheRefreshBus.stream.first;
+    source.pending!.complete([
+      Article.fromJson({'id': 1, 'title': 'Refreshed'})
+    ]);
+    await refreshed.timeout(const Duration(seconds: 5));
+    expect((await repository.latestArticles()).single.title, 'Refreshed');
     expect(source.calls, 2);
   });
 }

@@ -16,8 +16,9 @@ parser.add_argument('--adb', required=True)
 parser.add_argument('--php', required=True)
 parser.add_argument('--edition', choices=['europe', 'usa'], default='europe')
 parser.add_argument('--text-only', action='store_true')
+parser.add_argument('--package', default='com.woodandpanel.app')
 args = parser.parse_args()
-raw = subprocess.check_output([args.adb, 'shell', 'run-as', 'com.example.wood_panel_app',
+raw = subprocess.check_output([args.adb, 'shell', 'run-as', args.package,
                                'cat', 'shared_prefs/com.google.android.gms.appid.xml'])
 tokens = []
 for node in ET.fromstring(raw).findall('string'):

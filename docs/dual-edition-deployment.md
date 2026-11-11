@@ -82,7 +82,7 @@ Analytics records screen names and edition; it does not intentionally record for
 
 For Android DebugView:
 ```sh
-adb shell setprop debug.firebase.analytics.app com.example.wood_panel_app
+adb shell setprop debug.firebase.analytics.app com.woodandpanel.app
 ```
 Disable after checking:
 ```sh
@@ -98,7 +98,13 @@ Android/iOS have separate minimum/latest integer build values. For `1.2.0+12`, e
 
 ## Release and verified links
 
-Current identifiers are Android `com.example.wood_panel_app` and iOS `com.example.woodPanelApp`. Finalize identifiers before release and register matching Firebase applications as needed. Android currently signs release builds with the debug key: configure the production upload keystore/signing before building a release AAB.
+The approved Android application ID and namespace are `com.woodandpanel.app`, with version `1.0.0+2`. The visible app name is unchanged. iOS remains `com.example.woodPanelApp` pending its separate Mac release setup. Android release builds use a dedicated release signing configuration and fail if `android/key.properties` is missing; they no longer fall back to the debug key. Provision and back up the upload keystore before generating the APK/AAB. The ignored key.properties requires storeFile (relative to android/ or absolute), storePassword, keyAlias and keyPassword. Never commit credentials or keystores.
+
+### Firebase migration for the final Android ID
+
+In the existing Firebase project `wood-and-panel-ecc55`, add another Android application with package `com.woodandpanel.app`. Download its generated `google-services.json` to `android/app/google-services.json`; do not edit the package name inside the old JSON. The old file only registers `com.example.wood_panel_app` and cannot build the new application. Keep the old Firebase registration while testing. No replacement server service-account key or WordPress topic configuration is needed when staying in this Firebase project. Recheck both edition notifications, Analytics and Crashlytics on the new installed application.
+
+The new package installs separately from the old test app. Existing local preferences, avatars, downloaded PDFs, bookmarks and notification permissions do not automatically migrate. Keep the old installation until the new one is verified. Firebase configuration replacement, upload-key provisioning, Android release builds and device verification are still pending at this migration stage. The new Play listing URLs must only replace temporary plugin store links when the listings are available.
 
 Publish `/.well-known/assetlinks.json` on every claimed Android host using the final application ID and actual signing certificate fingerprints, including Play App Signing where applicable. Publish `/.well-known/apple-app-site-association` using the Apple Team ID and final bundle ID. Confirm valid public responses and test real shared article links. Explicit ADB intents and working notification taps do not prove website association verification. This release step remains pending confirmation.
 

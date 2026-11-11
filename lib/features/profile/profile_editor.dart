@@ -130,7 +130,7 @@ class _ProfileEditorState extends ConsumerState<ProfileEditor> {
                         children: [
                           Text(
                               widget.firstLaunch
-                                  ? 'Welcome to Wood & Panel'
+                                  ? 'Welcome to Wood and Panel'
                                   : 'Edit Profile',
                               style:
                                   Theme.of(context).textTheme.headlineMedium),

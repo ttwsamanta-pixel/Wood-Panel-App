@@ -5,7 +5,7 @@
          the central safe area, with equal padding on every side. -->
     <foreground>
         <inset android:inset="29%">
-            <bitmap android:src="@mipmap/launch_icon" android:gravity="fill" />
+            <bitmap android:src="@drawable/launch_brand_high_res" android:gravity="fill" android:filter="true" />
         </inset>
     </foreground>
 </adaptive-icon>

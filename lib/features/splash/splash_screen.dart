@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/repositories/app_preferences_repository.dart';
 import '../../widgets/wp_components.dart';
-import 'wood_corner_background.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -44,11 +43,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     return const AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.light,
         child: Scaffold(
-          backgroundColor: Colors.black,
-          body: Stack(fit: StackFit.expand, children: [
-            CustomPaint(painter: WoodCornerBackground()),
-            Center(child: WPBrandLoader(size: 188, compact: true)),
-          ]),
+          body: WPPageLoader(),
         ));
   }
 }

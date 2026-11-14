@@ -29,11 +29,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final completed = results.first as bool;
     final prefs = await SharedPreferences.getInstance();
     final profileSeen = prefs.getBool('profile_prompt_seen_v1') ?? false;
+    final notificationSeen =
+        prefs.getBool('notification_prompt_seen_v1') ?? false;
+    final alreadyEnabled = prefs.getBool('push_enabled_europe') == true ||
+        prefs.getBool('push_enabled_usa') == true ||
+        prefs.getBool('push_enabled') == true;
     if (mounted) {
       context.go(!profileSeen
           ? '/welcome-profile'
           : completed
-              ? '/feed'
+              ? (notificationSeen || alreadyEnabled
+                  ? '/feed'
+                  : '/enable-notifications')
               : '/onboarding');
     }
   }

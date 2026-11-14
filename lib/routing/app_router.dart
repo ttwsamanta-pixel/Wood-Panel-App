@@ -1,3 +1,4 @@
+import '../features/onboarding/notification_permission_screen.dart';
 import '../features/profile/preferences_page.dart';
 import '../features/profile/notification_screen.dart';
 import '../features/profile/profile_editor.dart';
@@ -27,6 +28,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     routes: [
+      GoRoute(
+          path: '/enable-notifications',
+          builder: (_, __) => const NotificationPermissionScreen()),
       GoRoute(
           path: '/notifications',
           builder: (context, state) => const NotificationScreen()),

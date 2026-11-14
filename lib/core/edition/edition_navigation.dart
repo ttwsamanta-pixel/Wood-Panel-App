@@ -23,13 +23,14 @@ final editionNavigationProvider = Provider<EditionNavigation>((ref) {
   final service = EditionNavigation(ref);
   ref.onDispose(service.dispose);
   ref.listen(editionPushProvider, (_, __) => service.syncTopics());
-  unawaited(service.start());
+  service.ready = service.start();
   return service;
 });
 
 class EditionNavigation {
   EditionNavigation(this.ref);
   final Ref ref;
+  late final Future<void> ready;
   final _subscriptions = <StreamSubscription<dynamic>>[];
   bool _disposed = false;
   bool _firebaseReady = false;
@@ -178,34 +179,38 @@ class EditionNavigation {
   }
 
   Future<void> setEnabled(bool enabled) async {
-    for (final e in Edition.values) {
-      await setEditionEnabled(e, enabled);
+    final accepted = await setEditionEnabled(Edition.europe, enabled);
+    if (!accepted) {
+      return;
     }
+    await setEditionEnabled(Edition.usa, enabled, requestPermission: false);
   }
 
-  Future<void> setEditionEnabled(Edition edition, bool enabled) async {
+  Future<bool> setEditionEnabled(Edition edition, bool enabled,
+      {bool requestPermission = true}) async {
     if (!_firebaseReady) {
       ref.read(notificationStatusProvider.notifier).state =
           'Notifications are unavailable. Please restart and try again.';
-      return;
+      return false;
     }
-    if (enabled) {
+    if (enabled && requestPermission) {
       final permission = await FirebaseMessaging.instance.requestPermission();
       if (permission.authorizationStatus != AuthorizationStatus.authorized &&
           permission.authorizationStatus != AuthorizationStatus.provisional) {
         ref.read(notificationStatusProvider.notifier).state =
             'Allow notifications in your phone settings to enable alerts.';
-        return;
+        return false;
       }
     }
-    if (_disposed) return;
+    if (_disposed) return false;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('push_enabled_${edition.name}', enabled);
-    if (_disposed) return;
+    if (_disposed) return false;
     final values = {...ref.read(editionPushProvider), edition: enabled};
     ref.read(editionPushProvider.notifier).state = values;
     ref.read(notificationsEnabledProvider.notifier).state =
         values.values.any((v) => v);
+    return true;
   }
 
   void syncTopics() {

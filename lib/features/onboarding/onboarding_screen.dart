@@ -169,7 +169,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _finishOnboarding() async {
     await ref.read(appPreferencesRepositoryProvider).setOnboardingComplete();
     if (mounted) {
-      context.go('/feed');
+      context.go('/enable-notifications');
     }
   }
 }

@@ -28,7 +28,7 @@ if (file("google-services.json").exists()) {
 }
 
 android {
-    namespace = "com.woodandpanel.app"
+    namespace = "com.woodandpanel.mobile"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -38,7 +38,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.woodandpanel.app"
+        applicationId = "com.woodandpanel.mobile"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

@@ -1,4 +1,4 @@
-package com.woodandpanel.app
+package com.woodandpanel.mobile
 
 import io.flutter.embedding.android.FlutterActivity
 

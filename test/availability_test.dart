@@ -49,7 +49,7 @@ void main() {
         edition: Edition.europe,
         availability: policy,
         appStoreUrl:
-            'https://play.google.com/store/apps/details?id=com.woodandpanel.app');
+            'https://play.google.com/store/apps/details?id=com.woodandpanel.mobile');
     await tester.pumpWidget(ProviderScope(
         overrides: [
           activeConfigProvider.overrideWithValue(config),

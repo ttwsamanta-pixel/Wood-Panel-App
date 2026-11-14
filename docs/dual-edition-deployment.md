@@ -82,7 +82,7 @@ Analytics records screen names and edition; it does not intentionally record for
 
 For Android DebugView:
 ```sh
-adb shell setprop debug.firebase.analytics.app com.woodandpanel.app
+adb shell setprop debug.firebase.analytics.app com.woodandpanel.mobile
 ```
 Disable after checking:
 ```sh
@@ -98,15 +98,15 @@ Android/iOS have separate minimum/latest integer build values. For `1.2.0+12`, e
 
 ## Release and verified links
 
-The approved Android application ID and namespace are `com.woodandpanel.app`, with version `1.0.0+5`. The visible app name is unchanged. iOS remains `com.example.woodPanelApp` pending its separate Mac release setup. Android release builds use a dedicated release signing configuration and fail if `android/key.properties` is missing; they no longer fall back to the debug key. A dedicated upload keystore was provisioned on 11 November 2026 at android/upload-keystore/wood-panel-upload.jks. Back it up securely together with android/key.properties. The ignored key.properties requires storeFile (relative to android/ or absolute), storePassword, keyAlias and keyPassword. Never commit credentials or keystores.
+The approved Android application ID and namespace are `com.woodandpanel.mobile`, with version `1.0.0+5`. The visible app name is unchanged. iOS remains `com.example.woodPanelApp` pending its separate Mac release setup. Android release builds use a dedicated release signing configuration and fail if `android/key.properties` is missing; they no longer fall back to the debug key. A dedicated upload keystore was provisioned on 11 November 2026 at android/upload-keystore/wood-panel-upload.jks. Back it up securely together with android/key.properties. The ignored key.properties requires storeFile (relative to android/ or absolute), storePassword, keyAlias and keyPassword. Never commit credentials or keystores.
 
 Release verification (11 November 2026): signed AAB and APK built successfully; signatures and APK package/version verified; APK installed on the connected Android phone and opened its welcome form. This is a launch smoke test only. New-registration push/Analytics/Crashlytics receipt and Play internal testing remain to be confirmed. Native debug symbols and R8 mapping are embedded in the AAB.
 
 ### Firebase migration for the final Android ID
 
-In the existing Firebase project `wood-and-panel-ecc55`, add another Android application with package `com.woodandpanel.app`. Download its generated `google-services.json` to `android/app/google-services.json`; do not edit the package name inside the old JSON. The replacement configuration was verified on 11 November 2026 and includes the new Android client. Keep the old Firebase registration while testing. No replacement server service-account key or WordPress topic configuration is needed when staying in this Firebase project. Recheck both edition notifications, Analytics and Crashlytics on the new installed application.
+In the existing Firebase project `wood-and-panel-ecc55`, add another Android application with package `com.woodandpanel.mobile`. Download its generated `google-services.json` to `android/app/google-services.json`; do not edit the package name inside the old JSON. As of 14 November 2026, replacement configuration for com.woodandpanel.mobile is pending. The existing JSON contains only the previous package registrations and cannot build the new release. Keep the old Firebase registration while testing. No replacement server service-account key or WordPress topic configuration is needed when staying in this Firebase project. Recheck both edition notifications, Analytics and Crashlytics on the new installed application.
 
-The new package installs separately from the old test app. Existing local preferences, avatars, downloaded PDFs, bookmarks and notification permissions do not automatically migrate. Keep the old installation until the new one is verified. Firebase configuration replacement and upload-key provisioning are complete. Signed release artifacts are generated under artifacts/android-release-1.0.0/ (ignored by Git); see its READ-ME.txt for handoff and verification limits. The new Play listing URLs must only replace temporary plugin store links when the listings are available.
+The new package installs separately from the old test app. Existing local preferences, avatars, downloaded PDFs, bookmarks and notification permissions do not automatically migrate. Keep the old installation until the new one is verified. The upload key is provisioned; Firebase configuration replacement for the new package remains pending. Signed release artifacts are generated under artifacts/android-release-1.0.0/ (ignored by Git); see its READ-ME.txt for handoff and verification limits. The new Play listing URLs must only replace temporary plugin store links when the listings are available.
 
 Publish `/.well-known/assetlinks.json` on every claimed Android host using the final application ID and actual signing certificate fingerprints, including Play App Signing where applicable. Publish `/.well-known/apple-app-site-association` using the Apple Team ID and final bundle ID. Confirm valid public responses and test real shared article links. Explicit ADB intents and working notification taps do not prove website association verification. This release step remains pending confirmation.
 
@@ -117,3 +117,6 @@ On Mac: add iOS Firebase configuration, configure Runner and ImageNotification s
 Run `flutter analyze` and `flutter test` for app changes. Isolated PHP checks are listed in the README; integration checks need their dedicated local WordPress/database fixture. `submissions-test.php` now loads `profiles.php` and tests all three kinds, pagination, profile routing and unauthorized access. `tool/test_profiles.php` checks profile validation/CSV handling plus newsletter/contact validation, disabled forms and storage errors using stubs.
 
 Before release, verify real per-site submissions and exports, banner metrics/rotation, current/legacy content, scheduled push cancellation/delivery, store URLs and signing. Keep iOS marked pending until tested on Mac/iPhone. Tests/documentation maintenance does not require reinstalling the app or uploading a new plugin.
+
+### New listing package change (14 November 2026)
+Android now uses com.woodandpanel.mobile for a separate listing; display name stays Wood & Panel and version remains 1.0.0+5. Earlier signed APK/AAB files, including build 5, use com.woodandpanel.app and must not be uploaded to the new listing. Rebuild and verify signatures/package after replacing google-services.json. The previous release verification above applies to the previous package only. Confirm and resolve the previous listing's policy removal reason before submitting the new listing.

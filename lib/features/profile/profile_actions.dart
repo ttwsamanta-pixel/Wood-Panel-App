@@ -2,7 +2,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:share_plus/share_plus.dart';
+import '../../core/platform/app_share.dart';
 import '../../core/edition/edition.dart';
 import '../../data/repositories/content_providers.dart';
 import '../home/home_screen.dart' show showNewsletterPopup;
@@ -25,7 +25,7 @@ Future<void> openProfileAction(
       return;
     }
     if (route == 'share') {
-      await Share.share('Wood & Panel - $url');
+      await shareText(context, 'Wood & Panel - $url');
     } else {
       try {
         final opened = await launchUrl(Uri.parse(url),

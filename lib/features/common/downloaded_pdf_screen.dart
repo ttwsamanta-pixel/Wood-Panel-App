@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/platform/app_share.dart';
 import '../../data/repositories/download_repository.dart';
 import '../../data/repositories/pdf_reading_repository.dart';
 import '../../widgets/wp_scaffold.dart';
@@ -158,7 +158,7 @@ class _DownloadedPdfScreenState extends State<DownloadedPdfScreen> {
                   tooltip: 'Share',
                   icon: const Icon(Icons.share_rounded),
                   onPressed: () =>
-                      Share.shareXFiles([XFile(widget.file.path)])),
+                      shareFile(context, widget.file.path)),
             ])),
         const Divider(height: 1),
         Expanded(

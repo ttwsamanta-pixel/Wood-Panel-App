@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:share_plus/share_plus.dart';
 
+import '../../core/platform/app_share.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/edition/edition.dart';
 import '../../data/models/content_models.dart';
@@ -618,7 +618,7 @@ class _TrendingCard extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                     tooltip: 'Share',
                     onPressed: () =>
-                        Share.share('${article.title}\n${article.url}'),
+                        shareText(context, '${article.title}\n${article.url}'),
                     icon: Icon(Icons.share_rounded,
                         color: Theme.of(context).colorScheme.primary, size: 19),
                   ),
@@ -784,7 +784,7 @@ class _HomeVideoCard extends StatelessWidget {
                     visualDensity: VisualDensity.compact,
                     tooltip: 'Share',
                     onPressed: () =>
-                        Share.share('${video.title}\n${video.url}'),
+                        shareText(context, '${video.title}\n${video.url}'),
                     icon: Icon(Icons.share_rounded,
                         color: Theme.of(context).colorScheme.primary, size: 19),
                   ),

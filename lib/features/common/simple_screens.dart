@@ -2,6 +2,7 @@ import '../profile/managed_pages.dart';
 import '../profile/preferences_page.dart';
 import 'about_page.dart';
 import '../profile/profile_page.dart';
+import '../../core/platform/app_share.dart';
 import '../../widgets/issue_highlights.dart';
 import 'dart:async';
 import 'brand_pages.dart';
@@ -18,7 +19,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
@@ -769,7 +769,7 @@ class _FeaturedInterviewCard extends StatelessWidget {
                         color: Theme.of(context).colorScheme.primary,
                         icon: const Icon(Icons.share_rounded),
                         onPressed: () =>
-                            Share.share('${article.title}\n${article.url}'),
+                            shareText(context, '${article.title}\n${article.url}'),
                       ),
                     ],
                   ),
@@ -986,7 +986,7 @@ class _ExploreArticleCardState extends ConsumerState<_ExploreArticleCard> {
                         tooltip: 'Share',
                         icon: const Icon(Icons.share_rounded),
                         onPressed: () =>
-                            Share.share('${article.title}\n${article.url}'),
+                            shareText(context, '${article.title}\n${article.url}'),
                       ),
                       IconButton(
                         tooltip: 'Bookmark',
@@ -1600,7 +1600,8 @@ class _FeedNewsCardState extends ConsumerState<_FeedNewsCard> {
                                                   .colorScheme
                                                   .primary,
                                               iconSize: 22,
-                                              onPressed: () => Share.share(
+                                              onPressed: () => shareText(
+                                                  context,
                                                   '${article.title}\n${article.url}'),
                                               icon: const Icon(
                                                   Icons.share_rounded),
@@ -2994,7 +2995,7 @@ class _CategoryArticleCardState extends ConsumerState<_CategoryArticleCard> {
                         icon: const Icon(Icons.share_rounded),
                         color: Theme.of(context).colorScheme.primary,
                         onPressed: () =>
-                            Share.share('${article.title}\n${article.url}'),
+                            shareText(context, '${article.title}\n${article.url}'),
                       ),
                     ],
                   ),
@@ -3534,7 +3535,7 @@ class _LegacyInterviewDetailScreenState
                 const SizedBox(height: 18),
                 OutlinedButton.icon(
                   onPressed: () =>
-                      Share.share('${detail.title}\n${widget.url}'),
+                      shareText(context, '${detail.title}\n${widget.url}'),
                   icon: const Icon(Icons.share_rounded),
                   label: const Text('Share'),
                 ),
@@ -4067,7 +4068,7 @@ class _YouTubeVideoCard extends StatelessWidget {
                         icon: const Icon(Icons.share_rounded),
                         color: Theme.of(context).colorScheme.primary,
                         onPressed: () =>
-                            Share.share('${video.title}\n${video.url}'),
+                            shareText(context, '${video.title}\n${video.url}'),
                       ),
                     ],
                   ),
@@ -4179,7 +4180,8 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                       visualDensity: VisualDensity.compact,
                       icon: const Icon(Icons.share_rounded),
                       color: Theme.of(context).colorScheme.primary,
-                      onPressed: () => Share.share(
+                      onPressed: () => shareText(
+                        context,
                         '${video.title}\n${video.url}',
                       ),
                     ),
@@ -4455,7 +4457,7 @@ class _DownloadedFileTile extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 icon: Icon(Icons.share_rounded,
                     color: Theme.of(context).colorScheme.primary),
-                onPressed: () => Share.shareXFiles([XFile(item.path)]),
+                onPressed: () => shareFile(context, item.path),
               ),
               IconButton(
                 tooltip: 'Delete PDF',

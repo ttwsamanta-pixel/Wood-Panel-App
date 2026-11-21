@@ -1,3 +1,4 @@
+import '../../core/platform/app_share.dart';
 import '../../data/repositories/reading_preferences.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/edition/edition.dart';
@@ -6,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:intl/intl.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../data/models/content_models.dart';
@@ -237,7 +237,7 @@ class _ArticleDetailScreenState extends ConsumerState<ArticleDetailScreen> {
                         isSpeaking: _isSpeaking,
                         onBookmark: () => _toggleBookmark(article),
                         onShare: () =>
-                            Share.share('${article.title}\n${article.url}'),
+                            shareText(context, '${article.title}\n${article.url}'),
                         onListen: () => _toggleSpeech(article),
                         onSmallerText: () => setState(() =>
                             _fontScale = (_fontScale - .1).clamp(.85, 1.35)),

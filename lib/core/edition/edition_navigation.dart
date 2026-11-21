@@ -220,13 +220,34 @@ class EditionNavigation {
       if (_disposed) return;
       final selections = ref.read(editionPushProvider);
       final enabled = selections.values.any((v) => v);
-      await FirebaseMessaging.instance.setAutoInitEnabled(enabled);
-      await syncEditionPushSubscriptions(
-        enabled: enabled,
-        editions: selections,
-        subscribe: FirebaseMessaging.instance.subscribeToTopic,
-        unsubscribe: FirebaseMessaging.instance.unsubscribeFromTopic,
-      );
+      final messaging = FirebaseMessaging.instance;
+      final usesApns = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+      if (!usesApns) await messaging.setAutoInitEnabled(enabled);
+      if (!usesApns || enabled || messaging.isAutoInitEnabled) {
+        if (usesApns) {
+          if (!messaging.isAutoInitEnabled) {
+            await messaging.setAutoInitEnabled(true);
+          }
+          // APNs registration completes asynchronously after auto-init starts.
+          final deadline = DateTime.now().add(const Duration(seconds: 8));
+          while (await messaging.getAPNSToken() == null) {
+            if (_disposed) return;
+            if (DateTime.now().isAfter(deadline)) {
+              throw TimeoutException('Waiting for APNs registration');
+            }
+            await Future<void>.delayed(const Duration(milliseconds: 250));
+          }
+        }
+        if (_disposed) return;
+        await syncEditionPushSubscriptions(
+          enabled: enabled,
+          editions: selections,
+          subscribe: messaging.subscribeToTopic,
+          unsubscribe: messaging.unsubscribeFromTopic,
+        );
+        // Keep registration available until both unsubscribe requests succeed.
+        if (usesApns && !enabled) await messaging.setAutoInitEnabled(false);
+      }
       if (!_disposed) {
         ref.read(notificationStatusProvider.notifier).state = enabled
             ? 'Alerts enabled for ${Edition.values.where((e) => selections[e] == true).map((e) => e.label).join(' and ')}.'

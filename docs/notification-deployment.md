@@ -57,7 +57,7 @@ The user requested Android testing on Windows first. **iOS notifications are not
 
 - `ios/ImageNotification/NotificationService.swift` and its Info.plist are included in the ImageNotification target with a Runner dependency and Embed App Extensions phase. The extension uses Foundation/UserNotifications; it does not need its own Firebase SDK dependency.
 - The sender includes APNs mutable-content, `fcm_options.image` and custom `image_url`. The extension attaches the downloaded image and returns the original title/body on failure or expiry.
-- Register the final iOS bundle ID in the same Firebase project. Add the matching `GoogleService-Info.plist` to Runner and Copy Bundle Resources.
+- Register the final iOS bundle ID in the same Firebase project. Save the matching `GoogleService-Info.plist` under `ios/Runner/`. Runner's build phase checks the project and bundle ID and copies the file into the app. See [the iOS release guide](ios-release.md).
 - Configure the APNs authentication key in Firebase, Push Notifications capability and signing/provisioning. Runner and ImageNotification must use the same development team. The extension identifier must match the final Runner identifier plus `.ImageNotification`.
 - On Mac, resolve Flutter packages and build/archive in Xcode. Check extension embedding and matching versions/build numbers. Windows structural checks do not compile Swift or validate Apple signing.
 - Test image/text delivery, failed-image fallback, foreground/background/terminated states, independent edition preferences and article routing on an iPhone. Verify production APNs through TestFlight before release.

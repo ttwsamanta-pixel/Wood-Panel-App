@@ -1,6 +1,6 @@
 # Dual-edition deployment
 
-Current guide reviewed against repository source on 4 November 2026. App version: `0.1.0+1`; App Manager plugin: `0.9.1`. This guide describes the current implementation, replacing earlier phase-by-phase deployment notes. Android has been built and tested on the connected phone; this document update does not deploy to either website.
+The repository currently sets the app version to `1.0.0+6` and App Manager plugin version to `0.9.1`. See the release notes below for historical Android device checks and [the iOS release guide](ios-release.md) for the Mac workflow.
 
 ## Architecture and backup
 
@@ -76,7 +76,7 @@ News/interview/magazine/event cache records use SQLite (`content_cache.db`) on A
 
 See [notification-deployment.md](notification-deployment.md) for server credentials, image payloads, schedules and the iOS extension checklist.
 
-Android reads `android/app/google-services.json`; iOS requires its matching `GoogleService-Info.plist` in Runner. With native configuration, ordinary builds need no Firebase Dart defines. Optional explicit overrides are `FIREBASE_APP_ID`, `FIREBASE_API_KEY`, `FIREBASE_PROJECT_ID`, `FIREBASE_SENDER_ID`, and `FIREBASE_IOS_BUNDLE_ID`.
+Android reads `android/app/google-services.json`; iOS reads `ios/Runner/GoogleService-Info.plist` through the Runner build phase. With native configuration, ordinary builds need no Firebase Dart defines. Optional explicit overrides are `FIREBASE_APP_ID`, `FIREBASE_API_KEY`, `FIREBASE_PROJECT_ID`, `FIREBASE_SENDER_ID`, and `FIREBASE_IOS_BUNDLE_ID`. See [the iOS release guide](ios-release.md) for the signing, archive and verification steps.
 
 Analytics records screen names and edition; it does not intentionally record form contents or email. Crashlytics captures framework/platform errors with screen/edition context. Android Firebase dashboard receipt was confirmed by screenshots on 2 November 2026: a controlled test crash plus `screen_view` and `notification_receive` events. This is not iOS verification.
 

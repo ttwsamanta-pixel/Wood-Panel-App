@@ -44,7 +44,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tool/package_dual_edition.ps
 
 The packaging script copies the existing debug APK, creates the WordPress plugin ZIP, copies the deployment guide and writes checksums under `artifacts/dual-edition/`. It does not build the app. Always build the normal `lib/main.dart` target first; never package a temporary preview or forced-crash build.
 
-The current Android release configuration still uses debug signing, and application identifiers are examples. A debug APK or an unreviewed release build is not a store-ready release.
+Android release builds use the `com.woodandpanel.mobile` application ID and a dedicated release signing configuration. See [the deployment guide](docs/dual-edition-deployment.md) for the Android signing setup and release checks.
 
 ## Project map
 
@@ -55,7 +55,8 @@ The current Android release configuration still uses debug signing, and applicat
 - `wordpress/tests`, `tool/test_profiles.php`: plugin regression checks.
 - `test/`: Flutter unit/widget tests.
 - `docs/dual-edition-deployment.md`: current installation, configuration and release checklist.
-- `docs/notification-deployment.md`: push delivery, scheduling, inbox and iOS handoff.
+- `docs/notification-deployment.md`: push delivery, scheduling and inbox.
+- `docs/ios-release.md`: Mac setup, signing, Firebase, device checks and TestFlight.
 - `backend/`: legacy scaffold; no setup required for the current WordPress-backed app.
 
 ## Submission checks

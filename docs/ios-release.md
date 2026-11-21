@@ -2,11 +2,12 @@
 
 ## Release status
 
-- [x] Audited the Mac and the iOS project. macOS `27.2.1`, Xcode `27.2` and the iOS `27.2` simulator runtime are available. The system-selected developer directory is Command Line Tools.
+- [x] Audited the Mac and the iOS project. macOS `27.2.1`, Xcode `27.2` and the iOS `27.2` simulator runtime are available. The Mac now selects full Xcode for command-line development.
 - [x] Resolved the Flutter lockfile with Flutter `3.47.5` and Dart `3.13.4`, ran analysis and passed all 91 Flutter tests. The notification extension also passed a Swift type check.
 - [x] Built the debug simulator app at `build/ios/iphonesimulator/Runner.app` using a workspace-local `xcrun` override. The embedded ImageNotification extension and Runner both report `1.0.0+6` and iOS 15. The simulator app contains SDK privacy manifests. Review the signed release archive separately.
 - [x] Installed and launched the build on the iPhone 18 Pro and iPad (A16) simulators. Both reached the welcome profile screen with the skip control, avatar picker and empty form visible. Screenshots are in `artifacts/ios-smoke/`.
-- [ ] Confirm the Apple team and bundle ID, configure matching Firebase and APNs registration, and sign both targets. Runner still uses `com.example.woodPanelApp` as its placeholder and no physical iPhone was connected during the audit.
+- [x] Registered the separate iOS app ID `com.woodandpanel.mobile` and its extension ID `com.woodandpanel.mobile.ImageNotification` under Keshan Infotech Private Limited. The Xcode project uses those IDs and automatic signing for team `EF2P3LYG94`.
+- [ ] Configure matching Firebase and APNs registration, then verify signing on a physical iPhone.
 - [ ] Publish the Universal Links association on the approved hosts. During the audit the Europe apex redirected to `www`. Both `www` sites and the USA apex returned HTTP 500 for the association path.
 - [ ] Verify device workflows, Crashlytics symbols and analytics, then archive and validate for TestFlight. The full device checklist is below.
 
@@ -32,8 +33,8 @@ The locked Firebase Analytics plugin selects `FirebaseAnalyticsCore` when `FIREB
 
 ## Apple account and Firebase
 
-1. In Xcode, open **Settings → Accounts** and sign in privately. Confirm the account lists the **KESHAN INFOTECH PVT LTD** team. In the Apple Developer portal, check whether that team already owns or can register `com.woodandpanel.mobile` before using it for iOS.
-2. Once the ID is confirmed, open `ios/Runner.xcworkspace`. In **Runner → Signing & Capabilities**, select the team and update the Runner bundle ID for Debug, Profile and Release. Update the RunnerTests bundle ID and set ImageNotification to the final Runner ID plus `.ImageNotification`. Use the same team on Runner and ImageNotification. Verify Runner has Push Notifications, Background Modes → Remote notifications, and Associated Domains.
+1. In Xcode, open **Settings → Apple Accounts** and sign in privately. Confirm the account lists **Keshan Infotech Private Limited**.
+2. Open `ios/Runner.xcworkspace`. In **Signing & Capabilities**, verify automatic signing and the company team on Runner and ImageNotification. Verify Runner has Push Notifications, Background Modes → Remote notifications, and Associated Domains.
 3. In Firebase **Project settings → General → Your apps**, register or select the exact final Runner bundle ID in `wood-and-panel-ecc55`. Save the generated file as `ios/Runner/GoogleService-Info.plist`. The Runner build phase copies it into the bundle and fails an archive when it is absent. The file is ignored by Git. Use the native iOS configuration for the release build.
 4. In Firebase **Project settings → Cloud Messaging**, verify the APNs authentication key and Key ID for the iOS app and the Apple Team ID. Complete credential handling in the private Apple/Firebase consoles. Test development delivery on a signed phone and production delivery through TestFlight.
 

@@ -7,7 +7,9 @@
 - [x] Built the debug simulator app at `build/ios/iphonesimulator/Runner.app` using a workspace-local `xcrun` override. The embedded ImageNotification extension and Runner both report `1.0.0+6` and iOS 15. The simulator app contains SDK privacy manifests. Review the signed release archive separately.
 - [x] Installed and launched the build on the iPhone 18 Pro and iPad (A16) simulators. Both reached the welcome profile screen with the skip control, avatar picker and empty form visible. Screenshots are in `artifacts/ios-smoke/`.
 - [x] Registered the separate iOS app ID `com.woodandpanel.mobile` and its extension ID `com.woodandpanel.mobile.ImageNotification` under Keshan Infotech Private Limited. The Xcode project uses those IDs and automatic signing for team `EF2P3LYG94`.
-- [ ] Configure matching Firebase and APNs registration, then verify signing on a physical iPhone.
+- [x] Bundled the matching Firebase configuration in Runner. The development and production APNs key uploads were reported complete. Verify push delivery on a physical iPhone.
+- [x] Confirmed the separate App Store Connect record uses `com.woodandpanel.mobile`. Created `build/ios/archive/Runner.xcarchive` and exported `build/ios/ipa/Wood & Panel.ipa` as `1.0.0`, build `6`. Verified the exported signatures, embedded extension, Firebase configuration and production APNs entitlement locally.
+- [ ] Validate the distribution build with Apple and upload to TestFlight when authorized.
 - [ ] Publish the Universal Links association on the approved hosts. During the audit the Europe apex redirected to `www`. Both `www` sites and the USA apex returned HTTP 500 for the association path.
 - [ ] Verify device workflows, Crashlytics symbols and analytics, then archive and validate for TestFlight. The full device checklist is below.
 
@@ -46,7 +48,7 @@ Add the official iOS App Store URL to the WordPress plugin when the listing URL 
 
 ## Archive, symbols and TestFlight
 
-1. Confirm the first iOS marketing version and a unique iOS build number in App Store Connect. The repository currently defaults to `1.0.0+6`. Pass `--build-name` and `--build-number` to Flutter for an iOS-only override when needed.
+1. Set the first iOS marketing version in App Store Connect to match the built version. The first archive is `1.0.0+6`. Pass `--build-name` and `--build-number` to Flutter for an iOS-only override when needed.
 2. Build a signed archive with `flutter build ipa --release --build-name <version> --build-number <number>`, or select a generic iOS device in Xcode and choose **Product → Archive**. Flutter puts archives under `build/ios/archive/` and exported IPAs under `build/ios/ipa/`. For Xcode archives, use **Window → Organizer → Archives** to locate the archive. Inspect the signed app for the expected entitlements and `PlugIns/ImageNotification.appex`. Confirm Runner and the extension share the version and build number.
 3. Runner Release uses `DWARF with dSYM File`. Upload archive symbols with the Firebase SDK’s `Crashlytics/upload-symbols` script from the Xcode Swift package checkout. Flutter places the checkout under `build/ios/SourcePackages/checkouts/firebase-ios-sdk`. Confirm receipt in the iOS app’s Crashlytics dashboard and retain the archive with its dSYMs. [Firebase Crashlytics symbol upload](https://firebase.google.com/docs/crashlytics/ios/get-deobfuscated-reports)
 

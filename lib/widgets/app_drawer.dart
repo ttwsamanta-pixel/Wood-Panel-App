@@ -30,6 +30,11 @@ class AppDrawer extends ConsumerWidget {
     final profile =
         ref.watch(userProfileProvider).valueOrNull ?? const UserProfile();
     final edition = ref.watch(editionProvider);
+    final showStoreActions = ref.watch(showAppStoreActionsProvider);
+    final visibleItems = [
+      for (final item in items)
+        if (showStoreActions || item.$3 != 'rate') item,
+    ];
     final colors = Theme.of(context).colorScheme;
     final path = GoRouterState.of(context).uri.path;
     void open(String route) {
@@ -44,7 +49,7 @@ class AppDrawer extends ConsumerWidget {
         child: SafeArea(child: LayoutBuilder(builder: (context, box) {
           // Reserve the header and footer first, then distribute all menu rows.
           final rowHeight =
-              ((box.maxHeight - 232) / items.length).clamp(30.0, 48.0);
+              ((box.maxHeight - 232) / visibleItems.length).clamp(30.0, 48.0);
           return SingleChildScrollView(
               child: Column(children: [
             SizedBox(
@@ -114,7 +119,7 @@ class AppDrawer extends ConsumerWidget {
             Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Column(children: [
-                  for (final item in items)
+                  for (final item in visibleItems)
                     SizedBox(
                         height: rowHeight,
                         child: Material(

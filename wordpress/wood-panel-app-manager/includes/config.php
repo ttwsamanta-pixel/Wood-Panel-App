@@ -135,6 +135,7 @@ function wpam_defaults(): array {
         'terms_conditions' => wpam_legal_defaults()['terms_conditions'],
         'availability' => wpam_availability_defaults(),
         'app_store_url' => '', 'ios_store_url' => '',
+        'ios_store_actions_enabled' => false,
         'youtube_channel_id' => WPAM_CHANNEL,
 
         'group_media_enabled' => false, 'clients_enabled' => false, 'premium_enabled' => false,
@@ -346,6 +347,10 @@ function wpam_sanitize_settings($input): array {
         $ios = wpam_settings()['ios_store_url'];
     }
     $out['ios_store_url'] = $ios;
+    $out['ios_store_actions_enabled'] = !empty($input['ios_store_actions_enabled']) && $ios !== '';
+    if (!empty($input['ios_store_actions_enabled']) && $ios === '') {
+        add_settings_error('wpam_settings', 'ios_store_actions_enabled', 'Add the published iOS App Store URL before enabling Rate and Share.');
+    }
     $control = is_array($input['availability'] ?? null) ? $input['availability'] : [];
     $out['availability'] = wpam_availability_defaults();
     $out['availability']['maintenance'] = !empty($control['maintenance']);
@@ -435,6 +440,7 @@ function wpam_public_config(): array {
         'inline_ads' => $s['inline_ads'], 'footer_ads' => $s['footer_ads'],
 
         'app_store_url' => $s['app_store_url'], 'ios_store_url' => $s['ios_store_url'],
+        'ios_store_actions_enabled' => (bool) $s['ios_store_actions_enabled'],
         'availability' => array_replace(wpam_availability_defaults(), (array) $s['availability']),
         'privacy_policy' => $s['privacy_policy'], 'terms_conditions' => $s['terms_conditions'],
         'contact_details' => array_replace(wpam_contact_defaults(), (array) $s['contact_details']), 'social_links' => $s['social_links'], 'wallpapers' => $s['wallpapers'],

@@ -2,7 +2,7 @@
 Contributors: woodandpanel
 Requires at least: 6.0
 Requires PHP: 8.0
-Stable tag: 0.4.2
+Stable tag: 0.9.2
 License: GPLv2 or later
 
 Regional configuration, content adapters, newsletter/contact storage and edition-specific Firebase notification sending for the Wood & Panel Flutter app.

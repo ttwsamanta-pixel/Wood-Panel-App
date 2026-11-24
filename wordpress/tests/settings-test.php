@@ -63,6 +63,11 @@ echo "App store setting: passed.\n";
 
 $storeInput['ios_store_url'] = 'https://apps.apple.com/us/app/wood-panel/id123456789';
 check(wpam_sanitize_settings($storeInput)['ios_store_url'] === $storeInput['ios_store_url'], 'Preserve iOS App Store URL');
+check(!wpam_sanitize_settings($storeInput)['ios_store_actions_enabled'], 'iOS Rate and Share default to disabled');
+$storeInput['ios_store_actions_enabled'] = '1';
+check(wpam_sanitize_settings($storeInput)['ios_store_actions_enabled'], 'Enable iOS Rate and Share with an Apple link');
+$storeInput['ios_store_url'] = '';
+check(!wpam_sanitize_settings($storeInput)['ios_store_actions_enabled'], 'Keep iOS Rate and Share disabled without an Apple link');
 $storeInput['ios_store_url'] = 'https://apps.apple.com.evil.test/app/id123';
 check(wpam_sanitize_settings($storeInput)['ios_store_url'] === '', 'Reject fake Apple host');
 $storeInput['ios_store_url'] = 'https://apps.apple.com/app/missing-id';

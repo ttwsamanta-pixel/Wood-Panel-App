@@ -11,7 +11,7 @@ Flutter news and magazine app with Europe and USA editions. Each website runs it
 - Independent Europe/USA push preferences, persistent notification inboxes, image notifications and scheduled sending from WordPress.
 - Name/email profile submissions with locally selected bundled avatars; first-launch welcome form and onboarding.
 - Appearance, text size, device narration controls, plugin-managed legal/contact/social content, optional Group Media/Clients/Premium pages and maintenance/update controls.
-- Firebase Analytics and Crashlytics integrated. Android dashboard receipt was confirmed; iOS build and device verification remain pending on Mac/iPhone.
+- Firebase Analytics and Crashlytics integrated. Android dashboard receipt was confirmed. The first iOS release is in App Store Connect with build 8 attached. See [iOS release status](docs/ios-release.md#release-status) for the verified state and remaining checks.
 
 Premium Subscribe currently opens a contact enquiry. Payments and premium access enforcement are not implemented. Language translation remains deferred.
 
@@ -51,7 +51,7 @@ Android release builds use the `com.woodandpanel.mobile` application ID and a de
 - `lib/app`, `lib/routing`, `lib/core`: app bootstrap, navigation, edition/configuration, notifications and telemetry.
 - `lib/data`: models, repositories and local persistence.
 - `lib/features`, `lib/widgets`: screens and shared UI.
-- `wordpress/wood-panel-app-manager`: production WordPress plugin source (currently 0.9.1).
+- `wordpress/wood-panel-app-manager`: production WordPress plugin source (currently 0.9.2).
 - `wordpress/tests`, `tool/test_profiles.php`: plugin regression checks.
 - `test/`: Flutter unit/widget tests.
 - `docs/dual-edition-deployment.md`: current installation, configuration and release checklist.
@@ -73,6 +73,8 @@ php wordpress/tests/admin-menu-test.php
 
 The submissions renderer lives in `includes/profiles.php`; form REST handlers live in `includes/rest.php`. Integration files such as `banner-integration-test.php` and `inbox-integration-test.php` require the isolated WordPress fixture under `artifacts/wp-test/wordpress` and database `wpam_banner_test` on `127.0.0.1:3317`. Do not run those against a production database.
 
-## Remaining release verification
+## Continue on another computer
 
-Finalize store identifiers/signing and Android/iOS association files; configure store URLs; review published legal text and store data declarations; archive and test iOS on a Mac and physical iPhone, including notification extension and Crashlytics symbols. Live configuration, scheduled pushes, submissions/exports and advertisements should be verified per edition before release. See the deployment guides for exact boundaries.
+Clone the repository, or run `git pull --ff-only origin main` if you already have a clean checkout. Start with the [iOS release status and handoff](docs/ios-release.md) and the [dual-edition deployment guide](docs/dual-edition-deployment.md). Use a Mac with Xcode for iOS builds and signing. App Store Connect can be managed from a browser using an authorized account, and already uploaded builds are available there from another computer.
+
+Git carries the source and guides. Get signing credentials, Firebase configuration and any needed archives or screenshots through their private sources.

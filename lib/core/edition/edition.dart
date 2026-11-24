@@ -127,6 +127,7 @@ class EditionConfig {
       this.logoUrl = '',
       this.appStoreUrl = '',
       this.iosStoreUrl = '',
+      this.iosStoreActionsEnabled = false,
       this.preloaderUrl = '',
       this.preloaderColor = const Color(0xFF211F21),
       Color? primary,
@@ -179,6 +180,7 @@ class EditionConfig {
   final String logoUrl;
   final String appStoreUrl;
   final String iosStoreUrl;
+  final bool iosStoreActionsEnabled;
   final String preloaderUrl;
   final Color preloaderColor;
   final Color primary, secondary;
@@ -259,6 +261,7 @@ class EditionConfig {
     return EditionConfig(
         appStoreUrl: validAppStoreUrl(json['app_store_url']),
         iosStoreUrl: validIosStoreUrl(json['ios_store_url']),
+        iosStoreActionsEnabled: json['ios_store_actions_enabled'] == true,
         edition: edition,
         managed: true,
         groupMediaEnabled: json['group_media_enabled'] == true,
@@ -354,8 +357,13 @@ String validIosStoreUrl(dynamic value) {
 String selectAppStoreUrl(EditionConfig europe, EditionConfig usa,
     {TargetPlatform platform = TargetPlatform.android}) {
   if (platform == TargetPlatform.iOS) {
-    final primary = validIosStoreUrl(europe.iosStoreUrl);
-    return primary.isNotEmpty ? primary : validIosStoreUrl(usa.iosStoreUrl);
+    for (final config in [europe, usa]) {
+      if (config.iosStoreActionsEnabled) {
+        final url = validIosStoreUrl(config.iosStoreUrl);
+        if (url.isNotEmpty) return url;
+      }
+    }
+    return '';
   }
   final primary = validAppStoreUrl(europe.appStoreUrl);
   return primary.isNotEmpty ? primary : validAppStoreUrl(usa.appStoreUrl);
@@ -368,4 +376,10 @@ final sharedAppStoreUrlProvider = FutureProvider<String>((ref) async {
   ]);
   return selectAppStoreUrl(configs[0], configs[1],
       platform: defaultTargetPlatform);
+});
+
+final showAppStoreActionsProvider = Provider<bool>((ref) {
+  if (defaultTargetPlatform != TargetPlatform.iOS) return true;
+  final url = ref.watch(sharedAppStoreUrlProvider).valueOrNull ?? '';
+  return url.isNotEmpty;
 });

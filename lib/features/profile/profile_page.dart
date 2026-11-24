@@ -113,8 +113,11 @@ class ProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final config = ref.watch(activeConfigProvider);
+    final showStoreActions = ref.watch(showAppStoreActionsProvider);
     final items = [
-      ...baseItems,
+      for (final item in baseItems)
+        if (showStoreActions || (item.$4 != 'rate' && item.$4 != 'share'))
+          item,
       if (config.showGroupMedia)
         (
           'Group Media',

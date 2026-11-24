@@ -303,6 +303,8 @@ function wpam_admin_page(): void {
         <p>Used by Rate Our App and Share App in both editions. Android uses Google Play; iOS uses Apple App Store. Set either link on either website. Europe takes priority separately for each platform when both websites have links. Leave blank until your listing is available.</p>
         <table class="form-table"><tr><th>Google Play app URL</th><td><input class="large-text" type="url" name="wpam_settings[app_store_url]" value="<?php echo esc_attr($s['app_store_url']); ?>" placeholder="https://play.google.com/store/apps/details?id=your.package"><p class="description">Save app settings after entering the link.</p></td></tr></table>
         <table class="form-table"><tr><th>iOS App Store URL</th><td><input class="large-text" type="url" name="wpam_settings[ios_store_url]" value="<?php echo esc_attr($s['ios_store_url']); ?>" placeholder="https://apps.apple.com/app/your-app/id123456789"><p class="description">Used on iPhones and iPads. Save app settings after entering the link.</p></td></tr></table>
+        <table class="form-table"><?php wpam_input('ios_store_actions_enabled', 'Enable Rate Our App and Share App on iOS', 'checkbox'); ?></table>
+        <p>Enable this after the App Store listing is publicly available. An enabled link can be used in both app editions. If both sites have enabled links, Europe takes priority. Leave the switch off on both sites to hide the iOS actions.</p>
         <h2>Maintenance and updates</h2>
         <p>Disabled by default. Applies to this edition only. Users can switch to the other edition during maintenance. For app-wide updates, configure both websites.</p>
         <?php $availability = array_replace(wpam_availability_defaults(), (array) $s['availability']); ?>

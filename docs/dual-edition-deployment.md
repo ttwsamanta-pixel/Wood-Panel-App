@@ -1,6 +1,6 @@
 # Dual-edition deployment
 
-The repository currently sets the app version to `1.0.0+6` and App Manager plugin version to `0.9.1`. See the release notes below for historical Android device checks and [the iOS release guide](ios-release.md) for the Mac workflow.
+The shared version in `pubspec.yaml` is `1.0.0+6`. The first iOS submission uses version `1.0.0`, build `8`, supplied as an iOS build override. App Manager source is version `0.9.2`. See [the iOS release guide](ios-release.md) for the current App Store Connect status.
 
 ## Architecture and backup
 

@@ -11,7 +11,7 @@ Flutter news and magazine app with Europe and USA editions. Each website runs it
 - Independent Europe/USA push preferences, persistent notification inboxes, image notifications and scheduled sending from WordPress.
 - Name/email profile submissions with locally selected bundled avatars; first-launch welcome form and onboarding.
 - Appearance, text size, device narration controls, plugin-managed legal/contact/social content, optional Group Media/Clients/Premium pages and maintenance/update controls.
-- Firebase Analytics and Crashlytics integrated. Android dashboard receipt was confirmed. The first iOS release is in App Store Connect with build 8 attached. See [iOS release status](docs/ios-release.md#release-status) for the verified state and remaining checks.
+- Firebase Analytics and Crashlytics are integrated. Android dashboard receipt was confirmed. iOS 1.0.0 (build 8) is live on the App Store. See [iOS release status](docs/ios-release.md#release-status) for the review outcome and remaining launch checks.
 
 Premium Subscribe currently opens a contact enquiry. Payments and premium access enforcement are not implemented. Language translation remains deferred.
 

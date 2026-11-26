@@ -2,19 +2,20 @@
 
 ## Release status
 
-Checked in App Store Connect on 24 November 2026. [Wood & Panel iOS 1.0.0](https://appstoreconnect.apple.com/apps/6837897820/distribution/ios/version/inflight)
+On 26 November 2026, App Store Connect showed **Review Completed** and **Ready for Distribution**. Apple's public App Store lookup returned Wood & Panel 1.0.0 in India, the United States, and the United Kingdom. [Public App Store listing](https://apps.apple.com/app/id6837897820)
 
 | Item | State |
 |---|---|
-| App Store review | `Prepare for Submission`. Build `1.0.0 (8)` is attached. `Add for Review` is visible. |
-| Product page | Description, promotional text, keywords, support URL and copyright are entered. Media Manager shows zero screenshots in the required iPhone Dynamic Island (medium display) slot and two in the iPad 13-inch slot. Upload iPhone screenshots at 1179 × 2556 or 1206 × 2622 for portrait. |
-| App Review information | Contact fields and reviewer notes are entered. Sign-in is unchecked because reviewers can tap Skip on the optional profile screen. |
-| Privacy and availability | Privacy answers are published. Price is $0.00. The app uses public distribution across 173 storefronts, with France and China mainland excluded. Mac and Vision Pro availability and the School Manager volume discount are off. |
-| Release timing | `Manually release this version` is selected. Set `Automatically release this version` on the version page and save if the owner confirms the earlier plan to launch automatically after approval. |
-| EU trader status | App Compliance currently shows **non-trader**. Confirm that declaration with the account owner before releasing to the selected EU storefronts. |
-| WordPress | The Europe and USA public configuration endpoints both return `ios_store_actions_enabled: false` and an empty iOS store URL. After the listing is publicly reachable, enter the Apple URL and enable iOS store actions in App Manager. Test Rate and Share in both editions. |
+| App Store review | Apple approved iOS `1.0.0 (8)` after resubmission. [App Store Connect version](https://appstoreconnect.apple.com/apps/6837897820/distribution/ios/version/inflight) |
+| Guideline 2.1 response | Apple initially requested more information. The team saved a physical-device walkthrough link, reviewer access instructions, external services, regional differences, and the content-rights declaration in App Review Information and sent a reply. The team resubmitted build 8 on 25 November 2026. |
+| Privacy and availability | Privacy answers were published and the Free Apps Agreement was active before submission. The app is free and uses public distribution. The pre-submission selection covered 173 storefronts, excluding France and China mainland. The public listing was checked in three storefronts after approval. |
+| Release timing | Automatic release was selected before resubmission. The public listing is live. |
+| WordPress | On 26 November 2026, both Europe and USA public configuration endpoints returned `ios_store_actions_enabled: false` and an empty `ios_store_url`. |
 
-Upload the required iPhone screenshots and confirm release timing and the EU trader declaration before adding the version for review. If App Store Connect shows additional blockers, resolve them on the version or App Compliance page. Use **Add for Review** and then **Submit for Review** when the team is ready. [Apple’s submission guide](https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-app/)
+### After release
+
+- [ ] Install from the public App Store on a physical iPhone. Test first launch, news and magazines, and switching between Europe and USA.
+- [ ] In WordPress App Manager for both editions, set the iOS store URL to `https://apps.apple.com/app/id6837897820` and enable iOS Rate and Share. Check both public configuration endpoints and test both actions in each edition on the App Store build.
 
 ### Build and test history
 
@@ -40,13 +41,13 @@ flutter analyze lib test
 flutter test
 ```
 
-For an existing checkout on `main`, use `git pull --ff-only origin main`. Install the Flutter SDK described below. To finish the existing submission, sign in to the Keshan Infotech Private Limited App Store Connect team and open the version link above. Build 8 is already attached. Use a Mac with Xcode and access to that Apple developer team if you need a new signed build. Restore `ios/Runner/GoogleService-Info.plist` from Firebase for the exact bundle ID and use the iOS build variables below. For another upload, choose a build number above the latest upload while matching the App Store marketing version. Retrieve the original signed archive and dSYMs separately from the original Mac or a private backup if needed.
+For an existing checkout on `main`, use `git pull --ff-only origin main`. Install the Flutter SDK described below. Version 1.0.0 (build 8) is already live. For App Store account work, sign in to the Keshan Infotech Private Limited team in App Store Connect. Use a Mac with Xcode and access to that Apple developer team if you need a new signed build. Restore `ios/Runner/GoogleService-Info.plist` from Firebase for the exact bundle ID and use the iOS build variables below. For another upload, choose a build number above the latest upload while matching the App Store marketing version. Retrieve the original signed archive and dSYMs separately from the original Mac or a private backup if needed.
 
 For Android, see the [deployment guide](dual-edition-deployment.md) and retrieve the existing release keystore and Firebase configuration privately. Keep signing credentials, APNs keys, Firebase service account keys and local configuration outside Git. Production WordPress settings and store form changes live in their respective consoles.
 
 Paste this into a fresh Codex chat opened in the cloned repository:
 
-> Continue Wood & Panel from the latest `origin/main`. Read `README.md`, `docs/ios-release.md` and `docs/dual-edition-deployment.md`. The new iOS listing is App Store Connect app 6837897820, version 1.0.0, build 8. Check the live store state against the handoff before assuming anything is finished. Help me complete the remaining release tasks and preserve the existing Apple and WordPress production settings unless I ask for changes.
+> Continue Wood & Panel from the latest `origin/main`. Read `README.md`, `docs/ios-release.md` and `docs/dual-edition-deployment.md`. Apple approved iOS 1.0.0 (build 8), App Store ID 6837897820. Start with the after-release checklist. Check current storefront and WordPress settings against the handoff before making changes. Preserve Apple and WordPress production settings unless I ask for changes.
 
 ## Local build
 
